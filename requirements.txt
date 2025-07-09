@@ -1,8 +1,8 @@
 grad_cam==1.4.6
-matplotlib==3.7.1
+matplotlib
 natsort==8.3.1
 numpy==1.24.2
-opencv_python==4.7.0.72
+opencv_python
 pandas==1.5.3
 Pillow==9.4.0
 scikit_learn==1.2.2
