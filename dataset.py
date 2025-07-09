@@ -25,7 +25,9 @@ class ImageDataset(Dataset):
         images_dir=None,
         labels_dir=None,
         transforms=None,
+        return_torchvision=False,  # Thêm tuỳ chọn trả về dạng torchvision
     ):
+        self.return_torchvision = return_torchvision
         if transforms is None:
             self.transforms = A.Compose([
                 A.Resize(IMG_SIZE, IMG_SIZE),
@@ -100,10 +102,23 @@ class ImageDataset(Dataset):
                 boxes = np.zeros((0, 5), dtype=np.float32)
         else:
             image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
-        return {
-            "image": image.float(),
-            "target": torch.tensor(boxes, dtype=torch.float32),
-        }
+        if self.return_torchvision:
+            # Trả về target dạng dict cho detection head torchvision
+            if len(boxes) > 0:
+                labels = torch.tensor(boxes[:, 0], dtype=torch.int64)
+                bboxes = torch.tensor(boxes[:, 1:], dtype=torch.float32)
+            else:
+                labels = torch.zeros((0,), dtype=torch.int64)
+                bboxes = torch.zeros((0, 4), dtype=torch.float32)
+            return {
+                "image": image.float(),
+                "target": {"boxes": bboxes, "labels": labels},
+            }
+        else:
+            return {
+                "image": image.float(),
+                "target": torch.tensor(boxes, dtype=torch.float32),
+            }
 
 
 def make_dataset_dataframe(images_dir, labels_dir, out_csv=None):
