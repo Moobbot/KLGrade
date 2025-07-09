@@ -1,6 +1,7 @@
 from torch import nn
 from torchvision import models
 from torchvision.models.detection import FasterRCNN
+from torchvision.models.detection.rpn import AnchorGenerator
 from config import NUM_CLASSES
 
 
@@ -60,8 +61,17 @@ def get_backbone(model_type):
 
 def model_return(args):
     backbone = get_backbone(args.model_type)
+    # Số lượng feature maps đầu ra của backbone là 2048 (ResNet101, ...), thường chỉ có 1 feature map
+    anchor_generator = AnchorGenerator(
+        sizes=(
+            (32, 64, 128, 256, 512),
+        ),  # tuple lồng tuple, số tuple ngoài = số feature map
+        aspect_ratios=((0.5, 1.0, 2.0),),
+    )
+
     model = FasterRCNNWithHead(
         backbone,
         num_classes=NUM_CLASSES,
+        rpn_anchor_generator=anchor_generator,
     )
     return model

@@ -8,6 +8,9 @@ from albumentations.pytorch.transforms import ToTensorV2
 import pandas as pd
 from config import IMG_SIZE
 
+# Thêm import các hàm utils
+from utils import yolo_to_xyxy, filter_valid_boxes
+
 
 class ImageDataset(Dataset):
     """
@@ -29,10 +32,7 @@ class ImageDataset(Dataset):
     ):
         self.return_torchvision = return_torchvision
         if transforms is None:
-            self.transforms = A.Compose([
-                A.Resize(IMG_SIZE, IMG_SIZE),
-                ToTensorV2()
-            ])
+            self.transforms = A.Compose([A.Resize(IMG_SIZE, IMG_SIZE), ToTensorV2()])
         else:
             self.transforms = transforms
         if isinstance(df, str):
@@ -106,7 +106,11 @@ class ImageDataset(Dataset):
             # Trả về target dạng dict cho detection head torchvision
             if len(boxes) > 0:
                 labels = torch.tensor(boxes[:, 0], dtype=torch.int64)
-                bboxes = torch.tensor(boxes[:, 1:], dtype=torch.float32)
+                # Chuyển đổi box sang xyxy và lọc box hợp lệ
+                bboxes_xyxy = yolo_to_xyxy(boxes[:, 1:])
+                bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, boxes[:, 0])
+                labels = torch.tensor(labels_np, dtype=torch.int64)
+                bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
             else:
                 labels = torch.zeros((0,), dtype=torch.int64)
                 bboxes = torch.zeros((0, 4), dtype=torch.float32)

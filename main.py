@@ -6,7 +6,7 @@ from tqdm import tqdm
 import cv2
 import albumentations as A
 from albumentations.pytorch.transforms import ToTensorV2
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import KFold
 
 import torch
 from torch import nn, optim
@@ -18,6 +18,17 @@ from dataset import ImageDataset
 from early_stop import EarlyStopping
 from model import model_return
 from config import BATCH_SIZE, EPOCHS, K_FOLDS
+
+
+def collate_fn(batch):
+    # Nếu là detection (target là dict), trả về tuple
+    if isinstance(batch[0]["target"], dict):
+        return {"image": torch.stack([item["image"] for item in batch]),
+                "target": {"boxes": [item["target"]["boxes"] for item in batch],
+                            "labels": [item["target"]["labels"] for item in batch]}}
+    else:
+        return {"image": torch.stack([item["image"] for item in batch]),
+                "target": torch.stack([item["target"] for item in batch])}
 
 
 def train_for_kfold(model, dataloader, criterion, optimizer, scheduler, fold, epoch):
@@ -81,19 +92,19 @@ def val_for_kfold(model, dataloader, criterion, fold, epoch):
 
 
 def train(
-    train_dataset, val_dataset, args, batch_size, epochs, k, splits, labels, foldperf
+    train_dataset, val_dataset, args, batch_size, epochs, k, splits, foldperf
 ):
     for fold, (train_idx, val_idx) in enumerate(
-        splits.split(np.arange(len(train_dataset)), labels), start=1
+        splits.split(np.arange(len(train_dataset))), start=1
     ):
         # Data Load에 사용되는 index, key의 순서를 지정하는데 사용, Sequential , Random, SubsetRandom, Batch 등 + Sampler
         train_sampler = SubsetRandomSampler(train_idx)
         val_sampler = SubsetRandomSampler(val_idx)
         # Data Load
         train_loader = DataLoader(
-            train_dataset, batch_size=batch_size, sampler=train_sampler
+            train_dataset, batch_size=batch_size, sampler=train_sampler, collate_fn=collate_fn
         )
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, sampler=val_sampler)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, sampler=val_sampler, collate_fn=collate_fn)
 
         model_ft = model_return(args)
 
@@ -183,7 +194,7 @@ if __name__ == "__main__":
     print(f"Model Type : {args.model_type}")
     print(f"Image Size : {image_size_tuple}")
 
-    train_csv = pd.read_csv("./KneeXray/train/train.csv")
+    train_csv = pd.read_csv("./dataset/dataset.csv")
 
     train_transform = A.Compose(
         [
@@ -223,8 +234,8 @@ if __name__ == "__main__":
     epochs = EPOCHS
     k = K_FOLDS
     torch.manual_seed(42)
-    splits = StratifiedKFold(n_splits=k, shuffle=True, random_state=42)
-    labels = train_dataset.get_labels()
+    # Thay thế StratifiedKFold bằng KFold
+    splits = KFold(n_splits=k, shuffle=True, random_state=42)
     foldperf = {}
 
     train(
@@ -235,6 +246,5 @@ if __name__ == "__main__":
         epochs,
         k,
         splits,
-        labels,
         foldperf,
     )
