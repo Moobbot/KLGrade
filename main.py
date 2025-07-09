@@ -19,6 +19,9 @@ from early_stop import EarlyStopping
 from model import model_return
 from config import BATCH_SIZE, EPOCHS, K_FOLDS
 
+# Thêm import torchmetrics
+from torchmetrics.detection.mean_ap import MeanAveragePrecision
+
 
 def collate_fn(batch):
     # Nếu là detection (target là dict), trả về tuple
@@ -31,9 +34,17 @@ def collate_fn(batch):
                 "target": torch.stack([item["target"] for item in batch])}
 
 
-def train_for_kfold(model, dataloader, criterion, optimizer, scheduler, fold, epoch):
+def train_for_kfold(model, dataloader, criterion, optimizer, scheduler, fold, epoch, save_metrics_path=None):
     train_loss = 0.0
-    model.train()  # Model을 Train Mode로 변환 >> Dropout Layer 같은 경우 Train시 동작 해야 함
+    cls_loss = 0.0
+    loc_loss = 0.0
+    total_loss = 0.0
+    metric = None
+    # Nếu là detection, khởi tạo metric
+    is_detection = hasattr(model, "roi_heads")
+    if is_detection:
+        metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+    model.train()
     with torch.set_grad_enabled(True):
         for batch in tqdm(
             dataloader, desc=f"Fold {fold} Epoch {epoch} Train", unit="Batch"
@@ -41,19 +52,48 @@ def train_for_kfold(model, dataloader, criterion, optimizer, scheduler, fold, ep
             optimizer.zero_grad()
             image = batch["image"].cuda()
             target = batch["target"]
-
-            # Nếu là detection (FasterRCNN)
-            if hasattr(model, "roi_heads"):
+            if is_detection:
                 targets = [
                     {"boxes": b.cuda(), "labels": l.cuda()}
                     for b, l in zip(target["boxes"], target["labels"])
                 ]
                 loss_dict = model(image, targets)
-                # loss_dict gồm: loss_classifier, loss_box_reg, ...
                 loss = sum(loss for loss in loss_dict.values())
                 train_loss += loss.item()
+                cls_loss += loss_dict.get("loss_classifier", torch.tensor(0.0)).item()
+                loc_loss += loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
+                total_loss += loss.item()
+                # Lấy predict để update metric
+                model.eval()
+                pred = model(image)
+                if isinstance(pred, tuple):
+                    pred_logits, pred_boxes = pred
+                    preds = []
+                    for s, b in zip(pred_logits, pred_boxes):
+                        preds.append({
+                            "scores": s.detach().cpu(),
+                            "boxes": b.detach().cpu(),
+                            "labels": torch.zeros_like(s, dtype=torch.long)
+                        })
+                else:
+                    preds = [
+                        {
+                            "boxes": p["boxes"].detach().cpu(),
+                            "scores": p["scores"].detach().cpu(),
+                            "labels": p["labels"].detach().cpu(),
+                        }
+                        for p in pred
+                    ]
+                gts = [
+                    {
+                        "boxes": t["boxes"].detach().cpu(),
+                        "labels": t["labels"].detach().cpu(),
+                    }
+                    for t in targets
+                ]
+                metric.update(preds, gts)
+                model.train()
             else:
-                # Classification như cũ
                 labels = batch["target"].cuda()
                 output = model(image)
                 loss = criterion(output, labels)
@@ -62,20 +102,35 @@ def train_for_kfold(model, dataloader, criterion, optimizer, scheduler, fold, ep
             optimizer.step()
         if scheduler is not None:
             scheduler.step()
-    return train_loss
+    metrics_result = None
+    if is_detection:
+        metrics_result = metric.compute()
+        if save_metrics_path is not None:
+            with open(save_metrics_path, "a", encoding="utf-8") as f:
+                f.write(f"Fold {fold} Epoch {epoch} Train Detection Metrics:\n")
+                f.write(f"  cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n")
+                f.write(f"  mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n")
+                for i, ap in enumerate(metrics_result['map_per_class']):
+                    f.write(f"    Class {i} AP: {ap:.4f}\n")
+                f.write("\n")
+    return train_loss, cls_loss, loc_loss, total_loss, metrics_result
 
 
-def val_for_kfold(model, dataloader, criterion, fold, epoch):
+def val_for_kfold(model, dataloader, criterion, fold, epoch, save_metrics_path=None):
     val_loss = 0.0
-    model.eval()  # Model을 Eval Mode로 전환 >> Dropout Layer 같은 경우 Eval시 동작 하지 않아야 함
-    with torch.no_grad():  # gradient 연산 기록 추적 off
+    cls_loss = 0.0
+    loc_loss = 0.0
+    total_loss = 0.0
+    # Khởi tạo metric detection nếu là detection
+    metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+    model.eval()
+    with torch.no_grad():
         for batch in tqdm(
             dataloader, desc=f"Fold {fold} Epoch {epoch} Valid", unit="Batch"
         ):
             image = batch["image"].cuda()
             target = batch["target"]
-            # Nếu là detection (FasterRCNN)
-            if hasattr(model, "roi_heads"):
+            if hasattr(model, "roi_heads"):  # Detection
                 targets = [
                     {"boxes": b.cuda(), "labels": l.cuda()}
                     for b, l in zip(target["boxes"], target["labels"])
@@ -83,12 +138,60 @@ def val_for_kfold(model, dataloader, criterion, fold, epoch):
                 loss_dict = model(image, targets)
                 loss = sum(loss for loss in loss_dict.values())
                 val_loss += loss.item()
+                cls_loss += loss_dict.get("loss_classifier", torch.tensor(0.0)).item()
+                loc_loss += loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
+                total_loss += loss.item()
+                # Lấy predict để update metric
+                model.eval()
+                pred = model(image)
+                # pred: list of dicts with 'boxes', 'labels', 'scores'
+                # targets: list of dicts
+                # Đảm bảo pred và targets đúng format cho torchmetrics
+                if isinstance(pred, tuple):
+                    # Nếu model trả về (scores, boxes)
+                    pred_logits, pred_boxes = pred
+                    preds = []
+                    for s, b in zip(pred_logits, pred_boxes):
+                        preds.append({
+                            "scores": s.detach().cpu(),
+                            "boxes": b.detach().cpu(),
+                            "labels": torch.zeros_like(s, dtype=torch.long)  # dummy nếu không có labels
+                        })
+                else:
+                    preds = [
+                        {
+                            "boxes": p["boxes"].detach().cpu(),
+                            "scores": p["scores"].detach().cpu(),
+                            "labels": p["labels"].detach().cpu(),
+                        }
+                        for p in pred
+                    ]
+                gts = [
+                    {
+                        "boxes": t["boxes"].detach().cpu(),
+                        "labels": t["labels"].detach().cpu(),
+                    }
+                    for t in targets
+                ]
+                metric.update(preds, gts)
             else:
                 labels = batch["target"].cuda()
                 output = model(image)
                 loss = criterion(output, labels)
                 val_loss += loss.item()
-    return val_loss
+    # Tính metric detection nếu là detection
+    metrics_result = None
+    if hasattr(model, "roi_heads"):
+        metrics_result = metric.compute()
+        if save_metrics_path is not None:
+            with open(save_metrics_path, "a", encoding="utf-8") as f:
+                f.write(f"Fold {fold} Epoch {epoch} Detection Metrics:\n")
+                f.write(f"  cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n")
+                f.write(f"  mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n")
+                for i, ap in enumerate(metrics_result['map_per_class']):
+                    f.write(f"    Class {i} AP: {ap:.4f}\n")
+                f.write("\n")
+    return val_loss, cls_loss, loc_loss, total_loss, metrics_result
 
 
 def train(
@@ -131,6 +234,7 @@ def train(
             args, patience=patience, verbose=True, delta=delta
         )
 
+        metrics_txt_path = f"metrics_fold{fold}.txt"
         for epoch in range(1, epochs + 1):
             if epoch == 2:
                 for param in model_ft.parameters():
@@ -146,10 +250,12 @@ def train(
 
             print(f"Learning Rate : {optimizer.param_groups[0]['lr']}")
 
-            train_loss = train_for_kfold(
-                model_ft, train_loader, criterion, optimizer, scheduler, fold, epoch
+            train_loss, train_cls_loss, train_loc_loss, train_total_loss, train_metrics = train_for_kfold(
+                model_ft, train_loader, criterion, optimizer, scheduler, fold, epoch, save_metrics_path=metrics_txt_path
             )
-            val_loss = val_for_kfold(model_ft, val_loader, criterion, fold, epoch)
+            val_loss, val_cls_loss, val_loc_loss, val_total_loss, val_metrics = val_for_kfold(
+                model_ft, val_loader, criterion, fold, epoch, save_metrics_path=metrics_txt_path
+            )
 
             train_loss = train_loss / len(train_loader)
             val_loss = val_loss / len(val_loader)
@@ -157,6 +263,20 @@ def train(
             print(
                 f"Epoch: {epoch}/{epochs} \t Avg Train Loss: {train_loss:.3f} \t Avg Valid Loss: {val_loss:.3f}"
             )
+            # Ghi log loss vào file txt
+            with open(metrics_txt_path, "a", encoding="utf-8") as f:
+                f.write(f"Epoch {epoch}:\n")
+                f.write(f"  Train Loss: {train_loss:.4f}, cls_loss: {train_cls_loss:.4f}, loc_loss: {train_loc_loss:.4f}, total_loss: {train_total_loss:.4f}\n")
+                if train_metrics is not None:
+                    f.write(f"  Train mAP: {train_metrics['map']:.4f}, Precision: {train_metrics['map_50']:.4f}, Recall: {train_metrics['mar_100']:.4f}\n")
+                    for i, ap in enumerate(train_metrics['map_per_class']):
+                        f.write(f"    Train Class {i} AP: {ap:.4f}\n")
+                f.write(f"  Val Loss: {val_loss:.4f}, cls_loss: {val_cls_loss:.4f}, loc_loss: {val_loc_loss:.4f}, total_loss: {val_total_loss:.4f}\n")
+                if val_metrics is not None:
+                    f.write(f"  Val mAP: {val_metrics['map']:.4f}, Precision: {val_metrics['map_50']:.4f}, Recall: {val_metrics['mar_100']:.4f}\n")
+                    for i, ap in enumerate(val_metrics['map_per_class']):
+                        f.write(f"    Val Class {i} AP: {ap:.4f}\n")
+                f.write("\n")
 
             history["train_loss"].append(train_loss)
             history["val_loss"].append(val_loss)
