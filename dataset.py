@@ -32,7 +32,15 @@ class ImageDataset(Dataset):
     ):
         self.return_torchvision = return_torchvision
         if transforms is None:
-            self.transforms = A.Compose([A.Resize(IMG_SIZE, IMG_SIZE), ToTensorV2()])
+            self.transforms = A.Compose(
+                [A.Resize(IMG_SIZE, IMG_SIZE), ToTensorV2()],
+                bbox_params=A.BboxParams(
+                    format="yolo",
+                    label_fields=["class_labels"],
+                    min_visibility=0.1,
+                    clip=True,
+                ),
+            )
         else:
             self.transforms = transforms
         if isinstance(df, str):
@@ -82,33 +90,49 @@ class ImageDataset(Dataset):
             if boxes
             else np.zeros((0, 5), dtype=np.float32)
         )
-        # Albumentations expects 'bboxes' and 'class_labels' for augmentation
+        # Lọc box hợp lệ TRƯỚC khi augment
+        if boxes.shape[0] > 0:
+            print("Boxes to augment:", boxes)
+            valid = (
+                (boxes[:, 1] >= 0) & (boxes[:, 1] <= 1) &  # x_center
+                (boxes[:, 2] >= 0) & (boxes[:, 2] <= 1) &  # y_center
+                (boxes[:, 3] > 0)  & (boxes[:, 3] <= 1) &  # w
+                (boxes[:, 4] > 0)  & (boxes[:, 4] <= 1)    # h
+            )
+            boxes = boxes[valid]
+        # Augmentation
         if self.transforms:
             transformed = self.transforms(
                 image=image,
-                bboxes=boxes[:, 1:],
+                bboxes=boxes[:, 1:] if len(boxes) > 0 else [],
                 class_labels=boxes[:, 0] if len(boxes) > 0 else [],
             )
             image = transformed["image"]
-            # Re-combine class_id and bbox after augmentation
             if len(transformed["bboxes"]) > 0:
-                boxes = np.hstack(
-                    [
-                        np.array(transformed["class_labels"]).reshape(-1, 1),
-                        np.array(transformed["bboxes"]),
-                    ]
-                )
+                bboxes = np.array(transformed["bboxes"])
+                # Clamp lại về [0, 1] để loại bỏ lỗi float nhỏ
+                bboxes = np.clip(bboxes, 0.0, 1.0)
+                # Loại box có w/h <= 0
+                valid = (bboxes[:, 2] > 0) & (bboxes[:, 3] > 0)
+                bboxes = bboxes[valid]
+                labels = np.array(transformed["class_labels"])[valid]
+                boxes = torch.tensor(bboxes)
+                labels = torch.tensor(labels)
             else:
-                boxes = np.zeros((0, 5), dtype=np.float32)
+                boxes = torch.zeros((0, 4), dtype=torch.float32)
+                labels = torch.zeros((0,), dtype=torch.int64)
         else:
             image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
+            labels = torch.zeros((0,), dtype=torch.int64) if boxes.shape[0] == 0 else torch.tensor(boxes[:, 0], dtype=torch.int64)
+            boxes = torch.zeros((0, 4), dtype=torch.float32) if boxes.shape[0] == 0 else torch.tensor(boxes[:, 1:], dtype=torch.float32)
         if self.return_torchvision:
             # Trả về target dạng dict cho detection head torchvision
             if len(boxes) > 0:
-                labels = torch.tensor(boxes[:, 0], dtype=torch.int64)
+                # labels = torch.tensor(boxes[:, 0], dtype=torch.int64)
                 # Chuyển đổi box sang xyxy và lọc box hợp lệ
-                bboxes_xyxy = yolo_to_xyxy(boxes[:, 1:])
-                bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, boxes[:, 0])
+                # import IPython; IPython.embed()
+                bboxes_xyxy = yolo_to_xyxy(boxes)
+                bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, labels)
                 labels = torch.tensor(labels_np, dtype=torch.int64)
                 bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
             else:
@@ -119,9 +143,14 @@ class ImageDataset(Dataset):
                 "target": {"boxes": bboxes, "labels": labels},
             }
         else:
+            # Trả về [class_id, x_center, y_center, w, h] cho custom
+            if boxes.shape[0] > 0:
+                out = torch.cat([labels.unsqueeze(1).float(), boxes], dim=1)
+            else:
+                out = torch.zeros((0, 5), dtype=torch.float32)
             return {
                 "image": image.float(),
-                "target": torch.tensor(boxes, dtype=torch.float32),
+                "target": out,
             }
 
 
