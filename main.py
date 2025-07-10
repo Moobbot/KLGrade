@@ -88,24 +88,24 @@ def train_for_kfold(
                     for s, b in zip(pred_logits, pred_boxes):
                         preds.append(
                             {
-                                "scores": s.detach().cpu(),
-                                "boxes": b.detach().cpu(),
-                                "labels": torch.zeros_like(s, dtype=torch.long),
+                                "scores": s.detach().cuda(),
+                                "boxes": b.detach().cuda(),
+                                "labels": torch.zeros_like(s, dtype=torch.long).cuda(),
                             }
                         )
                 else:
                     preds = [
                         {
-                            "boxes": p["boxes"].detach().cpu(),
-                            "scores": p["scores"].detach().cpu(),
-                            "labels": p["labels"].detach().cpu(),
+                            "boxes": p["boxes"].detach().cuda(),
+                            "scores": p["scores"].detach().cuda(),
+                            "labels": p["labels"].detach().cuda(),
                         }
                         for p in pred
                     ]
                 gts = [
                     {
-                        "boxes": t["boxes"].detach().cpu(),
-                        "labels": t["labels"].detach().cpu(),
+                        "boxes": t["boxes"].detach().cuda(),
+                        "labels": t["labels"].detach().cuda(),
                     }
                     for t in targets
                 ]
@@ -176,26 +176,26 @@ def val_for_kfold(model, dataloader, criterion, fold, epoch, save_metrics_path=N
                     for s, b in zip(pred_logits, pred_boxes):
                         preds.append(
                             {
-                                "scores": s.detach().cpu(),
-                                "boxes": b.detach().cpu(),
+                                "scores": s.detach().cuda(),
+                                "boxes": b.detach().cuda(),
                                 "labels": torch.zeros_like(
                                     s, dtype=torch.long
-                                ),  # dummy nếu không có labels
+                                ).cuda(),  # dummy nếu không có labels
                             }
                         )
                 else:
                     preds = [
                         {
-                            "boxes": p["boxes"].detach().cpu(),
-                            "scores": p["scores"].detach().cpu(),
-                            "labels": p["labels"].detach().cpu(),
+                            "boxes": p["boxes"].detach().cuda(),
+                            "scores": p["scores"].detach().cuda(),
+                            "labels": p["labels"].detach().cuda(),
                         }
                         for p in pred
                     ]
                 gts = [
                     {
-                        "boxes": t["boxes"].detach().cpu(),
-                        "labels": t["labels"].detach().cpu(),
+                        "boxes": t["boxes"].detach().cuda(),
+                        "labels": t["labels"].detach().cuda(),
                     }
                     for t in targets
                 ]
@@ -331,9 +331,9 @@ if __name__ == "__main__":
             A.Resize(
                 args.image_size, args.image_size, interpolation=cv2.INTER_CUBIC, p=1
             ),
-            A.HorizontalFlip(p=0.5),
-            A.Rotate(limit=20, p=1),
-            A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
+            # A.HorizontalFlip(p=0.5),
+            # A.Rotate(limit=20, p=1),
+            # A.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]),
             ToTensorV2(),
         ],
         bbox_params=A.BboxParams(
