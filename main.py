@@ -59,6 +59,7 @@ def train_for_kfold(
     is_detection = hasattr(model, "roi_heads")
     if is_detection:
         metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+        device = next(model.parameters()).device
     model.train()
     with torch.set_grad_enabled(True):
         for batch in tqdm(
@@ -88,24 +89,24 @@ def train_for_kfold(
                     for s, b in zip(pred_logits, pred_boxes):
                         preds.append(
                             {
-                                "scores": s.detach().cuda(),
-                                "boxes": b.detach().cuda(),
-                                "labels": torch.zeros_like(s, dtype=torch.long).cuda(),
+                                "scores": s.detach().to(device),
+                                "boxes": b.detach().to(device),
+                                "labels": torch.zeros_like(s, dtype=torch.long).to(device),
                             }
                         )
                 else:
                     preds = [
                         {
-                            "boxes": p["boxes"].detach().cuda(),
-                            "scores": p["scores"].detach().cuda(),
-                            "labels": p["labels"].detach().cuda(),
+                            "boxes": p["boxes"].detach().to(device),
+                            "scores": p["scores"].detach().to(device),
+                            "labels": p["labels"].detach().to(device),
                         }
                         for p in pred
                     ]
                 gts = [
                     {
-                        "boxes": t["boxes"].detach().cuda(),
-                        "labels": t["labels"].detach().cuda(),
+                        "boxes": t["boxes"].detach().to(device),
+                        "labels": t["labels"].detach().to(device),
                     }
                     for t in targets
                 ]
@@ -145,6 +146,7 @@ def val_for_kfold(model, dataloader, criterion, fold, epoch, save_metrics_path=N
     total_loss = 0.0
     # Khởi tạo metric detection nếu là detection
     metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+    device = next(model.parameters()).device
     model.eval()
     with torch.no_grad():
         for batch in tqdm(
@@ -176,26 +178,26 @@ def val_for_kfold(model, dataloader, criterion, fold, epoch, save_metrics_path=N
                     for s, b in zip(pred_logits, pred_boxes):
                         preds.append(
                             {
-                                "scores": s.detach().cuda(),
-                                "boxes": b.detach().cuda(),
+                                "scores": s.detach().to(device),
+                                "boxes": b.detach().to(device),
                                 "labels": torch.zeros_like(
                                     s, dtype=torch.long
-                                ).cuda(),  # dummy nếu không có labels
+                                ).to(device),  # dummy nếu không có labels
                             }
                         )
                 else:
                     preds = [
                         {
-                            "boxes": p["boxes"].detach().cuda(),
-                            "scores": p["scores"].detach().cuda(),
-                            "labels": p["labels"].detach().cuda(),
+                            "boxes": p["boxes"].detach().to(device),
+                            "scores": p["scores"].detach().to(device),
+                            "labels": p["labels"].detach().to(device),
                         }
                         for p in pred
                     ]
                 gts = [
                     {
-                        "boxes": t["boxes"].detach().cuda(),
-                        "labels": t["labels"].detach().cuda(),
+                        "boxes": t["boxes"].detach().to(device),
+                        "labels": t["labels"].detach().to(device),
                     }
                     for t in targets
                 ]
@@ -255,6 +257,7 @@ def train(train_dataset, val_dataset, args, batch_size, epochs):
     is_detection = hasattr(model_ft, "roi_heads")
     if is_detection:
         metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+        device = next(model_ft.parameters()).device
 
     for epoch in range(1, epochs + 1):
         if epoch == 2:
