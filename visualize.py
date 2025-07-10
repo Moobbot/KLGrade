@@ -96,8 +96,55 @@ for img_path in img_files:
             side = h - y1
         x2, y2 = x1 + side, y1 + side
 
+        # Đọc lại tất cả box ở label1 để kiểm tra có nằm trong crop không
+        expand = False
+        with open(label1_path) as f1:
+            boxes_abs = []
+            for l1 in f1:
+                parts1 = l1.strip().split()
+                if len(parts1) != 5:
+                    continue
+                _, x_l, y_l, bw_l, bh_l = map(float, parts1)
+                bx, by = x_l * w, y_l * h
+                bw_abs, bh_abs = bw_l * w, bh_l * h
+                bx1, by1, bx2, by2 = yolo_to_xyxy(np.array([[x_l, y_l, bw_l, bh_l]])) [0] * np.array([w, h, w, h])
+                boxes_abs.append([bx1, by1, bx2, by2])
+        # Mở rộng crop tối thiểu để bao trọn tất cả box (và vùng crop gốc)
+        all_x1 = [x1] + [bx1 for bx1, _, _, _ in boxes_abs if bx1 < x1]
+        all_y1 = [y1] + [by1 for _, by1, _, _ in boxes_abs if by1 < y1]
+        all_x2 = [x2] + [bx2 for _, _, bx2, _ in boxes_abs if bx2 > x2]
+        all_y2 = [y2] + [by2 for _, _, _, by2 in boxes_abs if by2 > y2]
+        x1_new = max(0, int(min(all_x1)))
+        y1_new = max(0, int(min(all_y1)))
+        x2_new = min(w, int(max(all_x2)))
+        y2_new = min(h, int(max(all_y2)))
+        if x2_new <= x1_new or y2_new <= y1_new:
+            print(f"[CROP_ERROR] {img_path}: Crop box invalid after expand.")
+            continue
+        x1, y1, x2, y2 = x1_new, y1_new, x2_new, y2_new
+
+        width = x2 - x1
+        height = y2 - y1
+        side = max(width, height)
+
+        # Căn chỉnh để crop là hình vuông, ưu tiên giữ tâm vùng crop cũ
+        cx = (x1 + x2) // 2
+        cy = (y1 + y2) // 2
+        half_side = side // 2
+
+        x1_sq = max(0, min(w - side, cx - half_side))
+        y1_sq = max(0, min(h - side, cy - half_side))
+        x2_sq = x1_sq + side
+        y2_sq = y1_sq + side
+
+        # Đảm bảo không vượt biên
+        x1_sq = int(max(0, min(w - side, x1_sq)))
+        y1_sq = int(max(0, min(h - side, y1_sq)))
+        x2_sq = int(min(w, x1_sq + side))
+        y2_sq = int(min(h, y1_sq + side))
+
         # Cắt ảnh
-        cropped_img = img[y1:y2, x1:x2]
+        cropped_img = img[y1_sq:y2_sq, x1_sq:x2_sq]
         cropped_img_path = os.path.join(cropped_dir, f"{base}_{idx}.jpg")
         cv2.imwrite(cropped_img_path, cropped_img)
         ch, cw, _ = cropped_img.shape
@@ -115,18 +162,18 @@ for img_path in img_files:
                 box_xyxy = yolo_to_xyxy(box_yolo) * np.array([[w, h, w, h]])
                 bx1, by1, bx2, by2 = box_xyxy[0]
                 # Clamp box vào vùng crop
-                nbx1 = max(bx1, x1)
-                nby1 = max(by1, y1)
-                nbx2 = min(bx2, x2)
-                nby2 = min(by2, y2)
+                nbx1 = max(bx1, x1_sq)
+                nby1 = max(by1, y1_sq)
+                nbx2 = min(bx2, x2_sq)
+                nby2 = min(by2, y2_sq)
                 # Nếu không giao thì bỏ qua
                 if nbx1 >= nbx2 or nby1 >= nby2:
                     continue
                 # Box mới trong crop (tọa độ so với crop)
-                nbx1_crop = nbx1 - x1
-                nby1_crop = nby1 - y1
-                nbx2_crop = nbx2 - x1
-                nby2_crop = nby2 - y1
+                nbx1_crop = max(0, min(cw, nbx1 - x1_sq))
+                nby1_crop = max(0, min(ch, nby1 - y1_sq))
+                nbx2_crop = max(0, min(cw, nbx2 - x1_sq))
+                nby2_crop = max(0, min(ch, nby2 - y1_sq))
                 # Chuyển về format YOLO (center, width, height, normalized)
                 ncx = (nbx1_crop + nbx2_crop) / 2 / cw
                 ncy = (nby1_crop + nby2_crop) / 2 / ch

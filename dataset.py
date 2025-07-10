@@ -64,9 +64,12 @@ class ImageDataset(Dataset):
             img_path = os.path.join(images_dir, img_file)
             label_file = img_file.replace(".jpg", ".txt")
             label_path = os.path.join(labels_dir, label_file)
-            if os.path.exists(label_path):
-                data.append(img_path)
-                label.append(label_path)
+        if os.path.exists(label_path):
+            data.append(img_path)
+            label.append(label_path)
+        else:
+            data.append(img_path)
+            label.append(None)
         return data, label
 
     def __len__(self):
@@ -78,7 +81,7 @@ class ImageDataset(Dataset):
         image = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
         image = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
         boxes = []
-        if os.path.exists(label_path):
+        if label_path is not None and os.path.exists(label_path):
             with open(label_path, "r") as f:
                 for line in f:
                     parts = line.strip().split()
@@ -90,41 +93,53 @@ class ImageDataset(Dataset):
             if boxes
             else np.zeros((0, 5), dtype=np.float32)
         )
-        # Lọc box hợp lệ TRƯỚC khi augment
-        if boxes.shape[0] > 0:
-            print("Boxes to augment:", boxes)
-            valid = (
-                (boxes[:, 1] >= 0) & (boxes[:, 1] <= 1) &  # x_center
-                (boxes[:, 2] >= 0) & (boxes[:, 2] <= 1) &  # y_center
-                (boxes[:, 3] > 0)  & (boxes[:, 3] <= 1) &  # w
-                (boxes[:, 4] > 0)  & (boxes[:, 4] <= 1)    # h
-            )
-            boxes = boxes[valid]
+
+        # Checkpoint: Trước augment
+        if len(boxes) > 0:
+            print(f"[Checkpoint] Before augment - img: {img_path}")
+            print(f"  boxes (yolo): {boxes}")
+            if np.any(boxes[:, 1:] < 0) or np.any(boxes[:, 1:] > 1):
+                print(f"  [ERROR] Found box out of [0,1] before augment: {boxes}")
+                raise Exception(f"Box out of range before augment: {boxes} in {img_path}")
+
         # Augmentation
         if self.transforms:
-            transformed = self.transforms(
-                image=image,
-                bboxes=boxes[:, 1:] if len(boxes) > 0 else [],
-                class_labels=boxes[:, 0] if len(boxes) > 0 else [],
-            )
+            print("boxes", boxes)
+            try:
+                transformed = self.transforms(
+                    image=image,
+                    bboxes=boxes[:, 1:] if len(boxes) > 0 else [],
+                    class_labels=boxes[:, 0] if len(boxes) > 0 else [],
+                )
+            except Exception as e:
+                print(f"[Checkpoint] Augment Exception - img: {img_path}")
+                print(f"  boxes (yolo): {boxes}")
+                raise
             image = transformed["image"]
-            if len(transformed["bboxes"]) > 0:
-                bboxes = np.array(transformed["bboxes"])
-                # Clamp lại về [0, 1] để loại bỏ lỗi float nhỏ
-                bboxes = np.clip(bboxes, 0.0, 1.0)
-                # Loại box có w/h <= 0
-                valid = (bboxes[:, 2] > 0) & (bboxes[:, 3] > 0)
-                bboxes = bboxes[valid]
-                labels = np.array(transformed["class_labels"])[valid]
-                boxes = torch.tensor(bboxes)
-                labels = torch.tensor(labels)
-            else:
-                boxes = torch.zeros((0, 4), dtype=torch.float32)
-                labels = torch.zeros((0,), dtype=torch.int64)
+            boxes = transformed['bboxes']
+            labels = transformed['class_labels']
+            # Checkpoint: Sau augment
+            print(f"[Checkpoint] After augment - img: {img_path}")
+            print(f"  boxes (yolo): {boxes}")
+            print(f"  labels: {labels}")
+            # Clip bbox về [0, 1] và cảnh báo nếu có giá trị bị clip
+            if len(boxes) > 0:
+                boxes_np = np.array(boxes)
+                boxes_clipped = np.clip(boxes_np, 0.0, 1.0)
+                if not np.allclose(boxes_np, boxes_clipped, atol=1e-6):
+                    print(f"[WARNING] Bbox clipped for image: {img_path}")
+                    print(f"  Before clip: {boxes_np}")
+                    print(f"  After  clip: {boxes_clipped}")
+                boxes = boxes_clipped
+            if len(boxes) > 0 and (np.any(np.array(boxes) < 0) or np.any(np.array(boxes) > 1)):
+                print(f"  [ERROR] Found box out of [0,1] after augment: {boxes}")
+                raise Exception(f"Box out of range after augment: {boxes} in {img_path}")
         else:
             image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
-            labels = torch.zeros((0,), dtype=torch.int64) if boxes.shape[0] == 0 else torch.tensor(boxes[:, 0], dtype=torch.int64)
-            boxes = torch.zeros((0, 4), dtype=torch.float32) if boxes.shape[0] == 0 else torch.tensor(boxes[:, 1:], dtype=torch.float32)
+            labels = torch.zeros((0,), dtype=torch.int64) if boxes.shape[0] == 0 else torch.tensor(
+                boxes[:, 0], dtype=torch.int64)
+            boxes = torch.zeros((0, 4), dtype=torch.float32) if boxes.shape[0] == 0 else torch.tensor(
+                boxes[:, 1:], dtype=torch.float32)
         if self.return_torchvision:
             # Trả về target dạng dict cho detection head torchvision
             if len(boxes) > 0:
@@ -132,9 +147,19 @@ class ImageDataset(Dataset):
                 # Chuyển đổi box sang xyxy và lọc box hợp lệ
                 # import IPython; IPython.embed()
                 bboxes_xyxy = yolo_to_xyxy(boxes)
-                bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, labels)
-                labels = torch.tensor(labels_np, dtype=torch.int64)
+                # Checkpoint: Sau khi chuyển sang xyxy
+                print(f"[Checkpoint] After yolo_to_xyxy - img: {img_path}")
+                print(f"  bboxes_xyxy: {bboxes_xyxy}")
+                if np.any(bboxes_xyxy < 0) or np.any(bboxes_xyxy > 1):
+                    print(f"  [ERROR] Found xyxy box out of [0,1]: {bboxes_xyxy}")
+                    raise Exception(f"xyxy box out of range: {bboxes_xyxy} in {img_path}")
+                bboxes_xyxy, labels_np = filter_valid_boxes(
+                    bboxes_xyxy, labels)
+                labels = torch.tensor(labels_np, dtype=torch.int64) if not torch.is_tensor(
+                    labels_np) else labels_np.clone().detach().to(torch.int64)
                 bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
+                print("Filtered bboxes:", bboxes)
+                print("Filtered labels:", labels)
             else:
                 labels = torch.zeros((0,), dtype=torch.int64)
                 bboxes = torch.zeros((0, 4), dtype=torch.float32)
@@ -145,7 +170,8 @@ class ImageDataset(Dataset):
         else:
             # Trả về [class_id, x_center, y_center, w, h] cho custom
             if boxes.shape[0] > 0:
-                out = torch.cat([labels.unsqueeze(1).float(), boxes], dim=1)
+                out = torch.cat([labels.unsqueeze(1).float(),
+                                boxes], dim=1).to(torch.float32)
             else:
                 out = torch.zeros((0, 5), dtype=torch.float32)
             return {
@@ -168,6 +194,9 @@ def make_dataset_dataframe(images_dir, labels_dir, out_csv=None):
         if os.path.exists(label_path):
             data.append(img_path)
             label.append(label_path)
+        else:
+            data.append(img_path)
+            label.append(None)
     df = pd.DataFrame({"data": data, "label": label})
     if out_csv is not None:
         df.to_csv(out_csv, index=False)
