@@ -2,6 +2,7 @@ import numpy as np
 
 import torch
 from torch import nn
+import os
 
 class EarlyStopping:
     def __init__(self, args, patience=7, verbose=False, delta=0):
@@ -28,11 +29,15 @@ class EarlyStopping:
             print(f"Valid Loss ({self.val_loss_min:.6f} --> {val_loss:.6f}).  Saving Model ...")
             
         image_size_tuple = (args.image_size, args.image_size)
+        save_dir = f'./models/{args.model_type}/{image_size_tuple}'
+        os.makedirs(save_dir, exist_ok=True)  # Ensure directory exists
+
+        save_path = f'{save_dir}/{fold}fold_epoch{epoch}.pt'
         
         if isinstance(model, nn.DataParallel):
-            torch.save(model.module.state_dict(), f'./models/{args.model_type}/{image_size_tuple}/{fold}fold_epoch{epoch}.pt')
+            torch.save(model.module.state_dict(), save_path)
         else:
-            torch.save(model.state_dict(), f'./models/{args.model_type}/{image_size_tuple}/{fold}fold_epoch{epoch}.pt')
+            torch.save(model.state_dict(), save_path)
         # torch.save(model, f"./models/{args.model_type}/{image_size_tuple}/{fold}fold_epoch{epoch}.pt")
             
         self.val_loss_min = val_loss

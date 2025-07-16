@@ -14,6 +14,5 @@ IMG_SIZE = 224  # You can change this value as needed
 NUM_CLASSES = len(CLASSES) + 1  # +1 for background
 
 # Training hyperparameters
-BATCH_SIZE = 16
+BATCH_SIZE = 1
 EPOCHS = 30
-K_FOLDS = 5

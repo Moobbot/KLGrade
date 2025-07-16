@@ -3,13 +3,15 @@ import torch
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 from config import IMG_SIZE, BATCH_SIZE
-from dataset import ImageDataset
+from dataset import ImageDataset, make_dataset_dataframe
 from model import model_return
 from torch import nn, optim
 
 # Dummy dataset, bạn cần thay bằng dataset thực tế
 images_dir = "dataset/images"
 labels_dir = "dataset/labels"
+make_dataset_dataframe(images_dir, labels_dir, out_csv="dataset/dataset.csv")
+
 dataset = ImageDataset(images_dir=images_dir, labels_dir=labels_dir, return_torchvision=True)
 
 batch_size = BATCH_SIZE

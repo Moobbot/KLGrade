@@ -96,15 +96,14 @@ class ImageDataset(Dataset):
 
         # Checkpoint: Trước augment
         if len(boxes) > 0:
-            print(f"[Checkpoint] Before augment - img: {img_path}")
-            print(f"  boxes (yolo): {boxes}")
+            # print(f"[Checkpoint] Before augment - img: {img_path}")
+            # print(f"  boxes (yolo): {boxes}")
             if np.any(boxes[:, 1:] < 0) or np.any(boxes[:, 1:] > 1):
                 print(f"  [ERROR] Found box out of [0,1] before augment: {boxes}")
                 raise Exception(f"Box out of range before augment: {boxes} in {img_path}")
 
         # Augmentation
         if self.transforms:
-            print("boxes", boxes)
             try:
                 transformed = self.transforms(
                     image=image,
@@ -119,9 +118,9 @@ class ImageDataset(Dataset):
             boxes = transformed['bboxes']
             labels = transformed['class_labels']
             # Checkpoint: Sau augment
-            print(f"[Checkpoint] After augment - img: {img_path}")
-            print(f"  boxes (yolo): {boxes}")
-            print(f"  labels: {labels}")
+            # print(f"[Checkpoint] After augment - img: {img_path}")
+            # print(f"  boxes (yolo): {boxes}")
+            # print(f"  labels: {labels}")
             # Clip bbox về [0, 1] và cảnh báo nếu có giá trị bị clip
             if len(boxes) > 0:
                 boxes_np = np.array(boxes)
@@ -148,8 +147,8 @@ class ImageDataset(Dataset):
                 # import IPython; IPython.embed()
                 bboxes_xyxy = yolo_to_xyxy(boxes)
                 # Checkpoint: Sau khi chuyển sang xyxy
-                print(f"[Checkpoint] After yolo_to_xyxy - img: {img_path}")
-                print(f"  bboxes_xyxy: {bboxes_xyxy}")
+                # print(f"[Checkpoint] After yolo_to_xyxy - img: {img_path}")
+                # print(f"  bboxes_xyxy: {bboxes_xyxy}")
                 if np.any(bboxes_xyxy < 0) or np.any(bboxes_xyxy > 1):
                     print(f"  [ERROR] Found xyxy box out of [0,1]: {bboxes_xyxy}")
                     raise Exception(f"xyxy box out of range: {bboxes_xyxy} in {img_path}")
@@ -158,8 +157,8 @@ class ImageDataset(Dataset):
                 labels = torch.tensor(labels_np, dtype=torch.int64) if not torch.is_tensor(
                     labels_np) else labels_np.clone().detach().to(torch.int64)
                 bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
-                print("Filtered bboxes:", bboxes)
-                print("Filtered labels:", labels)
+                # print("Filtered bboxes:", bboxes)
+                # print("Filtered labels:", labels)
             else:
                 labels = torch.zeros((0,), dtype=torch.int64)
                 bboxes = torch.zeros((0, 4), dtype=torch.float32)
