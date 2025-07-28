@@ -62,12 +62,12 @@ class ImageDataset(Dataset):
             img_path = os.path.join(images_dir, img_file)
             label_file = img_file.replace(".jpg", ".txt")
             label_path = os.path.join(labels_dir, label_file)
-        if os.path.exists(label_path):
-            data.append(img_path)
-            label.append(label_path)
-        else:
-            data.append(img_path)
-            label.append(None)
+            if os.path.exists(label_path):
+                data.append(img_path)
+                label.append(label_path)
+            else:
+                data.append(img_path)
+                label.append(None)
         return data, label
 
     def __len__(self):
@@ -98,7 +98,9 @@ class ImageDataset(Dataset):
             # print(f"  boxes (yolo): {boxes}")
             if np.any(boxes[:, 1:] < 0) or np.any(boxes[:, 1:] > 1):
                 print(f"  [ERROR] Found box out of [0,1] before augment: {boxes}")
-                raise Exception(f"Box out of range before augment: {boxes} in {img_path}")
+                raise Exception(
+                    f"Box out of range before augment: {boxes} in {img_path}"
+                )
 
         # Augmentation
         if self.transforms:
@@ -113,8 +115,8 @@ class ImageDataset(Dataset):
                 print(f"  boxes (yolo): {boxes}")
                 raise
             image = transformed["image"]
-            boxes = transformed['bboxes']
-            labels = transformed['class_labels']
+            boxes = transformed["bboxes"]
+            labels = transformed["class_labels"]
             # Checkpoint: Sau augment
             # print(f"[Checkpoint] After augment - img: {img_path}")
             # print(f"  boxes (yolo): {boxes}")
@@ -128,15 +130,25 @@ class ImageDataset(Dataset):
                     print(f"  Before clip: {boxes_np}")
                     print(f"  After  clip: {boxes_clipped}")
                 boxes = boxes_clipped
-            if len(boxes) > 0 and (np.any(np.array(boxes) < 0) or np.any(np.array(boxes) > 1)):
+            if len(boxes) > 0 and (
+                np.any(np.array(boxes) < 0) or np.any(np.array(boxes) > 1)
+            ):
                 print(f"  [ERROR] Found box out of [0,1] after augment: {boxes}")
-                raise Exception(f"Box out of range after augment: {boxes} in {img_path}")
+                raise Exception(
+                    f"Box out of range after augment: {boxes} in {img_path}"
+                )
         else:
             image = torch.from_numpy(image).permute(2, 0, 1).float() / 255.0
-            labels = torch.zeros((0,), dtype=torch.int64) if boxes.shape[0] == 0 else torch.tensor(
-                boxes[:, 0], dtype=torch.int64)
-            boxes = torch.zeros((0, 4), dtype=torch.float32) if boxes.shape[0] == 0 else torch.tensor(
-                boxes[:, 1:], dtype=torch.float32)
+            labels = (
+                torch.zeros((0,), dtype=torch.int64)
+                if boxes.shape[0] == 0
+                else torch.tensor(boxes[:, 0], dtype=torch.int64)
+            )
+            boxes = (
+                torch.zeros((0, 4), dtype=torch.float32)
+                if boxes.shape[0] == 0
+                else torch.tensor(boxes[:, 1:], dtype=torch.float32)
+            )
         # Trả về target dạng dict cho detection head torchvision
         if len(boxes) > 0:
             # Chuyển đổi box sang xyxy và lọc box hợp lệ
@@ -149,8 +161,11 @@ class ImageDataset(Dataset):
                 print(f"  [ERROR] Found xyxy box out of [0,1]: {bboxes_xyxy}")
                 raise Exception(f"xyxy box out of range: {bboxes_xyxy} in {img_path}")
             bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, labels)
-            labels = torch.tensor(labels_np, dtype=torch.int64) if not torch.is_tensor(
-                labels_np) else labels_np.clone().detach().to(torch.int64)
+            labels = (
+                torch.tensor(labels_np, dtype=torch.int64)
+                if not torch.is_tensor(labels_np)
+                else labels_np.clone().detach().to(torch.int64)
+            )
             bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
         else:
             labels = torch.zeros((0,), dtype=torch.int64)
@@ -159,4 +174,3 @@ class ImageDataset(Dataset):
             "image": image.float(),
             "target": {"boxes": bboxes, "labels": labels},
         }
-

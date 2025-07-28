@@ -145,13 +145,13 @@ def train_one_epoch(
             with open(save_metrics_path, "a", encoding="utf-8") as f:
                 f.write(f"Epoch {epoch} Train Detection Metrics:\n")
                 f.write(
-                    f"  cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n"
+                    f"cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n"
                 )
                 f.write(
-                    f"  mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n"
+                    f"mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n"
                 )
                 for i, ap in enumerate(metrics_result["map_per_class"]):
-                    f.write(f"    Class {i} AP: {ap:.4f}\n")
+                    f.write(f"Class {i} AP: {ap:.4f}\n")
                 f.write("\n")
     return train_loss, cls_loss, loc_loss, total_loss, metrics_result
 
@@ -242,13 +242,13 @@ def val_one_epoch(model, dataloader, criterion, epoch, save_metrics_path=None):
             with open(save_metrics_path, "a", encoding="utf-8") as f:
                 f.write(f"Epoch {epoch} Detection Metrics:\n")
                 f.write(
-                    f"  cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n"
+                    f"cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n"
                 )
                 f.write(
-                    f"  mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n"
+                    f"mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n"
                 )
                 for i, ap in enumerate(metrics_result["map_per_class"]):
-                    f.write(f"    Class {i} AP: {ap:.4f}\n")
+                    f.write(f"Class {i} AP: {ap:.4f}\n")
                 f.write("\n")
     return val_loss, cls_loss, loc_loss, total_loss, metrics_result
 
@@ -321,35 +321,35 @@ def train(train_dataset, val_dataset, args, batch_size, epochs):
         )
         if train_metrics is not None:
             print(
-                f"  Train mAP: {train_metrics['map']:.4f}, Precision: {train_metrics['map_50']:.4f}, Recall: {train_metrics['mar_100']:.4f}"
+                f"Train mAP: {train_metrics['map']:.4f}, Precision: {train_metrics['map_50']:.4f}, Recall: {train_metrics['mar_100']:.4f}"
             )
             for i, ap in enumerate(train_metrics["map_per_class"]):
-                print(f"    Train Class {i} AP: {ap:.4f}")
+                print(f"Train Class {i} AP: {ap:.4f}")
         if val_metrics is not None:
             print(
-                f"  Val mAP: {val_metrics['map']:.4f}, Precision: {val_metrics['map_50']:.4f}, Recall: {val_metrics['mar_100']:.4f}"
+                f"Val mAP: {val_metrics['map']:.4f}, Precision: {val_metrics['map_50']:.4f}, Recall: {val_metrics['mar_100']:.4f}"
             )
             for i, ap in enumerate(val_metrics["map_per_class"]):
-                print(f"    Val Class {i} AP: {ap:.4f}")
+                print(f"Val Class {i} AP: {ap:.4f}")
 
         # --- Ghi log sau mỗi epoch ---
         with open(log_path, "a", encoding="utf-8") as flog:
             flog.write(f"Epoch: {epoch}/{epochs}\n")
-            flog.write(f"  Learning Rate: {optimizer.param_groups[0]['lr']}\n")
-            flog.write(f"  Avg Train Loss: {train_loss:.3f}\n")
-            flog.write(f"  Avg Valid Loss: {val_loss:.3f}\n")
+            flog.write(f"Learning Rate: {optimizer.param_groups[0]['lr']}\n")
+            flog.write(f"Avg Train Loss: {train_loss:.3f}\n")
+            flog.write(f"Avg Valid Loss: {val_loss:.3f}\n")
             if train_metrics is not None:
                 flog.write(
-                    f"    Train mAP: {train_metrics['map']:.4f}, Precision: {train_metrics['map_50']:.4f}, Recall: {train_metrics['mar_100']:.4f}\n"
+                    f"Train mAP: {train_metrics['map']:.4f}, Precision: {train_metrics['map_50']:.4f}, Recall: {train_metrics['mar_100']:.4f}\n"
                 )
                 for i, ap in enumerate(train_metrics["map_per_class"]):
-                    flog.write(f"      Train Class {i} AP: {ap:.4f}\n")
+                    flog.write(f"Train Class {i} AP: {ap:.4f}\n")
             if val_metrics is not None:
                 flog.write(
-                    f"    Val mAP: {val_metrics['map']:.4f}, Precision: {val_metrics['map_50']:.4f}, Recall: {val_metrics['mar_100']:.4f}\n"
+                    f"Val mAP: {val_metrics['map']:.4f}, Precision: {val_metrics['map_50']:.4f}, Recall: {val_metrics['mar_100']:.4f}\n"
                 )
                 for i, ap in enumerate(val_metrics["map_per_class"]):
-                    flog.write(f"      Val Class {i} AP: {ap:.4f}\n")
+                    flog.write(f"Val Class {i} AP: {ap:.4f}\n")
             flog.write("\n")
         # --- End log ---
 
