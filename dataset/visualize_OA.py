@@ -1,7 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
 
-img_name = "1.2.392.200036.9107.307.24972.20230711.140105.1028621_2"
+img_name = "1.2.392.200036.9107.307.24972.20220821.103937.1020831_0"
 # Đường dẫn file
 img_path = f'dataset/images/{img_name}.jpg'
 label1_path = f'dataset/labels/{img_name}.txt'
