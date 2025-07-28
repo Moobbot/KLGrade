@@ -9,7 +9,7 @@ import pandas as pd
 from config import IMG_SIZE
 
 # Thêm import các hàm utils
-from utils import yolo_to_xyxy, filter_valid_boxes
+from utils import safe_yolo_to_xyxy, yolo_to_xyxy, filter_valid_boxes
 
 
 class ImageDataset(Dataset):
@@ -152,15 +152,19 @@ class ImageDataset(Dataset):
         # Trả về target dạng dict cho detection head torchvision
         if len(boxes) > 0:
             # Chuyển đổi box sang xyxy và lọc box hợp lệ
-            bboxes_xyxy = yolo_to_xyxy(boxes)
+            boxes = (
+                np.array(boxes, dtype=np.float32)
+                if len(boxes) > 0
+                else np.zeros((0, 4), dtype=np.float32)
+            )
+            # Chuyển box sang pixel:
+            img_size = image.shape[:2]  # Lấy kích thước ảnh
+            bboxes_xyxy, labels_np = safe_yolo_to_xyxy(boxes, labels, img_size)
+
             # import IPython; IPython.embed()
             # Checkpoint: Sau khi chuyển sang xyxy
             # print(f"[Checkpoint] After yolo_to_xyxy - img: {img_path}")
             # print(f"  bboxes_xyxy: {bboxes_xyxy}")
-            if np.any(bboxes_xyxy < 0) or np.any(bboxes_xyxy > 1):
-                print(f"  [ERROR] Found xyxy box out of [0,1]: {bboxes_xyxy}")
-                raise Exception(f"xyxy box out of range: {bboxes_xyxy} in {img_path}")
-            bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, labels)
             labels = (
                 torch.tensor(labels_np, dtype=torch.int64)
                 if not torch.is_tensor(labels_np)

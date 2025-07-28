@@ -12,7 +12,8 @@ from torch import nn, optim
 from torch.utils.data import DataLoader, SubsetRandomSampler
 from torch.optim.lr_scheduler import StepLR, MultiStepLR
 
-from utils import ImageDataset, make_dataset_dataframe
+from dataset import ImageDataset
+from utils import make_dataset_dataframe
 from early_stop import EarlyStopping
 from model import model_return
 from config import BATCH_SIZE, EPOCHS
@@ -46,210 +47,70 @@ def sum_dict_scalars(d):
     )
 
 
+# main.py
 def train_one_epoch(
-    model, dataloader, criterion, optimizer, scheduler, epoch, save_metrics_path=None
+    model, dataloader, optimizer, scheduler, epoch, save_metrics_path=None
 ):
-    train_loss = 0.0
-    cls_loss = 0.0
-    loc_loss = 0.0
-    total_loss = 0.0
-    metric = None
-    is_detection = hasattr(model, "roi_heads")
-    if is_detection:
-        metric = MeanAveragePrecision(class_metrics=True).to("cuda")
-        device = next(model.parameters()).device
     model.train()
-    with torch.set_grad_enabled(True):
-        for batch in tqdm(dataloader, desc=f"Epoch {epoch} Train", unit="Batch"):
-            optimizer.zero_grad()
-            image = batch["image"].cuda()
-            target = batch["target"]
-            if is_detection:
-                targets = [
-                    {"boxes": b.cuda(), "labels": l.cuda()}
-                    for b, l in zip(target["boxes"], target["labels"])
-                ]
-                loss_dict = model(image, targets)
-                if isinstance(loss_dict, dict):
-                    loss = sum(loss for loss in loss_dict.values())
-                elif isinstance(loss_dict, list):
-                    if all(isinstance(item, dict) for item in loss_dict):
-                        loss = sum(sum_dict_scalars(d) for d in loss_dict)
-                    else:
-                        loss = sum(loss_dict)
-                else:
-                    loss = loss_dict
-                train_loss += loss.item() if torch.is_tensor(loss) else loss
-                cls_loss += (
-                    loss_dict.get("loss_classifier", torch.tensor(0.0)).item()
-                    if isinstance(loss_dict, dict)
-                    else 0.0
-                )
-                loc_loss += (
-                    loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
-                    if isinstance(loss_dict, dict)
-                    else 0.0
-                )
-                total_loss += loss.item() if torch.is_tensor(loss) else loss
-                # Lấy predict để update metric
-                model.eval()
-                pred = model(image)
-                if isinstance(pred, tuple):
-                    pred_logits, pred_boxes = pred
-                    preds = []
-                    for s, b in zip(pred_logits, pred_boxes):
-                        preds.append(
-                            {
-                                "scores": s.detach().to(device),
-                                "boxes": b.detach().to(device),
-                                "labels": torch.zeros_like(s, dtype=torch.long).to(
-                                    device
-                                ),
-                            }
-                        )
-                else:
-                    preds = [
-                        {
-                            "boxes": p["boxes"].detach().to(device),
-                            "scores": p["scores"].detach().to(device),
-                            "labels": p["labels"].detach().to(device),
-                        }
-                        for p in pred
-                    ]
-                gts = [
-                    {
-                        "boxes": t["boxes"].detach().to(device),
-                        "labels": t["labels"].detach().to(device),
-                    }
-                    for t in targets
-                ]
-                metric.update(preds, gts)
-                model.train()
-            else:
-                if isinstance(batch["target"], torch.Tensor):
-                    labels = batch["target"].cuda()
-                else:
-                    # If it's a dict, move each value to cuda
-                    labels = {k: v.cuda() for k, v in batch["target"].items()}
-                output = model(image)
-                loss = criterion(output, labels)
-                train_loss += loss.item()
-            loss.backward()
-            optimizer.step()
-        if scheduler is not None:
-            scheduler.step()
-    metrics_result = None
-    if is_detection:
-        metrics_result = metric.compute()
-        if save_metrics_path is not None:
-            with open(save_metrics_path, "a", encoding="utf-8") as f:
-                f.write(f"Epoch {epoch} Train Detection Metrics:\n")
-                f.write(
-                    f"cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n"
-                )
-                f.write(
-                    f"mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n"
-                )
-                for i, ap in enumerate(metrics_result["map_per_class"]):
-                    f.write(f"Class {i} AP: {ap:.4f}\n")
-                f.write("\n")
+    train_loss, cls_loss, loc_loss, total_loss = 0.0, 0.0, 0.0, 0.0
+    metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+    device = next(model.parameters()).device
+
+    for batch in tqdm(dataloader, desc=f"Epoch {epoch} Train", unit="Batch"):
+        images = list(img.to(device) for img in batch["image"])
+        targets = [
+            {"boxes": b.to(device), "labels": l.to(device)}
+            for b, l in zip(batch["target"]["boxes"], batch["target"]["labels"])
+        ]
+        loss_dict = model(images, targets)
+        losses = sum(loss for loss in loss_dict.values())
+        optimizer.zero_grad()
+        losses.backward()
+        optimizer.step()
+
+        train_loss += losses.item()
+        cls_loss += loss_dict.get("loss_classifier", torch.tensor(0.0)).item()
+        loc_loss += loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
+        total_loss += losses.item()
+
+        # Metric
+        model.eval()
+        with torch.no_grad():
+            preds = model(images)
+            metric.update(preds, targets)
+        model.train()
+    if scheduler:
+        scheduler.step()
+
+    metrics_result = metric.compute()
     return train_loss, cls_loss, loc_loss, total_loss, metrics_result
 
 
-def val_one_epoch(model, dataloader, criterion, epoch, save_metrics_path=None):
-    val_loss = 0.0
-    cls_loss = 0.0
-    loc_loss = 0.0
-    total_loss = 0.0
-    metric = None
-    is_detection = hasattr(model, "roi_heads")
-    if is_detection:
-        metric = MeanAveragePrecision(class_metrics=True).to("cuda")
-        device = next(model.parameters()).device
+def val_one_epoch(model, dataloader, epoch, save_metrics_path=None):
     model.eval()
+    val_loss, cls_loss, loc_loss, total_loss = 0.0, 0.0, 0.0, 0.0
+    metric = MeanAveragePrecision(class_metrics=True).to("cuda")
+    device = next(model.parameters()).device
+
     with torch.no_grad():
         for batch in tqdm(dataloader, desc=f"Epoch {epoch} Valid", unit="Batch"):
-            image = batch["image"].cuda()
-            target = batch["target"]
-            if is_detection:
-                targets = [
-                    {"boxes": b.cuda(), "labels": l.cuda()}
-                    for b, l in zip(target["boxes"], target["labels"])
-                ]
-                loss_dict = model(image, targets)
-                if isinstance(loss_dict, dict):
-                    loss = sum(loss for loss in loss_dict.values())
-                elif isinstance(loss_dict, list):
-                    if all(isinstance(item, dict) for item in loss_dict):
-                        loss = sum(sum_dict_scalars(d) for d in loss_dict)
-                    else:
-                        loss = sum(loss_dict)
-                else:
-                    loss = loss_dict
-                val_loss += loss.item() if torch.is_tensor(loss) else loss
-                cls_loss += (
-                    loss_dict.get("loss_classifier", torch.tensor(0.0)).item()
-                    if isinstance(loss_dict, dict)
-                    else 0.0
-                )
-                loc_loss += (
-                    loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
-                    if isinstance(loss_dict, dict)
-                    else 0.0
-                )
-                total_loss += loss.item() if torch.is_tensor(loss) else loss
-                model.eval()
-                pred = model(image)
-                if isinstance(pred, tuple):
-                    pred_logits, pred_boxes = pred
-                    preds = []
-                    for s, b in zip(pred_logits, pred_boxes):
-                        preds.append(
-                            {
-                                "scores": s.detach().to(device),
-                                "boxes": b.detach().to(device),
-                                "labels": torch.zeros_like(s, dtype=torch.long).to(
-                                    device
-                                ),
-                            }
-                        )
-                else:
-                    preds = [
-                        {
-                            "boxes": p["boxes"].detach().to(device),
-                            "scores": p["scores"].detach().to(device),
-                            "labels": p["labels"].detach().to(device),
-                        }
-                        for p in pred
-                    ]
-                gts = [
-                    {
-                        "boxes": t["boxes"].detach().to(device),
-                        "labels": t["labels"].detach().to(device),
-                    }
-                    for t in targets
-                ]
-                metric.update(preds, gts)
-            else:
-                labels = batch["target"].cuda()
-                output = model(image)
-                loss = criterion(output, labels)
-                val_loss += loss.item()
-    metrics_result = None
-    if is_detection:
-        metrics_result = metric.compute()
-        if save_metrics_path is not None:
-            with open(save_metrics_path, "a", encoding="utf-8") as f:
-                f.write(f"Epoch {epoch} Detection Metrics:\n")
-                f.write(
-                    f"cls_loss: {cls_loss:.4f}, loc_loss: {loc_loss:.4f}, total_loss: {total_loss:.4f}\n"
-                )
-                f.write(
-                    f"mAP: {metrics_result['map']:.4f}, Precision: {metrics_result['map_50']:.4f}, Recall: {metrics_result['mar_100']:.4f}\n"
-                )
-                for i, ap in enumerate(metrics_result["map_per_class"]):
-                    f.write(f"Class {i} AP: {ap:.4f}\n")
-                f.write("\n")
+            images = list(img.to(device) for img in batch["image"])
+            targets = [
+                {"boxes": b.to(device), "labels": l.to(device)}
+                for b, l in zip(batch["target"]["boxes"], batch["target"]["labels"])
+            ]
+            loss_dict = model(images, targets)
+            losses = sum(loss for loss in loss_dict.values())
+
+            val_loss += losses.item()
+            cls_loss += loss_dict.get("loss_classifier", torch.tensor(0.0)).item()
+            loc_loss += loss_dict.get("loss_box_reg", torch.tensor(0.0)).item()
+            total_loss += losses.item()
+
+            preds = model(images)
+            metric.update(preds, targets)
+
+    metrics_result = metric.compute()
     return val_loss, cls_loss, loc_loss, total_loss, metrics_result
 
 
@@ -267,7 +128,6 @@ def train(train_dataset, val_dataset, args, batch_size, epochs):
         type("Args", (), {**vars(args), "num_proposals": num_proposals})()
     )
 
-    criterion = nn.CrossEntropyLoss(label_smoothing=0.1)
     optimizer = optim.Adam(
         filter(lambda p: p.requires_grad, model_ft.parameters()), lr=0.01
     )
@@ -282,8 +142,6 @@ def train(train_dataset, val_dataset, args, batch_size, epochs):
     patience = 7
     delta = 0.1
     early_stopping = EarlyStopping(args, patience=patience, verbose=True, delta=delta)
-
-    is_detection = hasattr(model_ft, "roi_heads")
 
     # Lấy đường dẫn log
     log_path = getattr(args, "log_path", "training.log")
@@ -305,12 +163,10 @@ def train(train_dataset, val_dataset, args, batch_size, epochs):
         print(f"Learning Rate : {optimizer.param_groups[0]['lr']}")
 
         train_loss, train_cls_loss, train_loc_loss, train_total_loss, train_metrics = (
-            train_one_epoch(
-                model_ft, train_loader, criterion, optimizer, scheduler, epoch
-            )
+            train_one_epoch(model_ft, train_loader, optimizer, scheduler, epoch)
         )
         val_loss, val_cls_loss, val_loc_loss, val_total_loss, val_metrics = (
-            val_one_epoch(model_ft, val_loader, criterion, epoch)
+            val_one_epoch(model_ft, val_loader, epoch)
         )
 
         train_loss = train_loss / len(train_loader)
