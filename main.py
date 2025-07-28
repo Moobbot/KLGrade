@@ -446,12 +446,8 @@ if __name__ == "__main__":
             format="yolo", label_fields=["class_labels"], min_visibility=0.01
         ),
     )
-    train_dataset = ImageDataset(
-        train_csv, transforms=train_transform, return_torchvision=True
-    )
-    val_dataset = ImageDataset(
-        train_csv, transforms=val_transform, return_torchvision=True
-    )
+    train_dataset = ImageDataset(train_csv, transforms=train_transform)
+    val_dataset = ImageDataset(train_csv, transforms=val_transform)
 
     batch_size = BATCH_SIZE
     epochs = EPOCHS

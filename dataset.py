@@ -28,9 +28,7 @@ class ImageDataset(Dataset):
         images_dir=None,
         labels_dir=None,
         transforms=None,
-        return_torchvision=False,  # Thêm tuỳ chọn trả về dạng torchvision
     ):
-        self.return_torchvision = return_torchvision
         if transforms is None:
             self.transforms = A.Compose(
                 [A.Resize(IMG_SIZE, IMG_SIZE), ToTensorV2()],
@@ -139,42 +137,26 @@ class ImageDataset(Dataset):
                 boxes[:, 0], dtype=torch.int64)
             boxes = torch.zeros((0, 4), dtype=torch.float32) if boxes.shape[0] == 0 else torch.tensor(
                 boxes[:, 1:], dtype=torch.float32)
-        if self.return_torchvision:
-            # Trả về target dạng dict cho detection head torchvision
-            if len(boxes) > 0:
-                # labels = torch.tensor(boxes[:, 0], dtype=torch.int64)
-                # Chuyển đổi box sang xyxy và lọc box hợp lệ
-                # import IPython; IPython.embed()
-                bboxes_xyxy = yolo_to_xyxy(boxes)
-                # Checkpoint: Sau khi chuyển sang xyxy
-                # print(f"[Checkpoint] After yolo_to_xyxy - img: {img_path}")
-                # print(f"  bboxes_xyxy: {bboxes_xyxy}")
-                if np.any(bboxes_xyxy < 0) or np.any(bboxes_xyxy > 1):
-                    print(f"  [ERROR] Found xyxy box out of [0,1]: {bboxes_xyxy}")
-                    raise Exception(f"xyxy box out of range: {bboxes_xyxy} in {img_path}")
-                bboxes_xyxy, labels_np = filter_valid_boxes(
-                    bboxes_xyxy, labels)
-                labels = torch.tensor(labels_np, dtype=torch.int64) if not torch.is_tensor(
-                    labels_np) else labels_np.clone().detach().to(torch.int64)
-                bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
-                # print("Filtered bboxes:", bboxes)
-                # print("Filtered labels:", labels)
-            else:
-                labels = torch.zeros((0,), dtype=torch.int64)
-                bboxes = torch.zeros((0, 4), dtype=torch.float32)
-            return {
-                "image": image.float(),
-                "target": {"boxes": bboxes, "labels": labels},
-            }
+        # Trả về target dạng dict cho detection head torchvision
+        if len(boxes) > 0:
+            # Chuyển đổi box sang xyxy và lọc box hợp lệ
+            bboxes_xyxy = yolo_to_xyxy(boxes)
+            # import IPython; IPython.embed()
+            # Checkpoint: Sau khi chuyển sang xyxy
+            # print(f"[Checkpoint] After yolo_to_xyxy - img: {img_path}")
+            # print(f"  bboxes_xyxy: {bboxes_xyxy}")
+            if np.any(bboxes_xyxy < 0) or np.any(bboxes_xyxy > 1):
+                print(f"  [ERROR] Found xyxy box out of [0,1]: {bboxes_xyxy}")
+                raise Exception(f"xyxy box out of range: {bboxes_xyxy} in {img_path}")
+            bboxes_xyxy, labels_np = filter_valid_boxes(bboxes_xyxy, labels)
+            labels = torch.tensor(labels_np, dtype=torch.int64) if not torch.is_tensor(
+                labels_np) else labels_np.clone().detach().to(torch.int64)
+            bboxes = torch.tensor(bboxes_xyxy, dtype=torch.float32)
         else:
-            # Trả về [class_id, x_center, y_center, w, h] cho custom
-            if boxes.shape[0] > 0:
-                out = torch.cat([labels.unsqueeze(1).float(),
-                                boxes], dim=1).to(torch.float32)
-            else:
-                out = torch.zeros((0, 5), dtype=torch.float32)
-            return {
-                "image": image.float(),
-                "target": out,
-            }
+            labels = torch.zeros((0,), dtype=torch.int64)
+            bboxes = torch.zeros((0, 4), dtype=torch.float32)
+        return {
+            "image": image.float(),
+            "target": {"boxes": bboxes, "labels": labels},
+        }
 
