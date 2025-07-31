@@ -23,7 +23,7 @@ def yolo_to_xyxy(boxes_arr, clip=True, img_size=None):
             boxes_xyxy[:, [0, 2]] *= W
             boxes_xyxy[:, [1, 3]] *= H
             boxes_xyxy = np.clip(boxes_xyxy, [0, 0, 0, 0], [W, H, W, H])
-    return boxes
+    return boxes_xyxy
 
 
 def filter_valid_boxes(boxes_xyxy, labels=None):
