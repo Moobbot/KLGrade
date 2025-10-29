@@ -9,6 +9,9 @@ OAI-KL/submission
 OAI-KL/Grad CAM
 OAI-KL/Ensemble Network Box Plot
 OAI-KL/Final Result
+debug_images
+debug_errors_*
+debug_*
 
 Datasets
 *.pt
