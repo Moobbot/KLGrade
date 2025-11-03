@@ -11,9 +11,9 @@ if ROOT_DIR not in sys.path:
 from config import CLASSES
 
 
-IMG_DIR = os.path.join("dataset", "images")
-LABEL_DIR = os.path.join("dataset", "labels")
-OUT_DIR = os.path.join("check_dataset")
+IMG_DIR = os.path.join("processed", "knee", "images")
+LABEL_DIR = os.path.join("processed", "knee", "labels")
+OUT_DIR = os.path.join("splits")
 
 
 def list_images(img_dir: str):
