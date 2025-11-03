@@ -12,6 +12,7 @@ OAI-KL/Final Result
 debug_images
 debug_errors_*
 debug_*
+check_vis
 
 Datasets
 *.pt

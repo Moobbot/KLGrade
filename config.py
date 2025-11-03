@@ -8,7 +8,7 @@ CLASSES = {
 }
 
 # Image size for resizing all input images (height, width)
-IMG_SIZE = 224  # You can change this value as needed
+IMG_SIZE = 512  # Default input size for classification and transforms
 
 # Detection utility
 NUM_CLASSES = len(CLASSES) + 1  # +1 for background

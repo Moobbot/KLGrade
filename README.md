@@ -75,6 +75,62 @@ python main.py -m resnet_101 -i 224
 python main_test.py -m resnet_101 -i 224
 ```
 
+## Pipeline phân loại KL (classification)
+
+Các bước end-to-end từ YOLO labels sang phân loại miếng cắt đầu gối và giải thích Grad-CAM:
+
+1. Tiền xử lý: crop vùng đầu gối từ YOLO labels thành dataset phân loại
+
+- Ảnh đầu vào: `dataset/images/*.jpg|png`
+- Nhãn YOLO: `dataset/labels/*.txt` (class cx cy w h, normalized)
+
+Chạy:
+
+```sh
+python pipeline/preprocess_crops.py
+```
+
+Kết quả:
+
+- Ảnh: `processed/classification/images/*.jpg`
+- CSV: `processed/classification/labels.csv` (cột: path,label)
+
+1. Train classifier (ResNet/EfficientNet)
+
+Chạy huấn luyện (ví dụ ResNet50, size 224):
+
+```sh
+python pipeline/train_cls.py --backbone resnet50 --size 224 --epochs 30 --out models/cls_resnet50.pt
+```
+
+1. Tích hợp dữ liệu sinh (generative) – tuỳ chọn
+
+- Đặt ảnh sinh tổng hợp theo lớp vào: `processed/generative/KL0..KL4/*.jpg`
+- Sau đó tạo CSV mới gồm cả dữ liệu gốc và sinh:
+
+```sh
+python pipeline/integrate_generated.py --gen_dir processed/generative --csv processed/classification/labels.csv --out_csv processed/classification/labels_with_generated.csv
+```
+
+- Khi train, trỏ `--csv` tới file mới:
+
+```sh
+python pipeline/train_cls.py --csv processed/classification/labels_with_generated.csv --backbone resnet50 --size 224 --epochs 30
+```
+
+1. Grad-CAM trực quan hoá dự đoán
+
+Sinh heatmap Grad-CAM từ ảnh crop và model đã train:
+
+```sh
+python pipeline/gradcam.py --model models/cls_resnet50.pt --image processed/classification/images/<ten_anh>.jpg --backbone resnet50 --layer layer4.2 --out gradcam_<ten_anh>.jpg
+```
+
+Ghi chú:
+
+- Mặc định số lớp lấy từ `config.py` (biến `CLASSES`).
+- Có thể sử dụng các file split đã tạo trong `splits/train.txt|val.txt|test.txt` để lọc ảnh trước khi train nếu cần.
+
 ## Lưu ý
 
 - Nếu gặp lỗi liên quan đến numpy, scikit-learn, opencv, hãy xóa và tạo lại môi trường ảo, sau đó cài lại đúng các phiên bản trong `requirements.txt`.
