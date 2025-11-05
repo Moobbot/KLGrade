@@ -1,5 +1,8 @@
 """
-Augmentations and imbalance utilities for classification.
+Legacy augmentations and imbalance utilities (originally for classification).
+
+Note: The current pipeline is detection-only (Ultralytics YOLO).
+These utilities are kept for reference and are NOT used in the detection flow.
 
 - Albumentations pipelines (train/val)
 - Mixup and CutMix collates

@@ -1,35 +1,25 @@
-import os
-import sys
+from typing import Callable, Dict
 
-ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
-
-from config import CLASSES
-from .cnn_basic import CNNBasic
-from .resnet import ResNet50Classifier, ResNet101Classifier
-from .efficientnet import EfficientNetB0Classifier
+from .yolo_ultralytics import YoloUltralyticsDetector, build_yolo_detector
 
 
-REGISTRY = {
-    "cnn_basic": CNNBasic,
-    "resnet50": ResNet50Classifier,
-    "resnet101": ResNet101Classifier,
-    "efficientnet_b0": EfficientNetB0Classifier,
+# Registry cho các detector backend. Chỉ cần sửa đúng 1 chỗ: BACKENDS["default"]
+BACKENDS: Dict[str, Callable[[str], object]] = {
+    "ultralytics": build_yolo_detector,
 }
 
+# Chọn backend mặc định tại MỘT NƠI này
+DEFAULT_BACKEND: str = "ultralytics"
 
-def build_model(name: str = "resnet50", pretrained: bool = True, in_channels: int = 3):
-    num_classes = len(CLASSES)
-    cls = REGISTRY.get(name)
-    if cls is None:
-        # fallback to resnet50
-        cls = ResNet50Classifier
-    # Not all models use 'pretrained' or 'in_channels' the same way; pass what they accept
-    try:
-        return cls(num_classes=num_classes, in_channels=in_channels, pretrained=pretrained)
-    except TypeError:
-        try:
-            return cls(num_classes=num_classes, in_channels=in_channels)
-        except TypeError:
-            return cls(num_classes=num_classes)
+
+def build_detection_model(weights: str = "yolov8n.pt", backend: str | None = None):
+    """Factory khởi tạo detector theo backend.
+
+    Thay đổi backend mặc định chỉ ở duy nhất biến DEFAULT_BACKEND ở trên.
+    Khi thêm model mới, chỉ cần đăng ký vào BACKENDS.
+    """
+    chosen = (backend or DEFAULT_BACKEND).lower()
+    if chosen not in BACKENDS:
+        available = ", ".join(sorted(BACKENDS.keys()))
+        raise ValueError(f"Unknown backend '{chosen}'. Available: {available}")
+    return BACKENDS[chosen](weights)

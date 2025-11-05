@@ -2,7 +2,28 @@
 
 ## Mô tả
 
-Dự án KLGrade là hệ thống nhận diện và phân loại hình ảnh X-quang đầu gối sử dụng PyTorch và các mô hình detection/classification hiện đại.
+KLGrade là dự án phát hiện và định độ nặng thoái hóa khớp gối (Kellgren–Lawrence, KL) trên ảnh X‑quang. Hiện tại dự án tập trung vào bài toán Detection (dạng YOLO) trên ảnh crop vùng gối, cho phép huấn luyện và suy luận nhanh.
+
+### Tổng quan dự án
+
+- Mục tiêu: Xây dựng pipeline end‑to‑end để:
+  - Tiền xử lý dữ liệu từ ảnh toàn chân → crop vùng gối → tái chiếu nhãn KL vào crop (YOLO format)
+  - Tạo tập train/val (splits)
+  - Huấn luyện mô hình phát hiện (mặc định Ultralytics YOLO) trên ảnh crop vùng gối
+- Thành phần chính:
+  - `pipeline/preprocess_knee_kl.py`: tiền xử lý 2 giai đoạn (crop gối + tái chiếu KL)
+  - `pipeline/train_det.py`: chuẩn bị dataset cho YOLO (train.txt/val.txt/dataset.yaml) và gọi train
+  - `pipeline/preview_det_dataset.py`: xem nhanh dữ liệu qua `dataset.py` (vẽ bbox)
+  - `pipeline/models/`: kiến trúc backend detector có thể hoán đổi (mặc định `ultralytics`)
+- Dữ liệu đầu vào: ảnh gốc và nhãn YOLO (knee, KL) theo định dạng `class cx cy w h` (normalized)
+- Dữ liệu đầu ra cho train: `processed/knee/images`, `processed/knee/labels`, `splits/train.txt`, `splits/val.txt`, và `processed/det/dataset.yaml`
+
+### Thay đổi mô hình (backend detector)
+
+- Mặc định dùng Ultralytics YOLO. Có thể đổi sang backend khác mà không sửa logic train:
+  - Chạy: `python pipeline/train_det.py --backend ultralytics --model yolov8n.pt`
+  - Hoặc đổi mặc định trong `pipeline/models/__init__.py` (biến `DEFAULT_BACKEND`)
+  - Thêm backend mới: tạo lớp kế thừa `BaseDetector`, viết factory `build_xxx_detector` và đăng ký vào `BACKENDS` (xem `pipeline/models/README.md`)
 
 ## Yêu cầu hệ thống
 
@@ -54,90 +75,107 @@ pip install -r requirements.txt
 
 ## Cấu trúc thư mục
 
-- `main.py`, `main_test.py`: Chạy train/test mô hình
+- `pipeline/`: Tiền xử lý, huấn luyện YOLO (detection-only)
 - `dataset/`: Chứa ảnh và label
-- `OAI-KL/`: Code base tham khảo Các script xử lý, đánh giá, visualize
-- `config.py`: Cấu hình chung
-- `model.py`: Định nghĩa model
-- `early_stop.py`: EarlyStopping callback
+- `OAI-KL/`: Code base tham khảo
+- `config.py`: Cấu hình chung (bao gồm `CLASSES`)
 
 ## Hướng dẫn sử dụng
 
-### Train mô hình
+### Thiết lập môi trường nhanh
 
 ```sh
-python main.py -m resnet_101 -i 224
+python -m venv .venv
+./.venv/Scripts/Activate.ps1   # Windows PowerShell
+pip install -r requirements.txt
 ```
 
-### Test mô hình
+### Tiền xử lý dữ liệu (two-stage)
 
-```sh
-python main_test.py -m resnet_101 -i 224
+```powershell
+python pipeline/preprocess_knee_kl.py `
+  --img_dir dataset/dataset_v0/images `
+  --knee_labels dataset/dataset_v0/labels-knee `
+  --kl_labels dataset/dataset_v0/labels `
+  --knee_size 512 `
+  --lesion_size 512
 ```
 
-## Pipeline phân loại KL (classification)
+Kết quả: `processed/knee/images` và `processed/knee/labels` (YOLO trên knee-crop).
 
-Các bước end-to-end từ YOLO labels sang phân loại miếng cắt đầu gối và giải thích Grad-CAM:
+### Tạo splits (train/val)
 
-1. Tiền xử lý: crop vùng đầu gối từ YOLO labels thành dataset phân loại
-
-- Ảnh đầu vào: `dataset/images/*.jpg|png`
-- Nhãn YOLO: `dataset/labels/*.txt` (class cx cy w h, normalized)
-
-Chạy:
-
-```sh
-python pipeline/preprocess_crops.py
+```powershell
+python check_dataset/split_dataset.py
 ```
 
-Kết quả:
+Sinh `splits/train.txt`, `splits/val.txt` (tên theo ảnh gốc).
 
-- Ảnh: `processed/classification/images/*.jpg`
-- CSV: `processed/classification/labels.csv` (cột: path,label)
+### Huấn luyện detector
 
-1. Train classifier (ResNet/EfficientNet)
-
-Chạy huấn luyện (ví dụ ResNet50, size 224):
-
-```sh
-python pipeline/train_cls.py --backbone resnet50 --size 224 --epochs 30 --out models/cls_resnet50.pt
+```powershell
+pip install ultralytics
+python pipeline/train_det.py `
+  --img_dir processed/knee/images `
+  --splits_dir splits `
+  --model yolov8n.pt `
+  --epochs 100 `
+  --imgsz 640 `
+  --batch 16
 ```
 
-1. Tích hợp dữ liệu sinh (generative) – tuỳ chọn
+Sinh `processed/det/train.txt`, `processed/det/val.txt`, `processed/det/dataset.yaml` và kết quả trong `processed/det/runs/`.
 
-- Đặt ảnh sinh tổng hợp theo lớp vào: `processed/generative/KL0..KL4/*.jpg`
-- Sau đó tạo CSV mới gồm cả dữ liệu gốc và sinh:
+### Xem nhanh dữ liệu (preview)
 
-```sh
-python pipeline/integrate_generated.py --gen_dir processed/generative --csv processed/classification/labels.csv --out_csv processed/classification/labels_with_generated.csv
+```powershell
+python pipeline/preview_det_dataset.py `
+  --img_dir processed/knee/images `
+  --splits_dir splits `
+  --split train `
+  --n 5 `
+  --out_dir check_vis/preview
 ```
 
-- Khi train, trỏ `--csv` tới file mới:
+## Pipeline phát hiện KL (detection)
 
-```sh
-python pipeline/train_cls.py --csv processed/classification/labels_with_generated.csv --backbone resnet50 --size 224 --epochs 30
-```
+Luồng chuẩn end‑to‑end: kiểm tra dữ liệu → tiền xử lý crop gối + tái chiếu KL → tạo splits → train → (tuỳ chọn) preview.
 
-1. Grad-CAM trực quan hoá dự đoán
+0. Kiểm tra dữ liệu (khuyến nghị)
 
-Sinh heatmap Grad-CAM từ ảnh crop và model đã train:
+   ```powershell
+   python check_dataset/check_image_label.py --img_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels
+   python check_dataset/visualize_yolo_boxes.py --img_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels --out_dir check_vis
+   ```
 
-```sh
-python pipeline/gradcam.py --model models/cls_resnet50.pt --image processed/classification/images/<ten_anh>.jpg --backbone resnet50 --layer layer4.2 --out gradcam_<ten_anh>.jpg
-```
+1. Tiền xử lý 2 giai đoạn (knee ROI + KL)
 
-Ghi chú:
+   - Sinh knee crops và nhãn KL dạng YOLO trên crop: `processed/knee/images|labels`
+   - Knee ROI được mở rộng/di chuyển bao trọn box KL giao nhau (thêm đệm 2 px)
 
-- Mặc định số lớp lấy từ `config.py` (biến `CLASSES`).
-- Có thể sử dụng các file split đã tạo trong `splits/train.txt|val.txt|test.txt` để lọc ảnh trước khi train nếu cần.
+2. Tạo splits
+
+   - `splits/train.txt`, `splits/val.txt` theo stem ảnh gốc
+
+3. Train detector
+
+   - Dùng `pipeline/train_det.py` (mặc định Ultralytics YOLO)
+   - Sinh `processed/det/*.txt` và `processed/det/dataset.yaml`
+
+4. Preview dataset (tuỳ chọn)
+   - Vẽ bbox để kiểm tra nhanh qua `pipeline/preview_det_dataset.py`
 
 ## Lưu ý
 
-- Nếu gặp lỗi liên quan đến numpy, scikit-learn, opencv, hãy xóa và tạo lại môi trường ảo, sau đó cài lại đúng các phiên bản trong `requirements.txt`.
+- Nếu gặp lỗi liên quan đến numpy, scikit-learn, opencv, hãy xóa và tạo lại môi trường ảo, sau đó cài lại đúng các phiên bản trong [requirements.txt](requirements.txt).
 - Nếu dùng GPU, đảm bảo driver và CUDA toolkit đã cài đặt đúng.
 - Nếu dùng Linux, nên sử dụng Python >=3.10 và pip mới nhất.
 
 ## Tham khảo
 
-- [PyTorch Get Started](https://pytorch.org/get-started/locally/)
-- [TorchVision Detection Models](https://pytorch.org/vision/stable/models.html#object-detection-instance-segmentation-and-person-keypoint-detection)
+- PyTorch: [https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/)
+- Ultralytics YOLO: [https://docs.ultralytics.com/](https://docs.ultralytics.com/)
+- OpenCV: [https://docs.opencv.org/](https://docs.opencv.org/)
+- scikit-learn (train/val split): [https://scikit-learn.org/stable/](https://scikit-learn.org/stable/)
+- TorchVision Detection Models: [https://pytorch.org/vision/stable/models.html#object-detection-instance-segmentation-and-person-keypoint-detection](https://pytorch.org/vision/stable/models.html#object-detection-instance-segmentation-and-person-keypoint-detection)
+- Kellgren–Lawrence grading (wiki): [https://en.wikipedia.org/wiki/Kellgren%E2%80%93Lawrence_grading_scale](https://en.wikipedia.org/wiki/Kellgren%E2%80%93Lawrence_grading_scale)

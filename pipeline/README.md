@@ -1,4 +1,4 @@
-# Pipeline: KL Detection
+# Pipeline: KL Detection (Detection-only)
 
 Hướng dẫn end-to-end để tạo knee crops + nhãn KL (YOLO), tạo splits và huấn luyện detector (Ultralytics YOLO).
 
@@ -9,6 +9,22 @@ Hướng dẫn end-to-end để tạo knee crops + nhãn KL (YOLO), tạo splits
   - Ảnh: `dataset/images/*.jpg|png`
   - Nhãn YOLO: `dataset/labels/*.txt` (dòng: `class cx cy w h`, normalized)
 - Chạy lệnh từ thư mục gốc của repo: `E:\CaoHoc\thesis\KLGrade`
+
+## 0. Kiểm tra dữ liệu đầu vào (khuyến nghị)
+
+Sử dụng các tiện ích trong `check_dataset/` để rà soát dữ liệu trước khi tiền xử lý:
+
+- `check_dataset/check_labels.py`: kiểm tra file nhãn YOLO hợp lệ (định dạng, số trường, giá trị trong [0,1] cho toạ độ chuẩn hoá nếu dùng, v.v.).
+- `check_dataset/check_image_label.py`: đối chiếu ảnh và nhãn, phát hiện thiếu nhãn/ảnh.
+- `check_dataset/visualize_yolo_boxes.py`: trực quan hoá bbox trên ảnh để phát hiện nhãn sai.
+- `check_dataset/check_augment.py`: kiểm thử nhanh augment và vẽ kết quả để phát hiện lỗi pipeline augment.
+
+Ví dụ:
+
+```powershell
+python check_dataset/check_image_label.py --img_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels
+python check_dataset/visualize_yolo_boxes.py --img_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels --out_dir check_vis
+```
 
 ## 1. Tiền xử lý: cắt vùng đầu gối, tái chiếu nhãn KL
 
@@ -38,7 +54,15 @@ Ghi chú chung:
 - Số lớp lấy từ `config.py` (biến `CLASSES`).
 - Kích thước resize dùng `IMG_SIZE` trong `config.py` (mặc định 512).
 
-## Tạo splits (bắt buộc trước khi train)
+## 1.5. Tạo thống kê/soát xét nhanh (tuỳ chọn)
+
+Dùng `pipeline/stats_labels.py` để thống kê phân phối lớp, số ảnh, số box, v.v.
+
+```powershell
+python pipeline/stats_labels.py --labels_dir processed/knee/labels
+```
+
+## 2. Tạo splits (bắt buộc trước khi train)
 
 Sinh các file `splits/train.txt`, `splits/val.txt` (và `splits/test.txt` nếu cần) bằng script có sẵn:
 
@@ -48,7 +72,7 @@ python check_dataset/split_dataset.py
 
 Kết quả: thư mục `splits/` chứa các danh sách tên file gốc (một tên mỗi dòng).
 
-## 2. Huấn luyện detection (YOLO) trên knee crops
+## 3. Huấn luyện detection (YOLO) trên knee crops
 
 Khi một ảnh có nhiều box KL, hãy huấn luyện detector trên knee crops và nhãn KL đã tái chiếu:
 
@@ -62,7 +86,7 @@ Chạy train YOLO (Ultralytics):
 
 ```powershell
 pip install ultralytics
-python pipeline/train_det_yolo.py `
+python pipeline/train_det.py `
   --img_dir processed/knee/images `
   --splits_dir splits `
   --model yolov8n.pt `
@@ -78,7 +102,20 @@ Script sẽ tạo:
 
 và gọi Ultralytics để train. Thư mục kết quả trong `processed/det/runs/`.
 
-## 4. Grad-CAM: trực quan hoá vùng quan trọng
+### (Tuỳ chọn) Preview đọc dữ liệu bằng `dataset.py` (có vẽ bbox)
+
+Chạy script preview tách riêng (không train):
+
+```powershell
+python pipeline/preview_det_dataset.py `
+  --img_dir processed/knee/images `
+  --splits_dir splits `
+  --split train `
+  --n 5 `
+  --out_dir check_vis/preview
+```
+
+Script chỉ duyệt thử N mẫu để phát hiện lỗi nhãn hoặc lỗi đường dẫn, không ảnh hưởng quá trình train.
 
 ## Mẹo & Gỡ lỗi
 
