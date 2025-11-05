@@ -27,10 +27,19 @@ def read_split_stems(path: str) -> Set[str]:
 
 
 def extract_orig_stem_from_crop_path(p: str) -> str:
-    """Return original image stem from a crop filename '<stem>_obj{idx}_c{c}.jpg'."""
+    """Infer original image stem from various crop naming schemes.
+
+    Supported patterns (examples):
+    - '<stem>_obj{idx}_c{c}.jpg' (legacy one-stage)
+    - '<stem>_knee{kid}_lesion{lid}_c{c}.jpg' (two-stage knee+KL)
+    - Fallback: return the base name without extension
+    """
     b = os.path.splitext(os.path.basename(p))[0]
-    k = b.rfind("_obj")
-    return b[:k] if k != -1 else b
+    for marker in ("_knee", "_obj"):
+        k = b.rfind(marker)
+        if k != -1:
+            return b[:k]
+    return b
 
 
 def build_subset_indices_from_splits(

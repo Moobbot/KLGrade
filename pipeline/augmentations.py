@@ -30,12 +30,21 @@ def get_train_transforms(size: int | None = None):
         [
             A.Resize(size, size),
             A.HorizontalFlip(p=0.5),
-            A.ShiftScaleRotate(
-                shift_limit=0.02, scale_limit=0.05, rotate_limit=5, border_mode=0, value=0, p=0.7
+            # ShiftScaleRotate is deprecated in favor of Affine; replace to avoid warnings
+            A.Affine(
+                translate_percent={"x": (-0.02, 0.02), "y": (-0.02, 0.02)},
+                scale=(1 - 0.05, 1 + 0.05),
+                rotate=(-5, 5),
+                shear=None,
+                fit_output=False,
+                mode=0,   # cv2.BORDER_CONSTANT
+                cval=0,
+                p=0.7,
             ),
             A.CLAHE(clip_limit=2.0, tile_grid_size=(8, 8), p=0.5),
             A.RandomBrightnessContrast(brightness_limit=0.1, contrast_limit=0.15, p=0.5),
-            A.GaussNoise(var_limit=(5, 15), p=0.2),
+            # Use GaussianNoise class to avoid var_limit warning on some versions
+            A.GaussianNoise(var_limit=(5.0, 15.0), p=0.2),
             A.MotionBlur(blur_limit=3, p=0.2),
             A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.25, 0.25, 0.25)),
             ToTensorV2(),

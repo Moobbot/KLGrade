@@ -11,3 +11,4 @@ ttach
 albumentations
 torchmetrics
 pycocotools
+ultralytics
