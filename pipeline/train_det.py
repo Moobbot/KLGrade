@@ -115,6 +115,12 @@ def make_dataset_files(img_dir: str, splits_dir: str, out_dir: str) -> str:
     train_stems = read_split_stems(train_list)
     val_stems = read_split_stems(val_list)
 
+    print(f"Loaded splits: train={len(train_stems)} stems, val={len(val_stems)} stems")
+    if len(train_stems) > 0:
+        print(f"  Example train stems: {list(train_stems)[:3]}")
+    if len(val_stems) > 0:
+        print(f"  Example val stems: {list(val_stems)[:3]}")
+
     # Xây alias base-stem: loại bỏ hậu tố _<digits> để linh hoạt khi map crop -> gốc
     def base_stem(s: str) -> str:
         if "_" in s and s.rsplit("_", 1)[-1].isdigit():
@@ -126,6 +132,7 @@ def make_dataset_files(img_dir: str, splits_dir: str, out_dir: str) -> str:
     abs_img_dir = os.path.abspath(img_dir)
     train_paths: List[str] = []
     val_paths: List[str] = []
+    unmatched_stems = set()
 
     for f in imgs:
         p = os.path.join(abs_img_dir, f)
@@ -134,8 +141,24 @@ def make_dataset_files(img_dir: str, splits_dir: str, out_dir: str) -> str:
             train_paths.append(p.replace("\\", "/"))
         elif orig_stem in val_stems or base_stem(orig_stem) in val_base:
             val_paths.append(p.replace("\\", "/"))
+        else:
+            unmatched_stems.add(orig_stem)
+
+    print(f"Found {len(imgs)} images total")
+    print(f"Mapped: train={len(train_paths)} images, val={len(val_paths)} images")
+    if unmatched_stems and len(unmatched_stems) <= 10:
+        print(f"  Unmatched stems (first 10): {list(unmatched_stems)[:10]}")
+    elif unmatched_stems:
+        print(f"  Unmatched stems count: {len(unmatched_stems)} (showing first 5: {list(unmatched_stems)[:5]})")
 
     if not train_paths or not val_paths:
+        print("\nDEBUG INFO:")
+        print(f"  Image directory: {abs_img_dir}")
+        print(f"  Train stems from {train_list}: {len(train_stems)}")
+        print(f"  Val stems from {val_list}: {len(val_stems)}")
+        if len(imgs) > 0:
+            print(f"  First few image files: {imgs[:3]}")
+            print(f"  First few extracted stems: {[extract_orig_stem_from_crop_path(os.path.join(abs_img_dir, f)) for f in imgs[:3]]}")
         raise SystemExit(
             f"Split mapping empty: train={len(train_paths)} val={len(val_paths)}. Check stems and crop naming."
         )

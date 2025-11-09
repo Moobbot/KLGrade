@@ -6,6 +6,7 @@ Provides:
 - Stratified train/val(/test) indices using sklearn.model_selection.train_test_split.
 """
 import os
+import re
 from typing import Iterable, List, Sequence, Tuple, Set, Optional
 
 import numpy as np
@@ -27,18 +28,28 @@ def read_split_stems(path: str) -> Set[str]:
 
 
 def extract_orig_stem_from_crop_path(p: str) -> str:
-    """Infer original image stem from various crop naming schemes.
+    """Infer original image stem from crop naming scheme.
 
     Supported patterns (examples):
-    - '<stem>_obj{idx}_c{c}.jpg' (legacy one-stage)
-    - '<stem>_knee{kid}_lesion{lid}_c{c}.jpg' (two-stage knee+KL)
+    - '<stem>_{kid}_lesion{lid}_c{c}.jpg' (lesion crop from knee crop)
+    - '<stem>_{kid}.jpg' (knee crop)
     - Fallback: return the base name without extension
     """
     b = os.path.splitext(os.path.basename(p))[0]
-    for marker in ("_knee", "_obj"):
-        k = b.rfind(marker)
-        if k != -1:
-            return b[:k]
+    # Check for lesion pattern: {stem}_{k_idx}_lesion{...}
+    if '_lesion' in b:
+        lesion_pos = b.rfind('_lesion')
+        if lesion_pos > 0:
+            before_lesion = b[:lesion_pos]
+            # Match _<digit> at the end of before_lesion (knee index)
+            match = re.search(r'_(\d+)$', before_lesion)
+            if match:
+                return before_lesion[:match.start()]
+    else:
+        # Pattern: {stem}_{k_idx}.jpg - remove knee index at the end
+        match = re.search(r'_(\d+)$', b)
+        if match:
+            return b[:match.start()]
     return b
 
 

@@ -238,7 +238,7 @@ def main():
             cw = sx2 - sx1
             ch = sy2 - sy1
             # Write knee labels file
-            knee_label_path_out = os.path.join(args.out_knee_label_dir, f"{stem}_knee{k_idx}.txt")
+            knee_label_path_out = os.path.join(args.out_knee_label_dir, f"{stem}_{k_idx}.txt")
             lines_out: List[str] = []
             for i in groups_intersect.get(k_idx, []):
                 cls = kl_classes[i]
@@ -268,7 +268,7 @@ def main():
                 nbx2_c_i = int(round(nbx2_c)); nby2_c_i = int(round(nby2_c))
                 if nbx2_c_i > nbx1_c_i and nby2_c_i > nby1_c_i:
                     lesion_patch = lesion_roi[nby1_c_i:nby2_c_i, nbx1_c_i:nbx2_c_i]
-                    out_name = f"{stem}_knee{k_idx}_lesion{i}_c{int(cls)}.jpg"
+                    out_name = f"{stem}_{k_idx}_lesion{i}_c{int(cls)}.jpg"
                     out_path = os.path.join(args.out_cls_dir, out_name)
                     if resize_and_save(lesion_patch, out_path, args.lesion_size):
                         rows.append((out_path, int(cls)))
@@ -281,7 +281,7 @@ def main():
 
             # Save the adjusted knee ROI
             knee_roi_final = img_rgb_full[sy1:sy2, sx1:sx2]
-            knee_out = os.path.join(args.out_knee_dir, f"{stem}_knee{k_idx}.jpg")
+            knee_out = os.path.join(args.out_knee_dir, f"{stem}_{k_idx}.jpg")
             if resize_and_save(knee_roi_final, knee_out, args.knee_size):
                 knee_count += 1
 
