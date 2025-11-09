@@ -49,7 +49,7 @@ Kết quả:
 - Knee crops: `processed/knee/images/*.jpg` (tên file: `{stem}_{k_idx}.jpg`, ví dụ: `1.2.392..._0.jpg`)
 - Knee labels (KL tái chiếu, YOLO): `processed/knee/labels/*.txt` (tên file: `{stem}_{k_idx}.txt`, khớp với ảnh)
 
-**Lưu ý về tên file:** Script `preprocess_knee_kl.py` tự động thêm index `_{k_idx}` vào tên file crop (ví dụ: `_0`, `_1`) để phân biệt các knee crops từ cùng một ảnh gốc. Các script sau (`check_image_label.py`, `split_dataset.py`, `train_det.py`) đều tự động extract stem gốc (loại bỏ index) để xử lý đúng.
+**Lưu ý về tên file:** Script `preprocess_knee_kl.py` tự động thêm index `_{k_idx}` vào tên file crop (ví dụ: `_0`, `_1`) để phân biệt các knee crops từ cùng một ảnh gốc. Các script sau (`check_image_label.py`, `split_dataset.py`, `train_det.py`) chỉ loại bỏ extension `.jpg` để lấy stem, giữ nguyên toàn bộ tên file (bao gồm cả index `_{k_idx}`).
 
 Ghi chú hành vi (quan trọng): Knee ROI sau cùng sẽ được mở rộng/di chuyển để bao trọn mọi box KL nào giao nhau với knee đó (union → minimal square, clamp trong ảnh), có thêm đệm 2 px mỗi phía để box KL không dính viền.
 
@@ -85,14 +85,7 @@ python pipeline/stats_labels.py --labels_dir processed/knee/labels
 Sinh các file `splits/train.txt`, `splits/val.txt` (và `splits/test.txt` nếu cần) bằng script có sẵn:
 
 ```powershell
-python check_dataset/split_dataset.py `
-  --img_dir processed/knee/images `
-  --label_dir processed/knee/labels `
-  --out_dir splits `
-  --train 0.7 `
-  --val 0.15 `
-  --test 0.15 `
-  --seed 42
+python check_dataset/split_dataset.py --img_dir processed/knee/images --label_dir processed/knee/labels --out_dir splits --train 0.7 --val 0.15 --test 0.15 --seed 42
 ```
 
 **Arguments:**
@@ -103,9 +96,9 @@ python check_dataset/split_dataset.py `
 - `--train`, `--val`, `--test`: tỷ lệ chia (mặc định: 0.7, 0.15, 0.15)
 - `--seed`: random seed (mặc định: 42)
 
-**Lưu ý:** Script `split_dataset.py` tự động extract stem gốc từ tên file crop (loại bỏ index `_{k_idx}`) trước khi lưu vào splits. Ví dụ: từ file `1.2.392..._0.jpg` → lưu stem gốc `1.2.392...` vào splits. Điều này đảm bảo tương thích với `train_det.py` khi map crops về stem gốc.
+**Lưu ý:** Script `split_dataset.py` chỉ loại bỏ extension `.jpg` từ tên file crop trước khi lưu vào splits, giữ nguyên toàn bộ stem (bao gồm cả index `_{k_idx}`). Ví dụ: từ file `1.2.392..._0.jpg` → lưu stem `1.2.392..._0` vào splits. Điều này đảm bảo tương thích với `train_det.py` khi map crops (cũng extract stem đầy đủ).
 
-Kết quả: thư mục `splits/` chứa các danh sách stem gốc (một stem mỗi dòng, không có extension).
+Kết quả: thư mục `splits/` chứa các danh sách stem đầy đủ (một stem mỗi dòng, không có extension, bao gồm cả index `_{k_idx}` nếu có).
 
 ## 3. Huấn luyện detection (YOLO) trên knee crops
 
@@ -115,7 +108,7 @@ Khi một ảnh có nhiều box KL, hãy huấn luyện detector trên knee crop
 
 - Ảnh: `processed/knee/images/*.jpg`
 - Nhãn YOLO: `processed/knee/labels/*.txt`
-- Splits: `splits/train.txt`, `splits/val.txt` (theo stem ảnh gốc)
+- Splits: `splits/train.txt`, `splits/val.txt` (theo stem đầy đủ của crop file, bao gồm cả index `_{k_idx}`)
 
 Chạy train YOLO (Ultralytics):
 

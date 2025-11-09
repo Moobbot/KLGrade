@@ -21,7 +21,6 @@ Requirements
 """
 import os
 import sys
-import re
 import argparse
 from collections import defaultdict, Counter
 
@@ -209,28 +208,16 @@ def summarize(images, X, split, label_dir: str):
 
 
 def extract_orig_stem_from_filename(filename: str) -> str:
-    """Extract original stem from crop filename.
+    """Extract stem from filename (just remove extension).
+    
+    Since we no longer use _knee suffix, we just need to remove the file extension.
+    The full stem (including any _<digit> suffixes) is preserved.
     
     Examples:
-    - 'image_0_0.jpg' -> 'image_0' (removes knee index _0)
-    - 'image_0_0_lesion0_c0.jpg' -> 'image_0' (removes _0_lesion...)
+    - 'image_0_0.jpg' -> 'image_0_0' (keeps everything, just removes .jpg)
+    - 'image_0.jpg' -> 'image_0' (keeps everything, just removes .jpg)
     """
-    stem = os.path.splitext(filename)[0]
-    # Check for lesion pattern: {stem}_{k_idx}_lesion{...}
-    if '_lesion' in stem:
-        lesion_pos = stem.rfind('_lesion')
-        if lesion_pos > 0:
-            before_lesion = stem[:lesion_pos]
-            # Match _<digit> at the end (knee index)
-            match = re.search(r'_(\d+)$', before_lesion)
-            if match:
-                return before_lesion[:match.start()]
-    else:
-        # Pattern: {stem}_{k_idx} - remove knee index at the end
-        match = re.search(r'_(\d+)$', stem)
-        if match:
-            return stem[:match.start()]
-    return stem
+    return os.path.splitext(filename)[0]
 
 
 def save_lists(images, split, out_dir: str):
@@ -241,7 +228,7 @@ def save_lists(images, split, out_dir: str):
       - {out_dir}/val.txt
       - {out_dir}/test.txt
     
-    Note: Extracts original stems from crop filenames (removes _knee{k_idx} suffixes)
+    Note: Extracts original stems from crop filenames (removes knee index _{k_idx})
     to ensure compatibility with train_det.py which maps crops back to original stems.
     """
     os.makedirs(out_dir, exist_ok=True)
@@ -250,9 +237,14 @@ def save_lists(images, split, out_dir: str):
         out_path = os.path.join(out_dir, f"{sname}.txt")
         with open(out_path, "w", encoding="utf-8") as f:
             for i in idxs:
-                # Extract original stem from filename (handles crop names like _knee0, _obj0)
+                # Extract original stem from filename (removes knee index _{k_idx})
                 orig_stem = extract_orig_stem_from_filename(images[i])
                 f.write(orig_stem + "\n")
+        # Debug: show first few examples
+        if len(idxs) > 0:
+            sample_files = [images[i] for i in idxs[:3]]
+            sample_stems = [extract_orig_stem_from_filename(f) for f in sample_files]
+            print(f"  Sample: {sample_files[0]} -> {sample_stems[0]}")
         print(f"Saved {sname} list -> {out_path} ({len(idxs)} items)")
 
 
