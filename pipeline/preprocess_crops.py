@@ -28,20 +28,12 @@ if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from config import CLASSES, IMG_SIZE
-
+from utils import yolo_to_xyxy_norm
 
 IMG_DIR = os.path.join("dataset", "images")
 LABEL_DIR = os.path.join("dataset", "labels")
 OUT_IMG_DIR = os.path.join("processed", "classification", "images")
 OUT_CSV = os.path.join("processed", "classification", "labels.csv")
-
-
-def yolo_to_xyxy_norm(cx, cy, w, h) -> Tuple[float, float, float, float]:
-    x1 = cx - w / 2.0
-    y1 = cy - h / 2.0
-    x2 = cx + w / 2.0
-    y2 = cy + h / 2.0
-    return x1, y1, x2, y2
 
 
 def crop_and_save(image: np.ndarray, box_xyxy: Tuple[int, int, int, int], out_path: str, size: int):

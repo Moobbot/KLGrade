@@ -33,22 +33,16 @@ from typing import List, Tuple, Dict
 import cv2
 import numpy as np
 
+
 ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
 from config import CLASSES, IMG_SIZE
+from utils import yolo_to_xyxy_norm
 
 # Extra margin (in pixels) to ensure KL boxes are not flush against the knee crop border
 PADDING = 2
-
-
-def yolo_to_xyxy_norm(cx: float, cy: float, w: float, h: float) -> Tuple[float, float, float, float]:
-    x1 = cx - w / 2.0
-    y1 = cy - h / 2.0
-    x2 = cx + w / 2.0
-    y2 = cy + h / 2.0
-    return x1, y1, x2, y2
 
 
 def ensure_rgb(img: np.ndarray) -> np.ndarray:

@@ -1,7 +1,14 @@
 import os
+import sys
 import math
 import numpy as np
-from utils import yolo_to_xyxy
+
+# Ensure repository root in path
+ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+if ROOT_DIR not in sys.path:
+    sys.path.insert(0, ROOT_DIR)
+    
+from utils import yolo_to_xyxy_norm
 
 labels_dir = "dataset/labels"
 MIN_WH = 0.001  # Giá trị tối thiểu cho w/h
@@ -64,7 +71,7 @@ def check_label_file(file_path):
                         f"CẢNH BÁO: {os.path.basename(file_path)}, dòng {i}: w/h quá nhỏ ({w}, {h})")
                 # --- Check chuyển sang xyxy ---
                 box_yolo = np.array([[x, y, w, h]], dtype=np.float32)
-                box_xyxy = yolo_to_xyxy(box_yolo)
+                box_xyxy = yolo_to_xyxy_norm(box_yolo)
                 xmin, ymin, xmax, ymax = box_xyxy[0]
                 # Check xyxy hợp lệ
                 if not (0.0 <= xmin <= 1.0 and 0.0 <= ymin <= 1.0 and 0.0 <= xmax <= 1.0 and 0.0 <= ymax <= 1.0):
