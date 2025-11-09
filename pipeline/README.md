@@ -29,30 +29,42 @@ python check_dataset/visualize_yolo_boxes.py --img_dir dataset/dataset_v0/images
 ## 1. Tiền xử lý: cắt vùng đầu gối, tái chiếu nhãn KL
 
 Hai giai đoạn (đúng với dữ liệu của bạn):
-1) Dùng nhãn đầu gối (labels-knee) để cắt ROI khớp gối từ ảnh toàn chân (crop vuông).
-2) Tái chiếu nhãn KL (labels) vào knee crop để tạo nhãn YOLO cho detection.
+
+1. Dùng nhãn đầu gối (labels-knee) để cắt ROI khớp gối từ ảnh toàn chân (crop vuông).
+2. Tái chiếu nhãn KL (labels) vào knee crop để tạo nhãn YOLO cho detection.
 
 Chạy script 2-stage (đầu vào mặc định: `dataset/dataset_v0/images`, `dataset/dataset_v0/labels-knee`, `dataset/dataset_v0/labels`):
 
-  ```powershell
-  python pipeline/preprocess_knee_kl.py `
+```powershell
+python pipeline/preprocess_knee_kl.py `
   --img_dir dataset/dataset_v0/images `
-    --knee_labels dataset/dataset_v0/labels-knee `
-    --kl_labels dataset/dataset_v0/labels `
-    --knee_size 512 `
-    --lesion_size 512
-  ```
+  --knee_labels dataset/dataset_v0/labels-knee `
+  --kl_labels dataset/dataset_v0/labels `
+  --knee_size 512 `
+  --lesion_size 512
+```
 
-  Kết quả:
-  - Knee crops: `processed/knee/images/*.jpg`
-  - Knee labels (KL tái chiếu, YOLO): `processed/knee/labels/*.txt`
+Kết quả:
 
-  Ghi chú hành vi (quan trọng): Knee ROI sau cùng sẽ được mở rộng/di chuyển để bao trọn mọi box KL nào giao nhau với knee đó (union → minimal square, clamp trong ảnh), có thêm đệm 2 px mỗi phía để box KL không dính viền.
+- Knee crops: `processed/knee/images/*.jpg`
+- Knee labels (KL tái chiếu, YOLO): `processed/knee/labels/*.txt`
+
+Ghi chú hành vi (quan trọng): Knee ROI sau cùng sẽ được mở rộng/di chuyển để bao trọn mọi box KL nào giao nhau với knee đó (union → minimal square, clamp trong ảnh), có thêm đệm 2 px mỗi phía để box KL không dính viền.
 
 Ghi chú chung:
 
 - Số lớp lấy từ `config.py` (biến `CLASSES`).
 - Kích thước resize dùng `IMG_SIZE` trong `config.py` (mặc định 512).
+
+### Kiểm tra và lọc label sau tiền xử lý
+
+Sau khi tạo knee crops và labels, chạy script kiểm tra để lọc label:
+
+```powershell
+python check_dataset/check_image_label.py --img_dir processed/knee/images --label_dir processed/knee/labels
+```
+
+Script này sẽ đối chiếu ảnh và nhãn, phát hiện và lọc các trường hợp thiếu nhãn/ảnh hoặc không khớp.
 
 ## 1.5. Tạo thống kê/soát xét nhanh (tuỳ chọn)
 
