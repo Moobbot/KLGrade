@@ -79,8 +79,23 @@ python pipeline/stats_labels.py --labels_dir processed/knee/labels
 Sinh các file `splits/train.txt`, `splits/val.txt` (và `splits/test.txt` nếu cần) bằng script có sẵn:
 
 ```powershell
-python check_dataset/split_dataset.py
+python check_dataset/split_dataset.py `
+  --img_dir processed/knee/images `
+  --label_dir processed/knee/labels `
+  --out_dir splits `
+  --train 0.7 `
+  --val 0.15 `
+  --test 0.15 `
+  --seed 42
 ```
+
+**Arguments:**
+
+- `--img_dir`: thư mục chứa ảnh (default: `dataset/knee/images`)
+- `--label_dir`: thư mục chứa labels YOLO (default: `dataset/knee/labels`)
+- `--out_dir`: thư mục output cho split lists (default: `splits`)
+- `--train`, `--val`, `--test`: tỷ lệ chia (mặc định: 0.7, 0.15, 0.15)
+- `--seed`: random seed (mặc định: 42)
 
 Kết quả: thư mục `splits/` chứa các danh sách tên file gốc (một tên mỗi dòng).
 
@@ -98,13 +113,7 @@ Chạy train YOLO (Ultralytics):
 
 ```powershell
 pip install ultralytics
-python pipeline/train_det.py `
-  --img_dir processed/knee/images `
-  --splits_dir splits `
-  --model yolov8n.pt `
-  --epochs 100 `
-  --imgsz 640 `
-  --batch 16
+python pipeline/train_det.py --img_dir processed/knee/images --splits_dir splits --model yolov8n.pt --epochs 100 --imgsz 512 --batch 16
 ```
 
 Script sẽ tạo:

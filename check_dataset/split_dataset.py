@@ -3,16 +3,17 @@ Multilabel, group-aware stratified split for YOLO-format datasets.
 
 Overview
 --------
-- Reads images from dataset/images and labels from dataset/labels (YOLO txt).
+- Reads images and labels from specified directories (YOLO txt format).
 - Preserves multilabel class distribution across train/val/test using
     iterative-stratification (MultilabelStratifiedShuffleSplit).
 - Groups images that belong to the same study/side (e.g., name_0, name_1)
     to avoid leakage across splits.
-- Saves file lists to splits/train.txt, splits/val.txt, splits/test.txt.
+- Saves file lists to output directory (default: splits/train.txt, splits/val.txt, splits/test.txt).
 
 Usage
 -----
         python check_dataset/split_dataset.py --train 0.7 --val 0.15 --test 0.15 --seed 42
+        python check_dataset/split_dataset.py --img_dir processed/knee/images --label_dir processed/knee/labels --out_dir splits
 
 Requirements
 ------------
@@ -41,9 +42,10 @@ except Exception as e:
     )
 
 
-IMG_DIR = os.path.join("dataset", "images")
-LABEL_DIR = os.path.join("dataset", "labels")
-OUT_DIR = os.path.join("splits")
+# Default paths (can be overridden via CLI arguments)
+DEFAULT_IMG_DIR = os.path.join("dataset", "knee", "images")
+DEFAULT_LABEL_DIR = os.path.join("dataset", "knee", "labels")
+DEFAULT_OUT_DIR = os.path.join("splits")
 
 
 def list_images(img_dir: str):
@@ -93,7 +95,7 @@ def group_key_from_stem(stem: str) -> str:
     return stem
 
 
-def build_multilabel_matrix(images):
+def build_multilabel_matrix(images, label_dir: str):
     """Build a multilabel presence matrix (images × classes) and group IDs.
 
     For each image, mark presence (1) if the image contains at least one
@@ -105,7 +107,7 @@ def build_multilabel_matrix(images):
     groups = []
     for i, img in enumerate(images):
         stem, _ = os.path.splitext(img)
-        label_path = os.path.join(LABEL_DIR, f"{stem}.txt")
+        label_path = os.path.join(label_dir, f"{stem}.txt")
         cls_ids = read_label_file(label_path)
         for c in set(cls_ids):  # set -> multilabel presence per image (presence, not counts)
             if 0 <= c < num_classes:
@@ -174,7 +176,7 @@ def stratified_group_split(group_keys, G, group_to_indices, train_ratio=0.7, val
     return split
 
 
-def summarize(images, X, split):
+def summarize(images, X, split, label_dir: str):
     """Print summary statistics per split.
 
     Shows both per-class image presence counts and total object label counts
@@ -190,7 +192,7 @@ def summarize(images, X, split):
         obj_counts = Counter()
         for i in idxs:
             stem, _ = os.path.splitext(images[i])
-            class_ids = read_label_file(os.path.join(LABEL_DIR, f"{stem}.txt"))
+            class_ids = read_label_file(os.path.join(label_dir, f"{stem}.txt"))
             obj_counts.update(class_ids)
 
         print(f"\n=== {sname.upper()} ===")
@@ -205,18 +207,18 @@ def summarize(images, X, split):
             print(f"  {cid} ({name}): {obj_counts.get(cid, 0)}")
 
 
-def save_lists(images, split):
-    """Write split file lists (filenames only) into OUT_DIR.
+def save_lists(images, split, out_dir: str):
+    """Write split file lists (filenames only) into out_dir.
 
     Files:
-      - splits/train.txt
-      - splits/val.txt
-      - splits/test.txt
+      - {out_dir}/train.txt
+      - {out_dir}/val.txt
+      - {out_dir}/test.txt
     """
-    os.makedirs(OUT_DIR, exist_ok=True)
+    os.makedirs(out_dir, exist_ok=True)
     for sname in ["train", "val", "test"]:
         idxs = sorted(split[sname])
-        out_path = os.path.join(OUT_DIR, f"{sname}.txt")
+        out_path = os.path.join(out_dir, f"{sname}.txt")
         with open(out_path, "w", encoding="utf-8") as f:
             for i in idxs:
                 f.write(images[i] + "\n")
@@ -224,8 +226,11 @@ def save_lists(images, split):
 
 
 def parse_args():
-    """Parse CLI arguments for split ratios and seed."""
+    """Parse CLI arguments for split ratios, seed, and directory paths."""
     p = argparse.ArgumentParser(description="Multilabel group-aware stratified dataset split")
+    p.add_argument("--img_dir", type=str, default=DEFAULT_IMG_DIR, help="Directory containing images")
+    p.add_argument("--label_dir", type=str, default=DEFAULT_LABEL_DIR, help="Directory containing YOLO label files")
+    p.add_argument("--out_dir", type=str, default=DEFAULT_OUT_DIR, help="Output directory for split lists")
     p.add_argument("--train", type=float, default=0.70, help="Train ratio")
     p.add_argument("--val", type=float, default=0.15, help="Val ratio")
     p.add_argument("--test", type=float, default=0.15, help="Test ratio")
@@ -239,16 +244,16 @@ def main():
     if abs(args.train + args.val + args.test - 1.0) > 1e-6:
         raise SystemExit("train + val + test must equal 1.0")
 
-    images = list_images(IMG_DIR)
+    images = list_images(args.img_dir)
     if not images:
-        raise SystemExit(f"No images found in {IMG_DIR}")
+        raise SystemExit(f"No images found in {args.img_dir}")
 
-    X, groups = build_multilabel_matrix(images)
+    X, groups = build_multilabel_matrix(images, args.label_dir)
     gkeys, G, gsz, g2idx = aggregate_by_group(images, X, groups)
 
     split = stratified_group_split(gkeys, G, g2idx, args.train, args.val, args.test, args.seed)
-    summarize(images, X, split)
-    save_lists(images, split)
+    summarize(images, X, split, args.label_dir)
+    save_lists(images, split, args.out_dir)
 
 
 if __name__ == "__main__":
