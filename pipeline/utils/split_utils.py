@@ -13,15 +13,30 @@ from sklearn.model_selection import train_test_split
 
 
 def read_split_stems(path: str) -> Set[str]:
+    """Read stems from split file.
+    
+    Split files contain stems (not full file paths). If a line looks like a file path
+    (has known image extensions), we extract the stem. Otherwise, we use the line as-is.
+    """
     stems: Set[str] = set()
     if not path or not os.path.exists(path):
         return stems
+    # Known image extensions that should be removed
+    image_exts = {'.jpg', '.jpeg', '.png', '.bmp', '.tiff', '.tif'}
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             fn = line.strip()
             if not fn:
                 continue
-            stem = os.path.splitext(os.path.basename(fn))[0]
+            # If it looks like a file path with a known extension, extract stem
+            # Otherwise, treat the whole line as the stem
+            basename = os.path.basename(fn)
+            ext = os.path.splitext(basename)[1].lower()
+            if ext in image_exts:
+                stem = os.path.splitext(basename)[0]
+            else:
+                # No known extension, use the line as-is (it's already a stem)
+                stem = basename
             stems.add(stem)
     return stems
 
