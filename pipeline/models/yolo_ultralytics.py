@@ -9,6 +9,7 @@ from .base_det import BaseDetector
 
 class YoloUltralyticsDetector(BaseDetector):
     def __init__(self, weights: str = "yolov8n.pt"):
+        super().__init__()  # Must call super().__init__() first for nn.Module
         try:
             from ultralytics import YOLO  # type: ignore
         except Exception as e:  # pragma: no cover - phụ thuộc môi trường
