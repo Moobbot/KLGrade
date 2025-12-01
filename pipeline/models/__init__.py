@@ -12,7 +12,7 @@ BACKENDS: Dict[str, Callable[[str], object]] = {
 DEFAULT_BACKEND: str = "ultralytics"
 
 
-def build_detection_model(weights: str = "yolov8n.pt", backend: str | None = None):
+def build_detection_model(weights: str = "yolo11n.pt", backend: str | None = None):
     """Factory khởi tạo detector theo backend.
 
     Thay đổi backend mặc định chỉ ở duy nhất biến DEFAULT_BACKEND ở trên.

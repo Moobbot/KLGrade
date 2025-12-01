@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 
 img_name = "1.2.392.200036.9107.307.24972.20220821.103937.1020831_0"
 # Đường dẫn file
-img_path = f'dataset/images/{img_name}.jpg'
+img_path = f'processed/classification/images_512/{img_name}.jpg'
 label1_path = f'dataset/labels/{img_name}.txt'
 
 # Đọc ảnh

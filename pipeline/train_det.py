@@ -58,11 +58,16 @@ ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from config import CLASSES
+from config import CLASSES, CLASSES_LABEL_NEW
 from pipeline.utils.split_utils import (
     read_split_stems,
     extract_orig_stem_from_crop_path,
 )
+
+# Khai báo class mapping sẽ sử dụng
+# Có thể gán là CLASSES hoặc CLASSES_LABEL_NEW
+# CLASSES_TO_USE = CLASSES
+CLASSES_TO_USE = CLASSES_LABEL_NEW
 
 # Preview dataset đã được tách ra script riêng: pipeline/preview_det_dataset.py
 
@@ -79,6 +84,7 @@ def parse_args():
     """Parse tham số dòng lệnh cho huấn luyện YOLO."""
     p = argparse.ArgumentParser(description="Train YOLO detector on knee crops")
     p.add_argument("--img_dir", default=os.path.join("processed", "knee", "images"))
+    p.add_argument("--labels_dir", default=None, help="Thư mục labels (mặc định: cùng parent với img_dir, thay '/images' -> '/labels')")
     p.add_argument("--splits_dir", default="splits")
     p.add_argument("--out_dir", default=os.path.join("processed", "det"))
     p.add_argument("--model", default="yolov8n.pt", help="Ultralytics model weights, e.g., yolov8n.pt or yolo11n.pt")
@@ -94,7 +100,7 @@ def parse_args():
     return p.parse_args()
 
 
-def make_dataset_files(img_dir: str, splits_dir: str, out_dir: str) -> str:
+def make_dataset_files(img_dir: str, splits_dir: str, out_dir: str, labels_dir: str = None) -> str:
     """
     BƯỚC 1A - CHUẨN BỊ DỮ LIỆU
     - Đọc danh sách ảnh crop trong img_dir
@@ -170,7 +176,9 @@ def make_dataset_files(img_dir: str, splits_dir: str, out_dir: str) -> str:
     with open(val_txt, "w", encoding="utf-8") as f:
         f.write("\n".join(val_paths))
 
-    names = [CLASSES[i] for i in sorted(CLASSES.keys())]
+    names = [CLASSES_TO_USE[i] for i in sorted(CLASSES_TO_USE.keys())]
+    print(f"Using {len(names)} classes")
+    
     yaml_path = os.path.join(out_dir, "dataset.yaml")
     # Dùng absolute posix path trong YAML để tránh lỗi đường dẫn trên Windows
     train_txt_posix = os.path.abspath(train_txt).replace("\\", "/")
@@ -195,8 +203,21 @@ def main():
     # (Preview dữ liệu bằng dataset.py đã tách sang pipeline/preview_det_dataset.py)
     # ================================================================
 
-    yaml_path = make_dataset_files(args.img_dir, args.splits_dir, args.out_dir)
+    # Xác định labels_dir
+    if args.labels_dir:
+        labels_dir = args.labels_dir
+    else:
+        # Mặc định: cùng parent với img_dir, thay '/images' -> '/labels'
+        labels_dir = args.img_dir.replace("/images", "/labels").replace("\\images", "\\labels")
+    
+    yaml_path = make_dataset_files(
+        args.img_dir, 
+        args.splits_dir, 
+        args.out_dir,
+        labels_dir=labels_dir
+    )
     print(f"Dataset YAML -> {yaml_path}")
+    print(f"Labels directory: {labels_dir}")
 
     # ================================================================
     # BƯỚC 2 - LOAD MODEL
@@ -206,7 +227,7 @@ def main():
     # BƯỚC 2 - LOAD MODEL thông qua OOP wrapper
     from pipeline.model_det import build_detection_model
 
-    # Khởi tạo model detector từ checkpoint (vd: yolov8n.pt, yolo11n.pt)
+    # Khởi tạo model detector từ checkpoint (vd: yolo11n.pt, yolo11s.pt, yolov8n.pt, etc.)
     detector = build_detection_model(weights=args.model, backend=args.backend)
 
     # Tự chọn device nếu không chỉ định: ưu tiên CUDA, nếu không có thì CPU

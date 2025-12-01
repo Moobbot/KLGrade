@@ -107,20 +107,93 @@ Khi một ảnh có nhiều box KL, hãy huấn luyện detector trên knee crop
 Đầu vào:
 
 - Ảnh: `processed/knee/images/*.jpg`
-- Nhãn YOLO: `processed/knee/labels/*.txt`
+- Nhãn YOLO: `processed/knee/labels/*.txt` (format chuẩn) hoặc `processed/knee/labels_new/*.txt` (format với suffix a/b)
 - Splits: `splits/train.txt`, `splits/val.txt` (theo stem đầy đủ của crop file, bao gồm cả index `_{k_idx}`)
 
-Chạy train YOLO (Ultralytics):
+### 3.1 Tạo labels với suffix a/b (tuỳ chọn)
+
+Nếu muốn phân tách class thành gai xương (a) và khe khớp (b), sử dụng script `class_split_report.py`:
+
+```powershell
+python check_dataset/class_split_report.py `
+  --labels-dir processed/knee/labels `
+  --save-dir processed/knee/labels_new
+```
+
+Script sẽ:
+- Phân loại box dựa trên đặc điểm hình học (tỷ lệ w/h, diện tích, vị trí viền)
+- Tạo labels mới với format: `{class}{suffix} x y w h` (ví dụ: `3a 0.5 0.5 0.1 0.1`)
+- Lưu vào `processed/knee/labels_new/`
+
+Xem chi tiết trong `check_dataset/PREPROCESSING_LABELS.md`.
+
+### 3.2 Huấn luyện một model cụ thể
+
+**Với labels chuẩn (CLASSES):**
 
 ```powershell
 pip install ultralytics
-python pipeline/train_det.py --img_dir processed/knee/images --splits_dir splits --model yolov8n.pt --epochs 100 --imgsz 512 --batch 16
+python pipeline/train_det.py `
+  --img_dir processed/knee/images `
+  --labels_dir processed/knee/labels `
+  --splits_dir splits `
+  --model yolov8n.pt `
+  --epochs 100 `
+  --imgsz 512 `
+  --batch 16
 ```
+
+**Với labels mới có suffix a/b (CLASSES_LABEL_NEW):**
+
+1. Sửa `pipeline/train_det.py` dòng 69-70:
+   ```python
+   CLASSES_TO_USE = CLASSES_LABEL_NEW  # Thay vì CLASSES
+   ```
+
+2. Chạy train:
+   ```powershell
+   python pipeline/train_det.py `
+     --img_dir processed/knee/images `
+     --labels_dir processed/knee/labels_new `
+     --splits_dir splits `
+     --model yolov8n.pt `
+     --epochs 100 `
+     --imgsz 512 `
+     --batch 16
+   ```
+
+**Lưu ý:**
+- Mặc định sử dụng `CLASSES` (5 classes: KL0-KL4)
+- Để dùng `CLASSES_LABEL_NEW` (10 classes: KL0-a, KL0-b, ..., KL4-a, KL4-b), sửa `CLASSES_TO_USE` trong `train_det.py`
+- Argument `--labels_dir` cho phép chỉ định thư mục labels (mặc định: cùng parent với `--img_dir`, thay `/images` → `/labels`)
+
+### Huấn luyện nhiều phiên bản YOLO cùng lúc:
+
+Script `train_multiple_yolo.py` cho phép chạy nhiều model YOLO (YOLOv8, YOLO 11, các kích thước khác nhau) tuần tự từng model một:
+
+```powershell
+# Chạy tất cả các model mặc định (YOLO 11 và YOLOv8, các kích thước n/s/m/l/x)
+python pipeline/train_multiple_yolo.py --epochs 100 --imgsz 512 --batch 16
+
+# Chỉ định danh sách model cụ thể
+python pipeline/train_multiple_yolo.py --models yolov8n.pt yolo11n.pt yolov8s.pt yolo11s.pt
+
+# Chỉ định device cụ thể
+python pipeline/train_multiple_yolo.py --device cuda:0
+
+# Với wandb logging
+python pipeline/train_multiple_yolo.py --use_wandb --wandb_project KLGrade
+```
+
+**Các model YOLO có sẵn:**
+
+- YOLO 11: `yolo11n.pt`, `yolo11s.pt`, `yolo11m.pt`, `yolo11l.pt`, `yolo11x.pt`
+- YOLOv8: `yolov8n.pt`, `yolov8s.pt`, `yolov8m.pt`, `yolov8l.pt`, `yolov8x.pt`
 
 Script sẽ tạo:
 
 - `processed/det/train.txt`, `processed/det/val.txt` (danh sách ảnh tuyệt đối)
-- `processed/det/dataset.yaml` (tên lớp từ `config.CLASSES`)
+- `processed/det/dataset.yaml` (tên lớp từ `CLASSES_TO_USE` trong `train_det.py`, mặc định là `config.CLASSES`)
 
 và gọi Ultralytics để train. Thư mục kết quả trong `processed/det/runs/`.
 

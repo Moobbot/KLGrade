@@ -8,7 +8,7 @@ from .base_det import BaseDetector
 
 
 class YoloUltralyticsDetector(BaseDetector):
-    def __init__(self, weights: str = "yolov8n.pt"):
+    def __init__(self, weights: str = "yolo11n.pt"):
         super().__init__()  # Must call super().__init__() first for nn.Module
         try:
             from ultralytics import YOLO  # type: ignore
@@ -36,8 +36,9 @@ class YoloUltralyticsDetector(BaseDetector):
         """Xuất model sang định dạng khác (onnx, openvino, etc.)."""
         return self.model.export(**kwargs)
 
+# !TODO: Lấy hàm tranform mặc định của Ultralytics YOLO -> Custom transform
 
-def build_yolo_detector(weights: str = "yolov8n.pt") -> YoloUltralyticsDetector:
+def build_yolo_detector(weights: str = "yolo11n.pt") -> YoloUltralyticsDetector:
     """Factory trả về đối tượng detector OOP bọc Ultralytics YOLO."""
     return YoloUltralyticsDetector(weights=weights)
 
