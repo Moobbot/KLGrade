@@ -60,18 +60,30 @@ Khi có **2 box cùng class** và một hoặc cả hai không rõ ràng, script
 
 **Fallback**: Nếu vẫn không xác định được → dựa trên ratio: `ratio < 1.5 → "a"`, else → "b"
 
-### 4. Tạo Label Mới
+### 4. Chuyển Đổi Sang Format YOLO Chuẩn
+
+Sau khi phân loại thành tag "a"/"b", script tự động chuyển đổi sang class_id YOLO chuẩn (0-9) theo mapping trong `config.CLASSES_LABEL_NEW`:
+
+- `"0a"` → class_id `0`, `"0b"` → class_id `1`
+- `"1a"` → class_id `2`, `"1b"` → class_id `3`
+- `"2a"` → class_id `4`, `"2b"` → class_id `5`
+- `"3a"` → class_id `6`, `"3b"` → class_id `7`
+- `"4a"` → class_id `8`, `"4b"` → class_id `9`
+
+### 5. Tạo Label Mới
 
 Output: Thư mục chứa file label mới (`processed/knee/labels_new/`)
 
-Format mỗi dòng: `{class_id}{suffix} x_center y_center width height`
+Format mỗi dòng: `class_id x_center y_center width height` (YOLO chuẩn với class_id số nguyên)
 
 Ví dụ:
 
 ```txt
-3a 0.088764 0.733708 0.105618 0.134831
-3b 0.284831 0.633708 0.338202 0.089888
+6 0.088764 0.733708 0.105618 0.134831
+7 0.284831 0.633708 0.338202 0.089888
 ```
+
+(Trong đó: `6` = "3a", `7` = "3b" theo mapping)
 
 ## Quy Tắc Phân Loại Chi Tiết
 
@@ -161,9 +173,14 @@ File: `1.2.392.200036.9107.307.24972.20220914.81908.1033568_0.txt`
 File: `1.2.392.200036.9107.307.24972.20220914.81908.1033568_0.txt`
 
 ```txt
-3a 0.088764 0.733708 0.105618 0.134831
-3b 0.284831 0.633708 0.338202 0.089888
+6 0.088764 0.733708 0.105618 0.134831
+7 0.284831 0.633708 0.338202 0.089888
 ```
+
+**Giải thích:**
+
+- `6` = "3a" (KL3-a, gai xương) theo mapping `CLASSES_LABEL_NEW`
+- `7` = "3b" (KL3-b, khe khớp) theo mapping `CLASSES_LABEL_NEW`
 
 ## Cấu Hình
 
@@ -176,15 +193,27 @@ File: `1.2.392.200036.9107.307.24972.20220914.81908.1033568_0.txt`
 
 ### Mapping Class (config.py)
 
-Sau khi phân tách, có thể sử dụng `CLASSES_LABEL_NEW` trong `config.py`:
+Script tự động chuyển đổi tag sang class_id YOLO theo `CLASSES_LABEL_NEW` trong `config.py`:
 
 ```python
 CLASSES_LABEL_NEW = {
-    "3a": "KL3-joint",      # Khe khớp
-    "3b": "KL3-osteophyte", # Gai xương
-    # ...
+    0: "KL0-a",  # class_id 0 tương ứng với "0a"
+    1: "KL0-b",  # class_id 1 tương ứng với "0b"
+    2: "KL1-a",  # class_id 2 tương ứng với "1a"
+    3: "KL1-b",  # class_id 3 tương ứng với "1b"
+    4: "KL2-a",  # class_id 4 tương ứng với "2a"
+    5: "KL2-b",  # class_id 5 tương ứng với "2b"
+    6: "KL3-a",  # class_id 6 tương ứng với "3a" (gai xương)
+    7: "KL3-b",  # class_id 7 tương ứng với "3b" (khe khớp)
+    8: "KL4-a",  # class_id 8 tương ứng với "4a"
+    9: "KL4-b",  # class_id 9 tương ứng với "4b"
 }
 ```
+
+**Công thức chuyển đổi:**
+
+- `class_id = base_class * 2 + (0 nếu "a", 1 nếu "b")`
+- Ví dụ: `"3a" → 3 * 2 + 0 = 6`, `"3b" → 3 * 2 + 1 = 7`
 
 ## Lưu Ý
 

@@ -7,7 +7,8 @@ Quy tắc:
 - 2 box cùng class khác loại: box lớn → "b", box nhỏ → "a"
 - 2 box cùng loại: giữ nguyên
 
-Output: "{class}{suffix} x y w h"
+Output: class_id (0-9) x y w h (format YOLO chuẩn)
+Mapping: "0a"→0, "0b"→1, "1a"→2, "1b"→3, "2a"→4, "2b"→5, "3a"→6, "3b"→7, "4a"→8, "4b"→9
 """
 from __future__ import annotations
 
@@ -153,6 +154,45 @@ def assign_relative_group(boxes: List[dict]):
                 b2["suffix"] = "b"
 
 
+def convert_tag_to_yolo_class(tag: str) -> int:
+    """
+    Chuyển đổi tag (ví dụ "2a", "3b") sang class_id YOLO (0-9).
+    
+    Mapping theo CLASSES_LABEL_NEW:
+    - "0a" -> 0, "0b" -> 1
+    - "1a" -> 2, "1b" -> 3
+    - "2a" -> 4, "2b" -> 5
+    - "3a" -> 6, "3b" -> 7
+    - "4a" -> 8, "4b" -> 9
+    
+    Args:
+        tag: Tag dạng "{class}{suffix}" (ví dụ: "2a", "3b")
+        
+    Returns:
+        class_id (int) từ 0-9
+    """
+    import re
+    match = re.match(r"^(\d+)([a-z]?)$", tag)
+    if match:
+        base_class = int(match.group(1))
+        suffix = match.group(2) or ""
+        
+        # Tính class_id: base_class * 2 + (0 nếu "a", 1 nếu "b")
+        if suffix == "a":
+            return base_class * 2
+        elif suffix == "b":
+            return base_class * 2 + 1
+        else:
+            # Nếu không có suffix, giữ nguyên (nhưng không nên xảy ra)
+            return base_class
+    
+    # Fallback: thử parse số nguyên
+    try:
+        return int(tag)
+    except ValueError:
+        raise ValueError(f"Không parse được tag: {tag}")
+
+
 def build_reports(labels_dir, allowed_classes, max_split):
     """
     Xử lý labels và tạo output.
@@ -207,9 +247,15 @@ def build_reports(labels_dir, allowed_classes, max_split):
                         f"-> fallback {ent['suffix']}"
                     )
                 
+                # Tạo tag dạng "2a", "3b"
                 tag = f"{ent['cls']}{ent['suffix']}"
+                
+                # Chuyển đổi sang class_id YOLO chuẩn (0-9)
+                yolo_class_id = convert_tag_to_yolo_class(tag)
+                
                 class_entries[cls].append(ent)
-                out_line = f"{tag} " + " ".join(f"{v:.6f}" for v in ent["coords"])
+                # Output format YOLO chuẩn: class_id (số nguyên) x y w h
+                out_line = f"{yolo_class_id} " + " ".join(f"{v:.6f}" for v in ent["coords"])
                 exported_lines[label_file.name].append(out_line)
 
     return class_entries, warnings, exported_lines
