@@ -105,11 +105,44 @@ Kết quả: `processed/knee/images` và `processed/knee/labels` (YOLO trên kne
 
 ### Tạo splits (train/val)
 
+**Với labels chuẩn (CLASSES):**
+
 ```powershell
-python check_dataset/split_dataset.py
+python check_dataset/split_dataset.py `
+  --img_dir processed/knee/images `
+  --label_dir processed/knee/labels `
+  --out_dir splits `
+  --train 0.7 `
+  --val 0.15 `
+  --test 0.15 `
+  --seed 42
 ```
 
-Sinh `splits/train.txt`, `splits/val.txt` (tên theo ảnh gốc).
+**Với labels mới (CLASSES_LABEL_NEW):**
+
+1. Sửa `check_dataset/split_dataset.py` dòng 34-35:
+   ```python
+   # from config import CLASSES
+   from config import CLASSES_LABEL_NEW as CLASSES
+   ```
+
+2. Chạy split:
+   ```powershell
+   python check_dataset/split_dataset.py `
+     --img_dir processed/knee/images `
+     --label_dir processed/knee/labels_new `
+     --out_dir splits `
+     --train 0.7 `
+     --val 0.15 `
+     --test 0.15 `
+     --seed 42
+   ```
+
+**Lưu ý:**
+- Script tự động đọc class_id từ labels (hỗ trợ cả format chuẩn 0-4 và format mới 0-9)
+- Khi dùng `labels_new`, cần sửa import trong `split_dataset.py` để hiển thị đúng tên class (KL0-a, KL0-b, ...)
+- Sinh `splits/train.txt`, `splits/val.txt`, `splits/test.txt` (tên theo stem của ảnh crop, bao gồm cả index `_{k_idx}`)
+- Sử dụng multilabel stratified split để giữ phân phối class giữa các splits
 
 ### Huấn luyện detector
 
@@ -155,7 +188,8 @@ Luồng chuẩn end‑to‑end: kiểm tra dữ liệu → tiền xử lý crop 
 
 2. Tạo splits
 
-   - `splits/train.txt`, `splits/val.txt` theo stem ảnh gốc
+   - Chạy `check_dataset/split_dataset.py` với `--label_dir` tương ứng (labels hoặc labels_new)
+   - Sinh `splits/train.txt`, `splits/val.txt`, `splits/test.txt` theo stem ảnh crop (bao gồm index `_{k_idx}`)
 
 3. Train detector
 
