@@ -1,13 +1,21 @@
 """
-Dataset loader cho bài toán Detection (YOLO format)
-Hỗ trợ:
-- Train/Val split từ file splits
-- Hỗ trợ cả labels và labels_new
-- Cache để tăng tốc độ
-- Xử lý lỗi tốt hơn
-- Augmentation với Albumentations
-- Filter images không có label
-- Hỗ trợ nhiều format output
+YOLO Dataset Loader for Object Detection
+
+This module provides a flexible dataset loader for YOLO format labels, optimized for
+knee osteoarthritis (OA) detection using the Kellgren-Lawrence (KL) grading system.
+
+Features:
+- Train/Val/Test splits from text files
+- Support for both original labels (5 classes) and labels_new (10 classes)
+- Memory caching for images and labels (optional)
+- Robust error handling and validation
+- Albumentations-based augmentation with bbox support
+- Automatic filtering of images without labels
+- Multiple output formats: YOLO (normalized), Pascal VOC (absolute)
+- Compatible with YOLO11 (Ultralytics) and PyTorch DataLoader
+
+Author: KLGrade Project
+Compatible with: YOLO11, PyTorch 2.0+, Albumentations
 """
 
 import os
@@ -26,20 +34,41 @@ import matplotlib.patches as patches
 
 class YoloDataset(Dataset):
     """
-    Dataset loader cho bài toán Detection với format YOLO
+    YOLO format dataset loader for object detection tasks.
+    
+    This class loads images and YOLO format labels (normalized bounding boxes) and
+    supports various preprocessing, augmentation, and output formats.
     
     Args:
-        img_dir: Thư mục chứa ảnh
-        label_dir: Thư mục chứa labels (YOLO format)
-        transform: Albumentations transform - optional
-        split_file: Đường dẫn file split (train.txt hoặc val.txt) - optional
-        use_labels_new: Sử dụng labels_new thay vì labels - default False
-        filter_no_label: Bỏ qua ảnh không có label - default True
-        cache_images: Cache ảnh vào memory - default False
-        cache_labels: Cache labels vào memory - default True
-        img_size: Kích thước ảnh resize (height, width) - default None (giữ nguyên)
-        bbox_format: Format bbox output - 'yolo' (normalized) hoặc 'pascal_voc' (x1,y1,x2,y2) - default 'pascal_voc'
-        return_dict: Trả về dict thay vì tuple - default False (tương thích ngược)
+        img_dir (str): Directory containing images (.jpg, .png, .bmp)
+        label_dir (str): Directory containing YOLO format label files (.txt)
+        transform (Optional[A.Compose]): Albumentations transform pipeline
+        split_file (Optional[str]): Path to split file (train.txt/val.txt) containing image stems
+        use_labels_new (bool): Use labels_new directory (10 classes) instead of labels (5 classes)
+        filter_no_label (bool): Skip images without corresponding label files
+        cache_images (bool): Cache loaded images in memory for faster access
+        cache_labels (bool): Cache parsed labels in memory
+        img_size (Optional[Tuple[int, int]]): Resize images to (height, width) before transform
+        bbox_format (str): Output bbox format - 'yolo' (cx,cy,w,h normalized) or 'pascal_voc' (x1,y1,x2,y2)
+        return_dict (bool): Return dict instead of tuple for better compatibility
+    
+    Returns:
+        If return_dict=False: (image_tensor, boxes_tensor, labels_tensor)
+        If return_dict=True: {'image': tensor, 'boxes': tensor, 'labels': tensor, 'image_id': str}
+    
+    Example:
+        >>> from dataset import YoloDataset, get_default_train_transform
+        >>> transform = get_default_train_transform(img_size=(640, 640))
+        >>> dataset = YoloDataset(
+        ...     img_dir="processed/knee/images",
+        ...     label_dir="processed/knee/labels",
+        ...     transform=transform,
+        ...     split_file="splits/train.txt",
+        ...     bbox_format='pascal_voc',
+        ...     return_dict=True
+        ... )
+        >>> sample = dataset[0]
+        >>> print(sample['image'].shape, sample['boxes'].shape)
     """
     
     def __init__(
@@ -169,7 +198,12 @@ class YoloDataset(Dataset):
         return image
     
     def _load_labels(self, label_path: Path) -> Tuple[List[List[float]], List[int]]:
-        """Load labels từ file YOLO format"""
+        """
+        Load labels from YOLO format file with validation.
+        
+        Returns:
+            Tuple of (boxes, labels) where boxes are in YOLO format [cx, cy, w, h] (normalized)
+        """
         if self.cache_labels and str(label_path) in self.label_cache:
             return self.label_cache[str(label_path)]
         
@@ -181,13 +215,14 @@ class YoloDataset(Dataset):
         
         try:
             with open(label_path, 'r', encoding='utf-8') as f:
-                for line in f:
+                for line_num, line in enumerate(f, 1):
                     line = line.strip()
                     if not line:
                         continue
                     
                     parts = line.split()
                     if len(parts) < 5:
+                        warnings.warn(f"{label_path.name}:{line_num} - Invalid format (need 5 values)")
                         continue
                     
                     class_id = int(float(parts[0]))
@@ -195,6 +230,19 @@ class YoloDataset(Dataset):
                     y_center = float(parts[2])
                     width = float(parts[3])
                     height = float(parts[4])
+                    
+                    # Validate bbox coordinates (YOLO format should be 0-1)
+                    if not (0 <= x_center <= 1 and 0 <= y_center <= 1 and 
+                            0 <= width <= 1 and 0 <= height <= 1):
+                        warnings.warn(
+                            f"{label_path.name}:{line_num} - Bbox out of range: "
+                            f"[{x_center:.3f}, {y_center:.3f}, {width:.3f}, {height:.3f}]"
+                        )
+                        # Clip to valid range
+                        x_center = max(0, min(1, x_center))
+                        y_center = max(0, min(1, y_center))
+                        width = max(0, min(1, width))
+                        height = max(0, min(1, height))
                     
                     boxes.append([x_center, y_center, width, height])
                     labels.append(class_id)
