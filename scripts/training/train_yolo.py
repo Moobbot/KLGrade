@@ -19,7 +19,7 @@ from src.datasets import (
     get_default_train_transform,
     get_default_val_transform,
 )
-from src.config import CLASSES, CLASSES_LABEL_NEW, CLASSES_FILTERED
+from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_FILTERED
 from ultralytics import YOLO
 import torch
 
@@ -63,8 +63,8 @@ def train_yolo11(
         num_classes = len(CLASSES_FILTERED)
         label_subdir = "labels"  # Filtered dataset uses 'labels' folder
     elif use_labels_new:
-        class_names = CLASSES_LABEL_NEW
-        num_classes = len(CLASSES_LABEL_NEW)
+        class_names = CLASSES_10_CLASS
+        num_classes = len(CLASSES_10_CLASS)
         label_subdir = "labels_new"
     else:
         class_names = CLASSES

@@ -1,7 +1,7 @@
 # Data preparation guide - KLGrade Object Detection
 
 **Author**: Ngo Tam
-**Date**: 20/12/2025 
+**Date**: 20/12/2025
 **Purpose**: Guide for preparing 3 datasets for training object detection
 
 ---
@@ -10,11 +10,11 @@
 
 Dự án này sử dụng **3 cấu hình dataset** khác nhau để training:
 
-| Dataset | Classes | Mô tả | Use Case |
-|---------|---------|-------|----------|
-| **Dataset 1** | 5 classes | KL0-KL4 (baseline) | So sánh performance cơ bản |
-| **Dataset 2** | 10 classes | KL0-a/b đến KL4-a/b | Fine-grained detection |
-| **Dataset 3** | 7 classes | Filtered (loại bỏ rare classes) | Optimal for training |
+| Dataset       | Classes    | Mô tả                           | Use Case                   |
+| ------------- | ---------- | ------------------------------- | -------------------------- |
+| **Dataset 1** | 5 classes  | KL0-KL4 (baseline)              | So sánh performance cơ bản |
+| **Dataset 2** | 10 classes | KL0-a/b đến KL4-a/b             | Fine-grained detection     |
+| **Dataset 3** | 7 classes  | Filtered (loại bỏ rare classes) | Optimal for training       |
 
 ---
 
@@ -46,10 +46,12 @@ KLGrade/
 **Script**: `check_dataset/class_split_report.py`
 
 **Chức năng**: Chia mỗi KL class thành 2 subclasses (a/b) dựa trên:
+
 - **"a" (gai xương/osteophyte)**: Bounding box hình vuông, nhỏ
 - **"b" (khe khớp/joint space)**: Bounding box hình dài, lớn hơn
 
 **Thuật toán**:
+
 ```python
 def classify_box(w, h, area):
     ratio = w / h
@@ -61,13 +63,15 @@ def classify_box(w, h, area):
 ```
 
 **Câu lệnh**:
+
 ```powershell
 python check_dataset\class_split_report.py `
     --labels-dir dataset\dataset_v1\labels `
     --save-dir dataset\dataset_v1\labels_new
 ```
 
-**Output**: 
+**Output**:
+
 - `dataset/dataset_v1/labels_new/` - 1,685 label files với class IDs 0-9
 
 ---
@@ -76,7 +80,8 @@ python check_dataset\class_split_report.py `
 
 **Script**: `check_dataset/analyze_dataset.py`
 
-**Chức năng**: 
+**Chức năng**:
+
 - Thống kê class distribution
 - Phân tích bbox dimensions, aspect ratios
 - Categorize object sizes (small/medium/large)
@@ -100,13 +105,15 @@ python check_dataset/analyze_dataset.py `
     --class_names KL0-a KL0-b KL1-a KL1-b KL2-a KL2-b KL3-a KL3-b KL4-a KL4-b
 ```
 
-**Output**: 
+**Output**:
+
 - `DATASET_ANALYSIS_REPORT.md` - Summary report
 - `class_distribution.png` - Class distribution charts
 - `bbox_analysis.png` - Comprehensive bbox analysis
 - `dataset_statistics.json` - Raw statistics
 
 **Kết quả quan trọng**:
+
 - Dataset 1: Imbalance ratio **13.71:1**
 - Dataset 2: Imbalance ratio **130.30:1** (rất cao!)
 - 87.4% objects là **small objects** (<1% image area)
@@ -118,11 +125,13 @@ python check_dataset/analyze_dataset.py `
 **Script**: `filter_dataset_by_class.py`
 
 **Chức năng**: Lọc bỏ rare classes (<1% threshold):
+
 - Class 1 (KL0-b): 10 instances (0.32%)
 - Class 3 (KL1-b): 23 instances (0.74%)
 - Class 9 (KL4-b): 25 instances (0.80%)
 
 **Câu lệnh**:
+
 ```powershell
 python filter_dataset_by_class.py `
     --img_dir dataset\dataset_v1\images `
@@ -135,11 +144,13 @@ python filter_dataset_by_class.py `
 ```
 
 **Options**:
+
 - `--threshold 1.0`: Minimum percentage (1%)
 - `--remove_rare_from_labels`: Keep images, chỉ xóa rare boxes
 - Không dùng flag này: Skip toàn bộ images có rare boxes
 
 **Output**:
+
 - `dataset/dataset_filtered/images/` - 1,663 images (98.7% retention)
 - `dataset/dataset_filtered/labels/` - 3,069 boxes (98.1% retention)
 - `filter_report.json` & `FILTER_REPORT.md`
@@ -153,6 +164,7 @@ python filter_dataset_by_class.py `
 **Chức năng**: Chuyển class IDs từ rời rạc {0,2,4,5,6,7,8} → continuous {0,1,2,3,4,5,6}
 
 **Mapping**:
+
 ```python
 CLASS_REMAP_FILTERED = {
     0: 0,  # KL0-a
@@ -166,6 +178,7 @@ CLASS_REMAP_FILTERED = {
 ```
 
 **Câu lệnh**:
+
 ```powershell
 # Dry run (kiểm tra mapping)
 python remap_filtered_labels.py `
@@ -185,7 +198,8 @@ python remap_filtered_labels.py `
 
 **Script**: `split_dataset.py`
 
-**Chức năng**: 
+**Chức năng**:
+
 - Stratified splitting (balanced class distribution)
 - Multi-label support
 - Rare class protection
@@ -217,6 +231,7 @@ python split_dataset.py `
 ```
 
 **Output**:
+
 - `train.txt` - ~70% images
 - `val.txt` - ~15% images
 - `test.txt` - ~15% images
@@ -235,6 +250,7 @@ python check_dataset/analyze_dataset.py `
 ```
 
 **Kết quả**:
+
 - Imbalance ratio giảm từ **130.30:1** xuống **24.13:1**
 - Tổng instances: 3,069 (giảm 58 boxes)
 - Small objects: 89.0% (tăng nhẹ do loại bỏ một số large rare boxes)
@@ -248,6 +264,7 @@ python check_dataset/analyze_dataset.py `
 **Dataset**: `dataset/dataset_v1/` với `labels/`
 
 **Class Mapping** (từ `config.py`):
+
 ```python
 CLASSES = {
     0: "KL0", 1: "KL1", 2: "KL2", 3: "KL3", 4: "KL4"
@@ -286,8 +303,9 @@ python examples/train_detr.py `
 **Dataset**: `dataset/dataset_v1/` với `labels_new/`
 
 **Class Mapping**:
+
 ```python
-CLASSES_LABEL_NEW = {
+CLASSES_10_CLASS = {
     0: "KL0-a", 1: "KL0-b", 2: "KL1-a", 3: "KL1-b",
     4: "KL2-a", 5: "KL2-b", 6: "KL3-a", 7: "KL3-b",
     8: "KL4-a", 9: "KL4-b"
@@ -319,6 +337,7 @@ python examples/train_detr.py `
 ```
 
 **Challenges**:
+
 - ⚠️ Imbalance ratio cao (130:1)
 - ⚠️ 3 rare classes (<1%)
 - Cần weighted loss hoặc focal loss
@@ -330,6 +349,7 @@ python examples/train_detr.py `
 **Dataset**: `dataset/dataset_filtered/`
 
 **Class Mapping**:
+
 ```python
 CLASSES_FILTERED = {
     0: "KL0-a", 1: "KL1-a", 2: "KL2-a", 3: "KL2-b",
@@ -360,6 +380,7 @@ python examples/train_detr.py `
 ```
 
 **Advantages**:
+
 - ✅ Imbalance ratio thấp hơn (24:1)
 - ✅ Không có rare classes
 - ✅ Stable training
@@ -369,15 +390,15 @@ python examples/train_detr.py `
 
 ## 📊 So Sánh 3 Datasets
 
-| Metric | Dataset 1 (5 cls) | Dataset 2 (10 cls) | Dataset 3 (7 cls) |
-|--------|-------------------|--------------------|--------------------|
-| **Classes** | 5 | 10 | 7 |
-| **Images** | 1,685 | 1,685 | 1,663 (-1.3%) |
-| **Boxes** | 3,127 | 3,127 | 3,069 (-1.9%) |
-| **Imbalance** | 13.71:1 | 130.30:1 | 24.13:1 |
-| **Min class** | 99 (KL0) | 10 (KL0-b) | 54 (KL2-b) |
-| **Max class** | 1,357 (KL2) | 1,303 (KL2-a) | 1,303 (KL2-a) |
-| **Small obj %** | 87.4% | 87.4% | 89.0% |
+| Metric          | Dataset 1 (5 cls) | Dataset 2 (10 cls) | Dataset 3 (7 cls) |
+| --------------- | ----------------- | ------------------ | ----------------- |
+| **Classes**     | 5                 | 10                 | 7                 |
+| **Images**      | 1,685             | 1,685              | 1,663 (-1.3%)     |
+| **Boxes**       | 3,127             | 3,127              | 3,069 (-1.9%)     |
+| **Imbalance**   | 13.71:1           | 130.30:1           | 24.13:1           |
+| **Min class**   | 99 (KL0)          | 10 (KL0-b)         | 54 (KL2-b)        |
+| **Max class**   | 1,357 (KL2)       | 1,303 (KL2-a)      | 1,303 (KL2-a)     |
+| **Small obj %** | 87.4%             | 87.4%              | 89.0%             |
 
 ---
 
@@ -390,7 +411,7 @@ CLASSES = {
 }
 
 # Dataset 2: Fine-grained
-CLASSES_LABEL_NEW = {
+CLASSES_10_CLASS = {
     0: "KL0-a", 1: "KL0-b", 2: "KL1-a", 3: "KL1-b",
     4: "KL2-a", 5: "KL2-b", 6: "KL3-a", 7: "KL3-b",
     8: "KL4-a", 9: "KL4-b"
@@ -416,11 +437,13 @@ CLASS_REMAP_FILTERED = {
 ### Training Tips:
 
 1. **Dataset 1 (Baseline)**:
+
    - Good starting point
    - Moderate imbalance → use weighted loss
    - Nhiều small objects → use FPN
 
 2. **Dataset 2 (Fine-grained)**:
+
    - ⚠️ Rất imbalanced → **MUST use Focal Loss**
    - Consider oversampling rare classes
    - Hoặc train hierarchical: coarse→fine

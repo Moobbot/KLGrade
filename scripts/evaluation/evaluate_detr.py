@@ -27,7 +27,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from src.datasets import CocoDataset, create_coco_json
 from src.datasets.transforms import get_detr_processor
-from src.config import CLASSES, CLASSES_LABEL_NEW, CLASSES_FILTERED
+from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
 from transformers import DetrForObjectDetection
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -333,7 +333,7 @@ def main():
         class_names = CLASSES_FILTERED
         label_suffix = "_filtered"
     elif args.use_labels_new:
-        class_names = CLASSES_LABEL_NEW
+        class_names = CLASSES_10_CLASS
         label_suffix = "_new"
     else:
         class_names = CLASSES

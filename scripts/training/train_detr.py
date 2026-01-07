@@ -20,7 +20,7 @@ from src.datasets import (
     detr_collate_fn_dynamic_padding,
 )
 from src.datasets.transforms import get_detr_processor
-from src.config import CLASSES, CLASSES_LABEL_NEW
+from src.config import CLASSES, CLASSES_10_CLASS
 import torch
 from torch.utils.data import DataLoader
 from transformers import DetrForObjectDetection, DetrImageProcessor
@@ -45,7 +45,7 @@ def prepare_coco_annotations(
 
     # Determine class names and label subdirectory
     if use_labels_new:
-        class_names = CLASSES_LABEL_NEW
+        class_names = CLASSES_10_CLASS
         label_subdir = "labels_new"
         suffix = "_new"
     else:
@@ -112,8 +112,8 @@ def train_detr(
 
     # Determine class configuration
     if use_labels_new:
-        class_names = CLASSES_LABEL_NEW
-        num_classes = len(CLASSES_LABEL_NEW)
+        class_names = CLASSES_10_CLASS
+        num_classes = len(CLASSES_10_CLASS)
         label_suffix = "_new"
     else:
         class_names = CLASSES

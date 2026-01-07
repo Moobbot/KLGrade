@@ -20,7 +20,7 @@ from src.datasets import (
     get_default_train_transform,
     get_default_val_transform,
 )
-from src.config import CLASSES, CLASSES_LABEL_NEW
+from src.config import CLASSES, CLASSES_10_CLASS
 import torch
 
 
@@ -88,7 +88,7 @@ def test_yolo_dataset():
 
     print(f"✅ Val dataset size: {len(val_dataset)}")
 
-    # Test with labels_new (CLASSES_LABEL_NEW - 10 classes)
+    # Test with labels_new (CLASSES_10_CLASS - 10 classes)
     print("\n3. Testing with labels_new (10 classes)...")
 
     train_dataset_new = YoloDataset(
@@ -124,7 +124,7 @@ def test_yolo_dataset():
             visualize_dataset_sample(
                 train_dataset_new,
                 idx=i,
-                class_names=CLASSES_LABEL_NEW,
+                class_names=CLASSES_10_CLASS,
                 save_path=str(save_path),
             )
             print(f"   Saved: {save_path}")

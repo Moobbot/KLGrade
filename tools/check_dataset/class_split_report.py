@@ -10,6 +10,7 @@ Quy tắc:
 Output: class_id (0-9) x y w h (format YOLO chuẩn)
 Mapping: "0a"→0, "0b"→1, "1a"→2, "1b"→3, "2a"→4, "2b"→5, "3a"→6, "3b"→7, "4a"→8, "4b"→9
 """
+
 from __future__ import annotations
 
 import argparse
@@ -23,16 +24,35 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Gán nhãn a/b: a=gai xương, b=khe khớp"
     )
-    parser.add_argument("--labels-dir", type=Path, required=None, default="processed/knee/labels",
-                       help="Thư mục chứa file label YOLO gốc (*.txt)")
-    parser.add_argument("--classes", type=int, nargs="*", default=None,
-                       help="Chỉ xử lý các class cụ thể (ví dụ: --classes 2 3)")
-    parser.add_argument("--limit", type=int, default=10,
-                       help="Số lượng ví dụ hiển thị cho mỗi class trong báo cáo")
-    parser.add_argument("--max-split", type=int, default=2,
-                       help="Số nhánh tối đa (mặc định 2: a/b)")
-    parser.add_argument("--save-dir", type=Path, default="processed/knee/labels_new",
-                       help="Thư mục lưu file label mới với tag a/b")
+    parser.add_argument(
+        "--labels-dir",
+        type=Path,
+        required=None,
+        default="processed/knee/labels",
+        help="Thư mục chứa file label YOLO gốc (*.txt)",
+    )
+    parser.add_argument(
+        "--classes",
+        type=int,
+        nargs="*",
+        default=None,
+        help="Chỉ xử lý các class cụ thể (ví dụ: --classes 2 3)",
+    )
+    parser.add_argument(
+        "--limit",
+        type=int,
+        default=10,
+        help="Số lượng ví dụ hiển thị cho mỗi class trong báo cáo",
+    )
+    parser.add_argument(
+        "--max-split", type=int, default=2, help="Số nhánh tối đa (mặc định 2: a/b)"
+    )
+    parser.add_argument(
+        "--save-dir",
+        type=Path,
+        default="processed/knee/labels_new",
+        help="Thư mục lưu file label mới với tag a/b",
+    )
     return parser.parse_args()
 
 
@@ -60,26 +80,26 @@ def load_boxes(label_path: Path) -> List[Tuple[int, List[float]]]:
 def classify_box(w: float, h: float, area: float) -> str:
     """
     Phân loại box: "a" (gai xương) hoặc "b" (khe khớp).
-    
+
     Chỉ phân loại khi rõ ràng:
     - "a": w/h < 1.2 hoặc area < 0.01
     - "b": w/h > 2.0 hoặc area > 0.03
-    
+
     Nếu không rõ ràng → trả về None để xử lý sau.
     """
     if h <= 0:
         return "a"
 
     ratio = w / h
-    
+
     # Rõ ràng là "a" (gai xương)
     if ratio < 1.2 or area < 0.01:
         return "a"
-    
+
     # Rõ ràng là "b" (khe khớp)
     if ratio > 2.0 or area > 0.03:
         return "b"
-    
+
     # Không rõ ràng → trả về None
     return None
 
@@ -87,12 +107,12 @@ def classify_box(w: float, h: float, area: float) -> str:
 def is_at_edge(x: float, y: float, w: float, h: float, threshold: float = 0.01) -> bool:
     """
     Kiểm tra box có nằm ở viền ảnh không.
-    
+
     Args:
         x, y: Tọa độ center (normalized)
         w, h: Width, height (normalized)
         threshold: Ngưỡng khoảng cách từ viền (mặc định 0.05 = 5%)
-    
+
     Returns:
         True nếu box gần viền ảnh
     """
@@ -100,16 +120,20 @@ def is_at_edge(x: float, y: float, w: float, h: float, threshold: float = 0.01) 
     x_max = x + w / 2
     y_min = y - h / 2
     y_max = y + h / 2
-    
+
     # Kiểm tra gần viền trái, phải, trên, dưới
-    return (x_min < threshold or x_max > 1.0 - threshold or
-            y_min < threshold or y_max > 1.0 - threshold)
+    return (
+        x_min < threshold
+        or x_max > 1.0 - threshold
+        or y_min < threshold
+        or y_max > 1.0 - threshold
+    )
 
 
 def assign_relative_group(boxes: List[dict]):
     """
     Xử lý box không rõ ràng: so sánh width và kiểm tra vị trí viền.
-    
+
     Logic:
     - Nếu box có width lớn hơn VÀ không nằm ở viền ảnh → "b" (khe khớp)
     - Box còn lại → "a" (gai xương)
@@ -118,19 +142,19 @@ def assign_relative_group(boxes: List[dict]):
         return
 
     b1, b2 = boxes
-    
+
     # Chỉ xử lý box có suffix = None (không rõ ràng)
     if b1["suffix"] is not None and b2["suffix"] is not None:
         return  # Cả 2 đều đã rõ ràng
-    
+
     # Lấy thông tin box
     x1, y1, w1, h1 = b1["coords"]
     x2, y2, w2, h2 = b2["coords"]
-    
+
     # Kiểm tra box nào có width lớn hơn và không ở viền
     at_edge1 = is_at_edge(x1, y1, w1, h1)
     at_edge2 = is_at_edge(x2, y2, w2, h2)
-    
+
     # Box có width lớn hơn và không ở viền → "b"
     if w1 > w2 and not at_edge1:
         b1["suffix"] = "b"
@@ -157,26 +181,27 @@ def assign_relative_group(boxes: List[dict]):
 def convert_tag_to_yolo_class(tag: str) -> int:
     """
     Chuyển đổi tag (ví dụ "2a", "3b") sang class_id YOLO (0-9).
-    
-    Mapping theo CLASSES_LABEL_NEW:
+
+    Mapping theo CLASSES_10_CLASS:
     - "0a" -> 0, "0b" -> 1
     - "1a" -> 2, "1b" -> 3
     - "2a" -> 4, "2b" -> 5
     - "3a" -> 6, "3b" -> 7
     - "4a" -> 8, "4b" -> 9
-    
+
     Args:
         tag: Tag dạng "{class}{suffix}" (ví dụ: "2a", "3b")
-        
+
     Returns:
         class_id (int) từ 0-9
     """
     import re
+
     match = re.match(r"^(\d+)([a-z]?)$", tag)
     if match:
         base_class = int(match.group(1))
         suffix = match.group(2) or ""
-        
+
         # Tính class_id: base_class * 2 + (0 nếu "a", 1 nếu "b")
         if suffix == "a":
             return base_class * 2
@@ -185,7 +210,7 @@ def convert_tag_to_yolo_class(tag: str) -> int:
         else:
             # Nếu không có suffix, giữ nguyên (nhưng không nên xảy ra)
             return base_class
-    
+
     # Fallback: thử parse số nguyên
     try:
         return int(tag)
@@ -196,7 +221,7 @@ def convert_tag_to_yolo_class(tag: str) -> int:
 def build_reports(labels_dir, allowed_classes, max_split):
     """
     Xử lý labels và tạo output.
-    
+
     Returns:
         (class_entries, warnings, exported_lines)
     """
@@ -234,7 +259,7 @@ def build_reports(labels_dir, allowed_classes, max_split):
             # Xử lý box không rõ ràng (suffix = None)
             if len(entries) == 2:
                 assign_relative_group(entries)
-            
+
             # Đảm bảo tất cả box đều có suffix (fallback nếu vẫn None)
             for ent in entries:
                 if ent["suffix"] is None:
@@ -246,16 +271,18 @@ def build_reports(labels_dir, allowed_classes, max_split):
                         f"(ratio={ent['ratio']:.2f}, area={ent['area']:.3f}) "
                         f"-> fallback {ent['suffix']}"
                     )
-                
+
                 # Tạo tag dạng "2a", "3b"
                 tag = f"{ent['cls']}{ent['suffix']}"
-                
+
                 # Chuyển đổi sang class_id YOLO chuẩn (0-9)
                 yolo_class_id = convert_tag_to_yolo_class(tag)
-                
+
                 class_entries[cls].append(ent)
                 # Output format YOLO chuẩn: class_id (số nguyên) x y w h
-                out_line = f"{yolo_class_id} " + " ".join(f"{v:.6f}" for v in ent["coords"])
+                out_line = f"{yolo_class_id} " + " ".join(
+                    f"{v:.6f}" for v in ent["coords"]
+                )
                 exported_lines[label_file.name].append(out_line)
 
     return class_entries, warnings, exported_lines

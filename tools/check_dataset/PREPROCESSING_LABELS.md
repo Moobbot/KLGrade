@@ -62,7 +62,7 @@ Khi có **2 box cùng class** và một hoặc cả hai không rõ ràng, script
 
 ### 4. Chuyển Đổi Sang Format YOLO Chuẩn
 
-Sau khi phân loại thành tag "a"/"b", script tự động chuyển đổi sang class_id YOLO chuẩn (0-9) theo mapping trong `config.CLASSES_LABEL_NEW`:
+Sau khi phân loại thành tag "a"/"b", script tự động chuyển đổi sang class_id YOLO chuẩn (0-9) theo mapping trong `config.CLASSES_10_CLASS`:
 
 - `"0a"` → class_id `0`, `"0b"` → class_id `1`
 - `"1a"` → class_id `2`, `"1b"` → class_id `3`
@@ -179,8 +179,8 @@ File: `1.2.392.200036.9107.307.24972.20220914.81908.1033568_0.txt`
 
 **Giải thích:**
 
-- `6` = "3a" (KL3-a, gai xương) theo mapping `CLASSES_LABEL_NEW`
-- `7` = "3b" (KL3-b, khe khớp) theo mapping `CLASSES_LABEL_NEW`
+- `6` = "3a" (KL3-a, gai xương) theo mapping `CLASSES_10_CLASS`
+- `7` = "3b" (KL3-b, khe khớp) theo mapping `CLASSES_10_CLASS`
 
 ## Cấu Hình
 
@@ -193,10 +193,10 @@ File: `1.2.392.200036.9107.307.24972.20220914.81908.1033568_0.txt`
 
 ### Mapping Class (config.py)
 
-Script tự động chuyển đổi tag sang class_id YOLO theo `CLASSES_LABEL_NEW` trong `config.py`:
+Script tự động chuyển đổi tag sang class_id YOLO theo `CLASSES_10_CLASS` trong `config.py`:
 
 ```python
-CLASSES_LABEL_NEW = {
+CLASSES_10_CLASS = {
     0: "KL0-a",  # class_id 0 tương ứng với "0a"
     1: "KL0-b",  # class_id 1 tương ứng với "0b"
     2: "KL1-a",  # class_id 2 tương ứng với "1a"

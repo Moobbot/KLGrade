@@ -6,18 +6,29 @@
 KLGrade/
 │
 ├── 📂 data/                        # Data directories (gitignored)
-│   ├── dataset/                    # Raw dataset
+│   ├── dataset/                    # Raw datasets
+│   │   ├── dataset_v0/             # Original full X-ray images
+│   │   │   ├── images/             # 1,473 full X-rays
+│   │   │   ├── labels/             # KL 0-4 (5 classes) - 3,157 boxes
+│   │   │   ├── labels-knee/        # Knee detection boxes
+│   │   │   └── labels-knee-2box/   # Left/Right knee boxes
 │   │   └── dataset_v1/
 │   │       ├── images/
 │   │       ├── labels/             # 5 classes
 │   │       └── labels_new/         # 10 classes
-│   ├── splits/                     # Train/val/test split files
-│   │   ├── train.txt
-│   │   ├── val.txt
-│   │   └── test.txt
-│   └── processed/                  # Processed data
-│       ├── coco/                   # COCO format annotations
-│       └── yolo11_labels.yaml      # YOLO config
+│   │
+│   ├── processed/                  # Processed datasets
+│   │   ├── knee/                   # ✨ Cropped knee regions
+│   │   │   ├── images/             # 1,460 square knee crops
+│   │   │   ├── labels/             # Transformed KL labels (2,637 boxes, 84.2% retention)
+│   │   │   └── crop_stats.json    # Crop statistics
+│   │   ├── coco/                   # COCO format annotations
+│   │   └── yolo11_labels.yaml      # YOLO config
+│   │
+│   └── splits/                     # Train/val/test split files
+│       ├── train.txt
+│       ├── val.txt
+│       └── test.txt
 │
 ├── 📂 src/                         # Source code modules
 │   ├── __init__.py
@@ -42,6 +53,9 @@ KLGrade/
 │   └── config.py                   # Configuration
 │
 ├── 📂 scripts/                     # Executable scripts
+│   ├── preprocessing/              # ✨ Preprocessing scripts
+│   │   └── crop_knee_regions.py   # Crop knee from full X-rays
+│   │
 │   ├── data_preparation/           # Data prep scripts
 │   │   ├── split_dataset.py
 │   │   ├── filter_dataset.py
@@ -63,11 +77,14 @@ KLGrade/
 │       └── test_coco_dataset.py
 │
 ├── 📂 tools/                       # Development tools
-│   ├── check_dataset/
-│   │   ├── analyze_dataset.py
-│   │   ├── check_labels.py
-│   │   ├── visualize_boxes.py
-│   │   └── class_split_report.py
+│   ├── check_dataset/              # ✨ Consolidated tools (6 tools)
+│   │   ├── comprehensive_analysis.py  # Main dataset analysis
+│   │   ├── validate_dataset.py        # Data validation
+│   │   ├── visualize_samples.py       # Sample visualization
+│   │   ├── class_split_report.py      # Post-split analysis
+│   │   ├── check_augment.py           # Augmentation testing
+│   │   ├── resize_images.py           # Image preprocessing
+│   │   └── PREPROCESSING_LABELS.md    # Documentation
 │   └── check_vis/                  # Visualization outputs
 │
 ├── 📂 runs/                        # Training outputs

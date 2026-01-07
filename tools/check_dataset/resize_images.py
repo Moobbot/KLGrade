@@ -2,14 +2,15 @@
 Resize existing images to a fixed size without cropping.
 
 Usage (PowerShell):
-  python pipeline/resize_images.py \
+  python tools/check_dataset    /resize_images.py \
     --in_dir processed/classification/images \
-    --out_dir processed/classification/images_512 \
-    --size 512
+    --out_dir processed/classification/images_640 \
+    --size 640
 
 Optional aspect-preserving letterbox (pad to square):
-  python pipeline/resize_images.py --keep_aspect --size 512
+  python tools/check_dataset/resize_images.py --keep_aspect --size 640
 """
+
 import os
 import sys
 import argparse
@@ -18,11 +19,15 @@ from typing import Tuple
 import cv2
 import numpy as np
 
-ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
 
-from config import IMG_SIZE
+try:
+    from src.config import IMG_SIZE
+except ImportError:
+    # Fallback if config not found
+    IMG_SIZE = 640
 
 
 def ensure_rgb(img: np.ndarray) -> np.ndarray:
@@ -39,7 +44,9 @@ def resize_square(img: np.ndarray, size: int) -> np.ndarray:
     return cv2.resize(img, (size, size), interpolation=cv2.INTER_LINEAR)
 
 
-def letterbox_square(img: np.ndarray, size: int, color: Tuple[int, int, int] = (0, 0, 0)) -> np.ndarray:
+def letterbox_square(
+    img: np.ndarray, size: int, color: Tuple[int, int, int] = (0, 0, 0)
+) -> np.ndarray:
     h, w = img.shape[:2]
     scale = min(size / w, size / h)
     nw, nh = int(round(w * scale)), int(round(h * scale))
@@ -54,10 +61,18 @@ def letterbox_square(img: np.ndarray, size: int, color: Tuple[int, int, int] = (
 
 def parse_args():
     p = argparse.ArgumentParser(description="Resize images without cropping")
-    p.add_argument("--in_dir", default=os.path.join("processed", "classification", "images"))
-    p.add_argument("--out_dir", default=os.path.join("processed", "classification", "images_512"))
+    p.add_argument(
+        "--in_dir", default=os.path.join("processed", "classification", "images")
+    )
+    p.add_argument(
+        "--out_dir", default=os.path.join("processed", "classification", "images_512")
+    )
     p.add_argument("--size", type=int, default=IMG_SIZE)
-    p.add_argument("--keep_aspect", action="store_true", help="Preserve aspect by letterbox padding to square")
+    p.add_argument(
+        "--keep_aspect",
+        action="store_true",
+        help="Preserve aspect by letterbox padding to square",
+    )
     return p.parse_args()
 
 
