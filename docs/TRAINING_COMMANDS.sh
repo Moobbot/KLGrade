@@ -7,13 +7,14 @@
 set -e
 
 # ============================================================================
-# Virtual Environment Setup
+# Environment Setup (Conda)
 # ============================================================================
 
-echo "Activating virtual environment..."
-source .venv/bin/activate
+echo "Activating conda environment..."
+# Activate conda environment (replace 'klgrade' with your env name if different)
+conda activate klgrade
 
-# Verify Python is from venv
+# Verify Python is from conda env
 which python
 python --version
 

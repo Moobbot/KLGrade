@@ -9,8 +9,11 @@ set -e  # Exit on error
 echo "🚀 Starting KLGrade Dataset Preparation Pipeline"
 echo "=================================================="
 
-# Activate virtual environment
-source .venv/bin/activate
+# ============================================================================
+# Environment Setup (Conda)
+# ============================================================================
+echo "Activating conda environment..."
+conda activate klgrade
 
 # ============================================================================
 # STAGE 1: Initial Dataset Analysis
