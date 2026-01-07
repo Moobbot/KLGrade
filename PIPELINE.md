@@ -18,8 +18,9 @@ Complete pipeline for processing knee osteoarthritis X-ray dataset from raw imag
 5. Image Resize ✨
 6. Validation & Verification
 7. Final Analysis
-8. Create Dataset Variants (10-class, 4-class, 8-class)
-9. Train/Val/Test Split
+8. Create 10-class Dataset
+9. Create Filtered Datasets (4-class, 8-class)
+10. **Stratified Train/Val/Test Split** ✨
 
 ---
 
@@ -372,6 +373,94 @@ processed/knee_8_class/     # 8 classes, 1,603 images
 - 🗑️ Filtered: 85 images (5.0%)
 - Total boxes: 3,042 (96.8% retention)
 - Same distribution as 10-class but excluding KL0-a/b
+
+---
+
+## 🔄 Stage 10: Stratified Train/Val/Test Split
+
+**Purpose:** Create stratified splits for all 4 dataset variants for model training
+
+**Strategy:**
+
+- Split ratio: 70% train / 15% val / 15% test
+- Stratified sampling to balance class distribution
+- Same seed (42) for reproducibility
+
+**Commands:**
+
+```powershell
+# Split 5-class dataset
+.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
+    --img_dir processed\knee\images `
+    --label_dir processed\knee\labels `
+    --out_dir splits\knee_5class `
+    --train 0.7 --val 0.15 --test 0.15 --seed 42
+
+# Split 10-class dataset
+.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
+    --img_dir processed\knee_10_class\images `
+    --label_dir processed\knee_10_class\labels `
+    --out_dir splits\knee_10class `
+    --train 0.7 --val 0.15 --test 0.15 --seed 42
+
+# Split 4-class dataset
+.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
+    --img_dir processed\knee_4_class\images `
+    --label_dir processed\knee_4_class\labels `
+    --out_dir splits\knee_4class `
+    --train 0.7 --val 0.15 --test 0.15 --seed 42
+
+# Split 8-class dataset
+.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
+    --img_dir processed\knee_8_class\images `
+    --label_dir processed\knee_8_class\labels `
+    --out_dir splits\knee_8class `
+    --train 0.7 --val 0.15 --test 0.15 --seed 42
+```
+
+**Output:**
+
+```
+splits/
+├── knee_5class/
+│   ├── train.txt (1,181 images)
+│   ├── val.txt (253 images)
+│   ├── test.txt (254 images)
+│   └── split_info.json
+├── knee_10class/
+│   ├── train.txt (1,181 images)
+│   ├── val.txt (253 images)
+│   ├── test.txt (254 images)
+│   └── split_info.json
+├── knee_4class/
+│   ├── train.txt (1,122 images)
+│   ├── val.txt (240 images)
+│   ├── test.txt (241 images)
+│   └── split_info.json
+└── knee_8class/
+    ├── train.txt (1,122 images)
+    ├── val.txt (240 images)
+    ├── test.txt (241 images)
+    └── split_info.json
+```
+
+**Actual Results:**
+
+All datasets split successfully with stratified class distribution:
+
+| Dataset  | Train (70%) | Val (15%) | Test (15%) | Total |
+| -------- | ----------- | --------- | ---------- | ----- |
+| 5-class  | 1,181       | 253       | 254        | 1,688 |
+| 10-class | 1,181       | 253       | 254        | 1,688 |
+| 4-class  | 1,122       | 240       | 241        | 1,603 |
+| 8-class  | 1,122       | 240       | 241        | 1,603 |
+
+**Validation:**
+
+- ✅ All classes present in each split
+- ✅ Balanced distribution maintained
+- ✅ Rare classes preserved (min 1-2 samples per class per split)
+- ✅ No overlap between splits
 
 ---
 
