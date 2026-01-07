@@ -10,3 +10,6 @@ torchmetrics>=1.0.0
 tqdm>=4.65.0
 natsort>=8.4.0
 wandb>=0.16.0
+transformers>=4.57.3
+timm>=0.16.0
+pycocotools>=2.0.4
