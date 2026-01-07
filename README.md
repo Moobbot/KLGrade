@@ -95,7 +95,7 @@ pip install -r requirements.txt
 ```
 KLGrade/
 ├── dataset/                    # Raw data
-│   └── dataset_v1/
+│   └── dataset_v0/
 │       ├── images/            # Ảnh X-quang (.jpg)
 │       ├── labels/            # YOLO labels (5 classes)
 │       └── labels_new/        # YOLO labels (10 classes)
@@ -146,13 +146,13 @@ KLGrade/
 
 #### 1.1. Kiểm tra dữ liệu thô
 
-**Input**: `dataset/dataset_v1/images/` + `dataset/dataset_v1/labels/`
+**Input**: `dataset/dataset_v0/images/` + `dataset/dataset_v0/labels/`
 
 ```powershell
 # Phân tích phân bố classes, số lượng samples
 .venv\Scripts\python.exe check_dataset\analyze_dataset.py `
-    --image_dir dataset/dataset_v1/images `
-    --label_dir dataset/dataset_v1/labels `
+    --image_dir dataset/dataset_v0/images `
+    --label_dir dataset/dataset_v0/labels `
     --output analysis_results.txt
 ```
 
@@ -168,8 +168,8 @@ KLGrade/
 ```powershell
 # Kiểm tra chất lượng labels bằng visualization
 .venv\Scripts\python.exe check_dataset\visualize_yolo_boxes.py `
-    --image_dir dataset/dataset_v1/images `
-    --label_dir dataset/dataset_v1/labels `
+    --image_dir dataset/dataset_v0/images `
+    --label_dir dataset/dataset_v0/labels `
     --output check_vis `
     --num_samples 20
 ```
@@ -188,8 +188,8 @@ KLGrade/
 ```powershell
 # Split với tỷ lệ 70:20:10, stratified theo class
 .venv\Scripts\python.exe split_dataset.py `
-    --image_dir dataset/dataset_v1/images `
-    --label_dir dataset/dataset_v1/labels `
+    --image_dir dataset/dataset_v0/images `
+    --label_dir dataset/dataset_v0/labels `
     --output_dir splits `
     --train_ratio 0.7 `
     --val_ratio 0.2 `
@@ -202,7 +202,7 @@ KLGrade/
 ```powershell
 # Kiểm tra phân bố classes sau khi split
 .venv\Scripts\python.exe check_dataset\class_split_report.py `
-    --label_dir dataset/dataset_v1/labels `
+    --label_dir dataset/dataset_v0/labels `
     --splits_dir splits
 ```
 
@@ -219,7 +219,7 @@ KLGrade/
 ```powershell
 # Ví dụ: Chỉ giữ lại KL-0,1,2,3,4 (5 classes chính)
 .venv\Scripts\python.exe filter_dataset_by_class.py `
-    --input_dir dataset/dataset_v1 `
+    --input_dir dataset/dataset_v0 `
     --output_dir dataset/dataset_filtered `
     --classes_to_keep 0,1,2,3,4
 ```
@@ -255,8 +255,8 @@ KLGrade/
 
 ```yaml
 path: e:/CaoHoc/thesis/KLGrade
-train: dataset/dataset_v1/images
-val: dataset/dataset_v1/images
+train: dataset/dataset_v0/images
+val: dataset/dataset_v0/images
 
 names:
   0: KL0
@@ -309,8 +309,8 @@ Training script tự động convert YOLO → COCO bằng `datasets.create_coco_
 ```powershell
 # Baseline - ResNet-50 backbone
 .venv\Scripts\python.exe examples\train_detr.py `
-    --img_dir dataset/dataset_v1/images `
-    --label_dir dataset/dataset_v1/labels `
+    --img_dir dataset/dataset_v0/images `
+    --label_dir dataset/dataset_v0/labels `
     --model facebook/detr-resnet-50 `
     --epochs 100 `
     --batch 4 `
@@ -360,8 +360,8 @@ YOLO tự động evaluate trong quá trình training và lưu metrics:
 ```powershell
 .venv\Scripts\python.exe examples\evaluate_detr.py `
     --model_path runs/detr/exp_baseline/best_model.pt `
-    --img_dir dataset/dataset_v1/images `
-    --label_dir dataset/dataset_v1/labels `
+    --img_dir dataset/dataset_v0/images `
+    --label_dir dataset/dataset_v0/labels `
     --conf_threshold 0.01 `
     --output runs/detr/exp_baseline/evaluation
 ```
@@ -425,7 +425,7 @@ YOLO tự động evaluate trong quá trình training và lưu metrics:
 .venv\Scripts\python.exe examples\visualize_predictions.py `
     --predictions runs/detr/exp_baseline/evaluation/predictions.json `
     --ground_truth processed/coco/annotations_val.json `
-    --img_dir dataset/dataset_v1/images `
+    --img_dir dataset/dataset_v0/images `
     --output runs/detr/exp_baseline/visualizations `
     --num_images 20 `
     --conf_threshold 0.3
@@ -486,7 +486,7 @@ YOLO tự động evaluate trong quá trình training và lưu metrics:
 .venv\Scripts\python.exe examples\visualize_predictions.py `
     --predictions your_custom_predictions.json `
     --ground_truth processed/coco/annotations_val.json `
-    --img_dir dataset/dataset_v1/images `
+    --img_dir dataset/dataset_v0/images `
     --output visualizations
 ```
 
@@ -539,7 +539,7 @@ python -m pycocotools.coco --help
 
 ```powershell
 # 1. Phân tích dataset
-.venv\Scripts\python.exe check_dataset\analyze_dataset.py --image_dir dataset/dataset_v1/images --label_dir dataset/dataset_v1/labels --output analysis.txt
+.venv\Scripts\python.exe check_dataset\analyze_dataset.py --image_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels --output analysis.txt
 
 # 2. Split dataset (đã có splits/)
 # Bỏ qua nếu đã split
@@ -554,7 +554,7 @@ python -m pycocotools.coco --help
 
 ```powershell
 # 1. Filter dataset
-.venv\Scripts\python.exe filter_dataset_by_class.py --input_dir dataset/dataset_v1 --output_dir dataset/dataset_filtered --classes_to_keep 0,1,2,3,4,5,6
+.venv\Scripts\python.exe filter_dataset_by_class.py --input_dir dataset/dataset_v0 --output_dir dataset/dataset_filtered --classes_to_keep 0,1,2,3,4,5,6
 
 # 2. Remap class IDs
 .venv\Scripts\python.exe remap_filtered_labels.py --label_dir dataset/dataset_filtered/labels --output_dir dataset/dataset_filtered/labels
@@ -570,13 +570,13 @@ python -m pycocotools.coco --help
 .venv\Scripts\python.exe examples\train_yolo11.py --data processed/yolo11_labels.yaml --epochs 100 --name yolo_comparison
 
 # 2. Train DETR
-.venv\Scripts\python.exe examples\train_detr.py --img_dir dataset/dataset_v1/images --label_dir dataset/dataset_v1/labels --epochs 100 --output runs/detr/detr_comparison
+.venv\Scripts\python.exe examples\train_detr.py --img_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels --epochs 100 --output runs/detr/detr_comparison
 
 # 3. Validate YOLO và export predictions
 .venv\Scripts\python.exe examples\validate_yolo.py --model runs/detect/yolo_comparison/weights/best.pt --data processed/yolo11_labels.yaml --output runs/detect/yolo_comparison/validation
 
 # 4. Evaluate DETR
-.venv\Scripts\python.exe examples\evaluate_detr.py --model_path runs/detr/detr_comparison/best_model.pt --img_dir dataset/dataset_v1/images --label_dir dataset/dataset_v1/labels --output runs/detr/detr_comparison/evaluation
+.venv\Scripts\python.exe examples\evaluate_detr.py --model_path runs/detr/detr_comparison/best_model.pt --img_dir dataset/dataset_v0/images --label_dir dataset/dataset_v0/labels --output runs/detr/detr_comparison/evaluation
 
 # 5. Error Analysis cho cả 2
 .venv\Scripts\python.exe examples\error_analysis.py --predictions runs/detect/yolo_comparison/validation/val/predictions.json --ground_truth processed/coco/annotations_val.json --output runs/detect/yolo_comparison/error_analysis

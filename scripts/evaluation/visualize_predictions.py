@@ -8,7 +8,7 @@ Usage:
     python examples/visualize_predictions.py \
         --predictions runs/detr/exp1_test_5_classes/evaluation/predictions.json \
         --ground_truth processed/coco/annotations_val.json \
-        --img_dir dataset/dataset_v1/images \
+        --img_dir dataset/dataset_v0/images \
         --output runs/detr/exp1_test_5_classes/visualizations \
         --num_images 20 \
         --conf_threshold 0.3

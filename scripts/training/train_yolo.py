@@ -205,8 +205,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Train YOLO11 on KLGrade dataset")
-    parser.add_argument("--img_dir", type=str, default="dataset/dataset_v1/images")
-    parser.add_argument("--label_dir", type=str, default="dataset/dataset_v1/labels")
+    parser.add_argument("--img_dir", type=str, default="dataset/dataset_v0/images")
+    parser.add_argument("--label_dir", type=str, default="dataset/dataset_v0/labels")
     parser.add_argument(
         "--use_10_class", action="store_true", help="Use 10-class dataset"
     )

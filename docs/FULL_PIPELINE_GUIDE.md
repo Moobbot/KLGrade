@@ -11,8 +11,8 @@ This script regenerates the entire KLGrade dataset from raw data to ready-to-tra
 source .venv/bin/activate
 
 # 2. Ensure raw data exists
-ls dataset/dataset_v1/images  # Should have .jpg files
-ls dataset/dataset_v1/labels  # Should have .txt files
+ls dataset/dataset_v0/images  # Should have .jpg files
+ls dataset/dataset_v0/labels  # Should have .txt files
 ```
 
 ## Quick Start
@@ -139,7 +139,7 @@ configs/
 
 ```bash
 # Check raw data location
-ls dataset/dataset_v1/images
+ls dataset/dataset_v0/images
 # If missing, extract your raw dataset first
 ```
 

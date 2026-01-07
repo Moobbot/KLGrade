@@ -12,7 +12,7 @@ KLGrade/
 │   │   │   ├── labels/             # KL 0-4 (5 classes) - 3,157 boxes
 │   │   │   ├── labels-knee/        # Knee detection boxes
 │   │   │   └── labels-knee-2box/   # Left/Right knee boxes
-│   │   └── dataset_v1/
+│   │   └── dataset_v0/
 │   │       ├── images/
 │   │       ├── labels/             # 5 classes
 │   │       └── labels_new/         # 10 classes

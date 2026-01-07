@@ -9,8 +9,8 @@ Evaluates a trained DETR model on validation dataset and computes COCO metrics:
 Usage:
     python examples/evaluate_detr.py \
         --model_path runs/detr/exp1_test_5_classes/best_model.pt \
-        --img_dir dataset/dataset_v1/images \
-        --label_dir dataset/dataset_v1/labels \
+        --img_dir dataset/dataset_v0/images \
+        --label_dir dataset/dataset_v0/labels \
         --output runs/detr/exp1_test_5_classes/evaluation
 """
 
@@ -286,22 +286,27 @@ def main():
     parser.add_argument(
         "--img_dir",
         type=str,
-        default="dataset/dataset_v1/images",
+        default="dataset/dataset_v0/images",
         help="Directory containing images",
     )
     parser.add_argument(
         "--label_dir",
         type=str,
-        default="dataset/dataset_v1/labels",
+        default="dataset/dataset_v0/labels",
         help="Base directory for labels",
     )
     parser.add_argument(
-        "--use_labels_new",
+        "--use_10_class",
         action="store_true",
-        help="Use labels_new (10 classes) instead of labels (5 classes)",
+        help="Use 10-class dataset (with A/B split)",
     )
     parser.add_argument(
-        "--use_filtered", action="store_true", help="Use filtered dataset (7 classes)"
+        "--use_4_class", action="store_true", help="Use 4-class dataset (no KL0)"
+    )
+    parser.add_argument(
+        "--use_8_class",
+        action="store_true",
+        help="Use 8-class dataset (10-class without KL0-a/b)",
     )
     parser.add_argument(
         "--conf_threshold",
@@ -329,12 +334,15 @@ def main():
     print("=" * 60)
 
     # Determine class configuration
-    if args.use_filtered:
-        class_names = CLASSES_FILTERED
-        label_suffix = "_filtered"
-    elif args.use_labels_new:
+    if args.use_4_class:
+        class_names = CLASSES_4_CLASS
+        label_suffix = "_4_class"
+    elif args.use_8_class:
+        class_names = CLASSES_8_CLASS
+        label_suffix = "_8_class"
+    elif args.use_10_class:
         class_names = CLASSES_10_CLASS
-        label_suffix = "_new"
+        label_suffix = "_10_class"
     else:
         class_names = CLASSES
         label_suffix = ""

@@ -38,8 +38,8 @@ def test_yolo_dataset():
     )
 
     train_dataset = YoloDataset(
-        img_dir="dataset/dataset_v1/images",
-        label_dir="dataset/dataset_v1/labels",
+        img_dir="dataset/dataset_v0/images",
+        label_dir="dataset/dataset_v0/labels",
         transform=train_transform,
         split_file="splits/base/train.txt",
         use_labels_new=False,
@@ -76,8 +76,8 @@ def test_yolo_dataset():
     val_transform = get_default_val_transform(img_size=(640, 640))
 
     val_dataset = YoloDataset(
-        img_dir="dataset/dataset_v1/images",
-        label_dir="dataset/dataset_v1/labels",
+        img_dir="dataset/dataset_v0/images",
+        label_dir="dataset/dataset_v0/labels",
         transform=val_transform,
         split_file="splits/base/val.txt",
         use_labels_new=False,
@@ -92,8 +92,8 @@ def test_yolo_dataset():
     print("\n3. Testing with labels_new (10 classes)...")
 
     train_dataset_new = YoloDataset(
-        img_dir="dataset/dataset_v1/images",
-        label_dir="dataset/dataset_v1/labels",  # Will be changed to labels_new
+        img_dir="dataset/dataset_v0/images",
+        label_dir="dataset/dataset_v0/labels",  # Will be changed to labels_new
         transform=train_transform,
         split_file="splits/new/train.txt",
         use_labels_new=True,

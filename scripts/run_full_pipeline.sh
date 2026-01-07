@@ -18,8 +18,8 @@ source .venv/bin/activate
 echo ""
 echo "📊 STAGE 1: Analyzing raw dataset..."
 python scripts/analysis/analyze_dataset.py \
-    --img_dir dataset/dataset_v1/images \
-    --label_dir dataset/dataset_v1/labels \
+    --img_dir dataset/dataset_v0/images \
+    --label_dir dataset/dataset_v0/labels \
     --output docs/dataset_analysis
 
 # ============================================================================
@@ -28,8 +28,8 @@ python scripts/analysis/analyze_dataset.py \
 echo ""
 echo "✂️  STAGE 2: Cropping knee regions..."
 python scripts/preprocessing/crop_knee_roi.py \
-    --input_images dataset/dataset_v1/images \
-    --input_labels dataset/dataset_v1/labels \
+    --input_images dataset/dataset_v0/images \
+    --input_labels dataset/dataset_v0/labels \
     --output_images processed/knee/images \
     --output_labels processed/knee/labels \
     --crop_padding 50

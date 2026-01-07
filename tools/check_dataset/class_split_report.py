@@ -328,4 +328,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python check_dataset\class_split_report.py --labels-dir dataset\dataset_v1\labels --save-dir dataset\dataset_v1\labels_new
+# python check_dataset\class_split_report.py --labels-dir dataset\dataset_v0\labels --save-dir dataset\dataset_v0\labels_new

@@ -23,7 +23,7 @@ Dự án này sử dụng **3 cấu hình dataset** khác nhau để training:
 ```
 KLGrade/
 ├── dataset/
-│   └── dataset_v1/
+│   └── dataset_v0/
 │       ├── images/                      # Raw images (1,685 images)
 │       ├── labels/                      # Dataset 1: 5 classes (KL0-KL4)
 │       └── labels_new/                  # Dataset 2: 10 classes (KL0-a/b -> KL4-a/b)
@@ -66,13 +66,13 @@ def classify_box(w, h, area):
 
 ```powershell
 python check_dataset\class_split_report.py `
-    --labels-dir dataset\dataset_v1\labels `
-    --save-dir dataset\dataset_v1\labels_new
+    --labels-dir dataset\dataset_v0\labels `
+    --save-dir dataset\dataset_v0\labels_new
 ```
 
 **Output**:
 
-- `dataset/dataset_v1/labels_new/` - 1,685 label files với class IDs 0-9
+- `dataset/dataset_v0/labels_new/` - 1,685 label files với class IDs 0-9
 
 ---
 
@@ -92,15 +92,15 @@ python check_dataset\class_split_report.py `
 ```powershell
 # Dataset 1: 5 classes
 python check_dataset/analyze_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels `
     --output_dir dataset_analysis `
     --class_names KL0 KL1 KL2 KL3 KL4
 
 # Dataset 2: 10 classes
 python check_dataset/analyze_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --output_dir analysis_results_new `
     --class_names KL0-a KL0-b KL1-a KL1-b KL2-a KL2-b KL3-a KL3-b KL4-a KL4-b
 ```
@@ -134,8 +134,8 @@ python check_dataset/analyze_dataset.py `
 
 ```powershell
 python filter_dataset_by_class.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --output_img_dir dataset\dataset_filtered\images `
     --output_label_dir dataset\dataset_filtered\labels `
     --threshold 1.0 `
@@ -210,15 +210,15 @@ python remap_filtered_labels.py `
 ```powershell
 # Dataset 1: 5 classes
 python split_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels `
     --out_dir splits\base `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Dataset 2: 10 classes
 python split_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --out_dir splits\new `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
@@ -261,7 +261,7 @@ python check_dataset/analyze_dataset.py `
 
 ### **Experiment 1: Baseline (5 Classes)**
 
-**Dataset**: `dataset/dataset_v1/` với `labels/`
+**Dataset**: `dataset/dataset_v0/` với `labels/`
 
 **Class Mapping** (từ `config.py`):
 
@@ -276,8 +276,8 @@ CLASSES = {
 ```powershell
 # YOLO11
 python examples/train_yolo11.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels `
     --model yolo11n.pt `
     --epochs 100 `
     --batch 16 `
@@ -286,8 +286,8 @@ python examples/train_yolo11.py `
 
 # DETR
 python examples/train_detr.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels `
     --model facebook/detr-resnet-50 `
     --epochs 50 `
     --batch 4 `
@@ -300,7 +300,7 @@ python examples/train_detr.py `
 
 ### **Experiment 2: Fine-grained (10 Classes)**
 
-**Dataset**: `dataset/dataset_v1/` với `labels_new/`
+**Dataset**: `dataset/dataset_v0/` với `labels_new/`
 
 **Class Mapping**:
 
@@ -317,8 +317,8 @@ CLASSES_10_CLASS = {
 ```powershell
 # YOLO11
 python examples/train_yolo11.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --use_labels_new `
     --model yolo11n.pt `
     --epochs 100 `
@@ -327,8 +327,8 @@ python examples/train_yolo11.py `
 
 # DETR
 python examples/train_detr.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --use_labels_new `
     --model facebook/detr-resnet-50 `
     --epochs 50 `
@@ -487,26 +487,26 @@ python optimize_anchors.py `
 
 # 1. Tạo labels_new (10 classes)
 python check_dataset\class_split_report.py `
-    --labels-dir dataset\dataset_v1\labels `
-    --save-dir dataset\dataset_v1\labels_new
+    --labels-dir dataset\dataset_v0\labels `
+    --save-dir dataset\dataset_v0\labels_new
 
 # 2. Phân tích datasets
 python check_dataset/analyze_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels `
     --output_dir dataset_analysis `
     --class_names KL0 KL1 KL2 KL3 KL4
 
 python check_dataset/analyze_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --output_dir analysis_results_new `
     --class_names KL0-a KL0-b KL1-a KL1-b KL2-a KL2-b KL3-a KL3-b KL4-a KL4-b
 
 # 3. Filter rare classes
 python filter_dataset_by_class.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels_new `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels_new `
     --output_img_dir dataset\dataset_filtered\images `
     --output_label_dir dataset\dataset_filtered\labels `
     --threshold 1.0 `
@@ -519,8 +519,8 @@ python remap_filtered_labels.py `
 
 # 5. Tạo splits
 python split_dataset.py `
-    --img_dir dataset\dataset_v1\images `
-    --label_dir dataset\dataset_v1\labels `
+    --img_dir dataset\dataset_v0\images `
+    --label_dir dataset\dataset_v0\labels `
     --out_dir splits `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
