@@ -104,10 +104,10 @@ echo "🎲 STAGE 6: Creating stratified train/val/test splits (5-class)..."
 python scripts/data_preparation/split_dataset.py \
     --img_dir processed/knee/dataset_yolo/images \
     --label_dir processed/knee/dataset_yolo/labels \
-    --output_dir splits/knee_5_class \
-    --train_ratio 0.7 \
-    --val_ratio 0.15 \
-    --test_ratio 0.15 \
+    --out_dir splits/knee_5_class \
+    --train 0.7 \
+    --val 0.15 \
+    --test 0.15 \
     --seed 42
 
 echo "   ✅ Splits created: splits/knee_5_class/"
@@ -137,10 +137,10 @@ fi
 python scripts/data_preparation/split_dataset.py \
     --img_dir processed/knee_10_class/images \
     --label_dir processed/knee_10_class/labels \
-    --output_dir splits/knee_10_class \
-    --train_ratio 0.7 \
-    --val_ratio 0.15 \
-    --test_ratio 0.15 \
+    --out_dir splits/knee_10_class \
+    --train 0.7 \
+    --val 0.15 \
+    --test 0.15 \
     --seed 42
 
 echo "   ✅ 10-class dataset created"
@@ -171,10 +171,10 @@ python scripts/data_preparation/remap_labels.py \
 python scripts/data_preparation/split_dataset.py \
     --img_dir processed/knee_4_class/images \
     --label_dir processed/knee_4_class/labels \
-    --output_dir splits/knee_4_class \
-    --train_ratio 0.7 \
-    --val_ratio 0.15 \
-    --test_ratio 0.15 \
+    --out_dir splits/knee_4_class \
+    --train 0.7 \
+    --val 0.15 \
+    --test 0.15 \
     --seed 42
 
 echo "   ✅ 4-class dataset created"
@@ -206,10 +206,10 @@ python scripts/data_preparation/remap_labels.py \
 python scripts/data_preparation/split_dataset.py \
     --img_dir processed/knee_8_class/images \
     --label_dir processed/knee_8_class/labels \
-    --output_dir splits/knee_8_class \
-    --train_ratio 0.7 \
-    --val_ratio 0.15 \
-    --test_ratio 0.15 \
+    --out_dir splits/knee_8_class \
+    --train 0.7 \
+    --val 0.15 \
+    --test 0.15 \
     --seed 42
 
 echo "   ✅ 8-class dataset created"
