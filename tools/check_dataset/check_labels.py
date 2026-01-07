@@ -4,11 +4,11 @@ import math
 import numpy as np
 
 # Ensure repository root in path
-ROOT_DIR = os.path.dirname(os.path.dirname(__file__))
+ROOT_DIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 if ROOT_DIR not in sys.path:
     sys.path.insert(0, ROOT_DIR)
-    
-from utils import yolo_to_xyxy_norm
+
+from src.utils import yolo_to_xyxy_norm
 
 labels_dir = "dataset/labels"
 MIN_WH = 0.001  # Giá trị tối thiểu cho w/h
@@ -52,35 +52,50 @@ def check_label_file(file_path):
             parts = line.strip().split()
             if len(parts) != 5:
                 print(
-                    f"LỖI: {os.path.basename(file_path)}, dòng {i}: Không đủ 5 giá trị ({line.strip()})")
+                    f"LỖI: {os.path.basename(file_path)}, dòng {i}: Không đủ 5 giá trị ({line.strip()})"
+                )
                 continue
             try:
                 class_id, x, y, w, h = map(float, parts)
                 if not (class_id == int(class_id) and class_id >= 0):
                     print(
-                        f"LỖI: {os.path.basename(file_path)}, dòng {i}: class_id không hợp lệ ({class_id})")
-                for v, name in zip([x, y, w, h], ['x', 'y', 'w', 'h']):
+                        f"LỖI: {os.path.basename(file_path)}, dòng {i}: class_id không hợp lệ ({class_id})"
+                    )
+                for v, name in zip([x, y, w, h], ["x", "y", "w", "h"]):
                     if not is_valid_number(v):
                         print(
-                            f"LỖI: {os.path.basename(file_path)}, dòng {i}: {name} là NaN/Inf ({v})")
+                            f"LỖI: {os.path.basename(file_path)}, dòng {i}: {name} là NaN/Inf ({v})"
+                        )
                 if not (0 <= x <= 1 and 0 <= y <= 1 and 0 < w <= 1 and 0 < h <= 1):
                     print(
-                        f"LỖI: {os.path.basename(file_path)}, dòng {i}: Giá trị ngoài [0,1] hoặc w/h <= 0 ({line.strip()})")
+                        f"LỖI: {os.path.basename(file_path)}, dòng {i}: Giá trị ngoài [0,1] hoặc w/h <= 0 ({line.strip()})"
+                    )
                 if w < MIN_WH or h < MIN_WH:
                     print(
-                        f"CẢNH BÁO: {os.path.basename(file_path)}, dòng {i}: w/h quá nhỏ ({w}, {h})")
+                        f"CẢNH BÁO: {os.path.basename(file_path)}, dòng {i}: w/h quá nhỏ ({w}, {h})"
+                    )
                 # --- Check chuyển sang xyxy ---
                 box_yolo = np.array([[x, y, w, h]], dtype=np.float32)
                 box_xyxy = yolo_to_xyxy_norm(box_yolo)
                 xmin, ymin, xmax, ymax = box_xyxy[0]
                 # Check xyxy hợp lệ
-                if not (0.0 <= xmin <= 1.0 and 0.0 <= ymin <= 1.0 and 0.0 <= xmax <= 1.0 and 0.0 <= ymax <= 1.0):
-                    print(f"LỖI: {os.path.basename(file_path)}, dòng {i}: xyxy ra ngoài [0,1] ({xmin:.4f}, {ymin:.4f}, {xmax:.4f}, {ymax:.4f}) | {line.strip()}")
+                if not (
+                    0.0 <= xmin <= 1.0
+                    and 0.0 <= ymin <= 1.0
+                    and 0.0 <= xmax <= 1.0
+                    and 0.0 <= ymax <= 1.0
+                ):
+                    print(
+                        f"LỖI: {os.path.basename(file_path)}, dòng {i}: xyxy ra ngoài [0,1] ({xmin:.4f}, {ymin:.4f}, {xmax:.4f}, {ymax:.4f}) | {line.strip()}"
+                    )
                 if xmax <= xmin or ymax <= ymin:
-                    print(f"LỖI: {os.path.basename(file_path)}, dòng {i}: xyxy không hợp lệ (xmax <= xmin hoặc ymax <= ymin) | {line.strip()}")
+                    print(
+                        f"LỖI: {os.path.basename(file_path)}, dòng {i}: xyxy không hợp lệ (xmax <= xmin hoặc ymax <= ymin) | {line.strip()}"
+                    )
             except Exception as e:
                 print(
-                    f"LỖI: {os.path.basename(file_path)}, dòng {i}: Không thể parse ({line.strip()}) - {e}")
+                    f"LỖI: {os.path.basename(file_path)}, dòng {i}: Không thể parse ({line.strip()}) - {e}"
+                )
 
 
 def check_all_labels(labels_dir):

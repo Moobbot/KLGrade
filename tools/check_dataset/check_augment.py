@@ -1,8 +1,14 @@
 import os
+import sys
+from pathlib import Path
 import cv2
 import albumentations as A
 from tqdm import tqdm
-from dataset import YoloDataset
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from src.datasets import YoloDataset
 from albumentations.pytorch.transforms import ToTensorV2
 
 

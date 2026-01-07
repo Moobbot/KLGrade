@@ -11,11 +11,15 @@ This script demonstrates:
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from dataset import YoloDataset, get_default_train_transform, get_default_val_transform
-from config import CLASSES, CLASSES_LABEL_NEW, CLASSES_FILTERED
+from src.datasets import (
+    YoloDataset,
+    get_default_train_transform,
+    get_default_val_transform,
+)
+from src.config import CLASSES, CLASSES_LABEL_NEW, CLASSES_FILTERED
 from ultralytics import YOLO
 import torch
 

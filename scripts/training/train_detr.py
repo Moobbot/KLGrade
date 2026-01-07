@@ -11,16 +11,16 @@ This script demonstrates:
 import sys
 from pathlib import Path
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from datasets import (
+from src.datasets import (
     CocoDataset,
     create_coco_json,
-    get_detr_processor,
     detr_collate_fn_dynamic_padding,
 )
-from config import CLASSES, CLASSES_LABEL_NEW
+from src.datasets.transforms import get_detr_processor
+from src.config import CLASSES, CLASSES_LABEL_NEW
 import torch
 from torch.utils.data import DataLoader
 from transformers import DetrForObjectDetection, DetrImageProcessor

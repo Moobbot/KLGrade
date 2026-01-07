@@ -22,11 +22,12 @@ import torch
 from tqdm import tqdm
 import numpy as np
 
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from datasets import CocoDataset, create_coco_json, get_detr_processor
-from config import CLASSES, CLASSES_LABEL_NEW, CLASSES_FILTERED
+from src.datasets import CocoDataset, create_coco_json
+from src.datasets.transforms import get_detr_processor
+from src.config import CLASSES, CLASSES_LABEL_NEW, CLASSES_FILTERED
 from transformers import DetrForObjectDetection
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
@@ -352,7 +353,7 @@ def main():
 
     if not val_json.exists():
         print(f"\n⚠️  COCO validation annotations not found. Creating...")
-        from datasets import create_coco_json
+        from src.datasets import create_coco_json
 
         actual_label_dir = (
             Path(args.label_dir).parent
