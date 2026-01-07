@@ -257,4 +257,70 @@
 #   - Per-class breakdowns
 #
 
+# ============================================
+# VISUALIZATION COMMANDS
+# ============================================#  Draw predictions on images for visual analysis
+
+# Visualize DETR predictions (20 images)
+.venv\Scripts\python.exe examples\visualize_predictions.py `
+    --predictions runs/detr/exp1_test_5classes/evaluation/predictions.json `
+    --ground_truth processed/coco/annotations_val.json `
+    --img_dir dataset/dataset_v1/images `
+    --output runs/detr/exp1_test_5classes/visualizations `
+    --num_images 20 `
+    --conf_threshold 0.3 `
+    --max_boxes 20
+
+# Visualize with different threshold
+.venv\Scripts\python.exe examples\visualize_predictions.py `
+    --predictions runs/detr/exp1_test_5classes/evaluation/predictions.json `
+    --ground_truth processed/coco/annotations_val.json `
+    --img_dir dataset/dataset_v1/images `
+    --output runs/detr/exp1_test_5classes/visualizations_high_conf `
+    --num_images 20 `
+    --conf_threshold 0.7 `
+    --max_boxes 10
+
+# ============================================
+# VISUALIZATION OUTPUT:
+# ============================================
+# - vis_XXX_imgYYY.jpg:  Side-by-side comparison images
+#   - Left: Ground truth with green boxes
+#   - Right: Predictions with colored boxes
+#
+# - summary.txt:         Summary of visualized images
+#
+
+# ============================================
+# YOLO VALIDATION & VISUALIZATION
+# ============================================
+# Export YOLO predictions in COCO format and visualize
+
+# Step 1: Run YOLO validation to export predictions
+.venv\Scripts\python.exe examples\validate_yolo.py `
+    --model runs/detect/exp3_filtered_test/weights/best.pt `
+    --data processed/yolo11_labels.yaml `
+    --conf 0.25 `
+    --iou 0.7 `
+    --output runs/detect/exp3_filtered_test/validation
+
+# Step 2: Visualize YOLO predictions  
+.venv\Scripts\python.exe examples\visualize_predictions.py `
+    --predictions runs/detect/exp3_filtered_test/validation/predictions.json `
+    --ground_truth processed/coco/annotations_val.json `
+    --img_dir dataset/dataset_v1/images `
+    --output runs/detect/exp3_filtered_test/visualizations `
+    --num_images 20 `
+    --conf_threshold 0.25 `
+    --max_boxes 20
+
+# For dataset_filtered (7 classes)
+.venv\Scripts\python.exe examples\validate_yolo.py `
+    --model runs/detect/exp3_filtered_test/weights/best.pt `
+    --data dataset/dataset_filtered/data.yaml `
+    --conf 0.25 `
+    --output runs/detect/exp3_filtered_test/validation_filtered
+
+
+
 
