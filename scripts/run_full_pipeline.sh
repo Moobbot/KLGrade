@@ -64,20 +64,20 @@ echo "   ✅ Filtered: images WITH labels remain in processed/knee/"
 echo ""
 echo "🔄 STAGE 4: Resizing images to 640x640..."
 echo "   Input: processed/knee/images"
-echo "   Output: processed/knee/images_640"
+echo "   Output: processed/knee_5_class/images"
 
 if [ -f "tools/check_dataset/resize_images.py" ]; then
     python tools/check_dataset/resize_images.py \
         --in_dir processed/knee/images \
-        --out_dir processed/knee/images_640 \
+        --out_dir processed/knee_5_class/images \
         --size 640
     
     # Copy labels (they're already normalized, no resize needed)
-    mkdir -p processed/knee/labels_640
-    cp -r processed/knee/labels/* processed/knee/labels_640/
+    mkdir -p processed/knee_5_class/labels
+    cp -r processed/knee/labels/* processed/knee_5_class/labels/
     
-    echo "   ✅ Images resized to 640x640"
-    echo "   ✅ Labels copied to labels_640/"
+    echo "   ✅ Images resized to 640x640 (saved to knee_5_class/images)"
+    echo "   ✅ Labels copied to knee_5_class/labels/"
 else
     echo "   ❌ resize_images.py not found!"
     exit 1
@@ -92,8 +92,8 @@ echo "📁 STAGE 5: Creating standard YOLO structure..."
 mkdir -p processed/knee/dataset_yolo/images
 mkdir -p processed/knee/dataset_yolo/labels
 
-cp -r processed/knee/images_640/* processed/knee/dataset_yolo/images/
-cp -r processed/knee/labels_640/* processed/knee/dataset_yolo/labels/
+cp -r processed/knee_5_class/images/* processed/knee/dataset_yolo/images/
+cp -r processed/knee_5_class/labels/* processed/knee/dataset_yolo/labels/
 
 echo "   ✅ Created: processed/knee/dataset_yolo/"
 
@@ -133,7 +133,7 @@ mkdir -p processed/knee_10_class/images
 mkdir -p processed/knee_10_class/labels
 
 # Copy images (shared)
-cp -r processed/knee/images_640/* processed/knee_10_class/images/
+cp -r processed/knee_5_class/images/* processed/knee_10_class/images/
 
 # Check if labels_new exists in raw data
 if [ -d "dataset/dataset_v0/labels_new" ]; then
@@ -141,7 +141,7 @@ if [ -d "dataset/dataset_v0/labels_new" ]; then
     cp -r dataset/dataset_v0/labels_new/* processed/knee_10_class/labels/
 else
     echo "   ⚠️  labels_new not found, using 5-class as placeholder"
-    cp -r processed/knee/labels_640/* processed/knee_10_class/labels/
+    cp -r processed/knee_5_class/labels/* processed/knee_10_class/labels/
 fi
 
 # Create splits for 10-class
@@ -180,8 +180,8 @@ mkdir -p processed/knee_4_class/labels
 
 mkdir -p processed/knee_temp/images
 mkdir -p processed/knee_temp/labels
-cp -r processed/knee/images_640/* processed/knee_temp/images/
-cp -r processed/knee/labels_640/* processed/knee_temp/labels/
+cp -r processed/knee_5_class/images/* processed/knee_temp/images/
+cp -r processed/knee_5_class/labels/* processed/knee_temp/labels/
 
 # Use filter_kl0.py to remove KL0 class (auto-remaps KL1-4 to 0-3)
 python scripts/preprocessing/filter_kl0.py \

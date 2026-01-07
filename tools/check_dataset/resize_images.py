@@ -4,7 +4,7 @@ Resize existing images to a fixed size without cropping.
 Usage (PowerShell):
   python tools/check_dataset    /resize_images.py \
     --in_dir processed/classification/images \
-    --out_dir processed/classification/images_640 \
+    --out_dir processed/classification/images_5_class \
     --size 640
 
 Optional aspect-preserving letterbox (pad to square):

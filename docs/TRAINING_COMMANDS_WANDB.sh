@@ -1,7 +1,7 @@
 #!/bin/bash
 # YOLO Training Commands with WandB Integration
 # KLGrade - Knee OA Detection Project
-
+# chmod +x docs/TRAINING_COMMANDS_WANDB.sh
 set -e
 
 # ============================================================================
@@ -9,7 +9,7 @@ set -e
 # ============================================================================
 
 echo "Activating conda environment..."
-conda activate klgrade
+# conda activate klgrade
 
 # Verify Python is from conda env
 which python

@@ -4,9 +4,9 @@
 
 # Paths
 path: .
-train: processed/knee/images_640
-val: processed/knee/images_640
-test: processed/knee/images_640
+train: processed/knee_5_class/images
+val: processed/knee_5_class/images
+test: processed/knee_5_class/images
 
 # Dataset
 nc: 5  # Number of classes

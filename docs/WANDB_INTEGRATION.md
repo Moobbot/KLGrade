@@ -56,7 +56,7 @@ chmod +x docs/TRAINING_COMMANDS_WANDB.sh
 
 ```bash
 # Set API key first
-export WANDB_API_KEY="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"
+export WANDB_API_KEY="wandb_v1_hello"
 wandb login $WANDB_API_KEY
 
 # Then run any YOLO training command

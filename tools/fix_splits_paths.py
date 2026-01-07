@@ -15,7 +15,7 @@ def fix_splits_to_relative():
 
     # Mapping: split name -> relative path to images
     datasets = {
-        "knee_5_class": "processed/knee/images_640",
+        "knee_5_class": "processed/knee_5_class/images",
         "knee_10_class": "processed/knee_10_class/images",
         "knee_4_class": "processed/knee_4_class/images",
         "knee_8_class": "processed/knee_8_class/images",

@@ -25,8 +25,8 @@ import torch
 
 
 def train_yolo11(
-    img_dir: str = "processed/knee/images_640",
-    label_dir: str = "processed/knee/labels_640",
+    img_dir: str = "processed/knee_5_class/images",
+    label_dir: str = "processed/knee_5_class/labels",
     use_5_class: bool = False,
     use_10_class: bool = False,
     use_4_class: bool = False,

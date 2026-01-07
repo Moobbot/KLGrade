@@ -184,7 +184,7 @@ processed/knee/
 ```powershell
 .venv\Scripts\python.exe tools\check_dataset\resize_images.py `
     --in_dir processed\knee\images `
-    --out_dir processed\knee\images_640 `
+    --out_dir processed\knee_5_class\images `
     --size 640
 ```
 
@@ -199,7 +199,7 @@ processed/knee/
 **Output:**
 
 ```
-processed/knee/images_640/  (1,688 images at 640x640)
+processed/knee_5_class/images/  (1,688 images at 640x640)
 ```
 
 ---
@@ -260,7 +260,7 @@ processed/knee/images_640/  (1,688 images at 640x640)
 
 # Create separate 10-class dataset (Copy images for reuse, Move labels)
 New-Item -ItemType Directory -Path "processed\knee_10_class\images", "processed\knee_10_class\labels" -Force
-Copy-Item "processed\knee\images_640\*" "processed\knee_10_class\images\" -Force
+Copy-Item "processed\knee_5_class\images\*" "processed\knee_10_class\images\" -Force
 Move-Item "processed\knee\labels_10_class\*" "processed\knee_10_class\labels\" -Force
 
 # Analyze 10-class dataset
@@ -496,13 +496,13 @@ Run all stages sequentially to create all 4 dataset variants:
 # Stage 5: Resize to 640x640
 .venv\Scripts\python.exe tools\check_dataset\resize_images.py `
     --in_dir processed\knee\images `
-    --out_dir processed\knee\images_640 `
+    --out_dir processed\knee_5_class\images `
     --size 640
 
 # Stage 6: Validate
 .venv\Scripts\python.exe tools\check_dataset\validate_dataset.py `
-    --img_dir processed\knee\images_640 `
-    --label_dir processed\knee\labels
+    --img_dir processed\knee_5_class\images `
+    --label_dir processed\knee_5_class\labels
 
 # Stage 7: Final analysis
 .venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
@@ -532,6 +532,10 @@ KLGrade/
 │   │   ├── skipped_files.json        # 14 skipped files (12 no knee, 2 too small)
 │   │   ├── dropped_labels.json       # 1,062 dropped labels (far from knee)
 │   │   └── no_label_files.json       # 92 filtered files list
+│   │
+│   ├── knee_5_class/                 # Resized 5-class dataset
+│   │   ├── images/                   # 1,688 images at 640x640
+│   │   └── labels/                   # Copied from knee/labels
 │   │
 │   ├── knee_10_class/                 # 10-class (KL0-a → KL4-b)
 │   │   ├── images/                   # 1,688 crops (same as knee)
