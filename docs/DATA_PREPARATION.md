@@ -282,7 +282,7 @@ python examples/train_yolo11.py `
     --epochs 100 `
     --batch 16 `
     --img_size 640 `
-    --name exp1_baseline_5classes
+    --name exp1_baseline_5_classes
 
 # DETR
 python examples/train_detr.py `
@@ -291,7 +291,7 @@ python examples/train_detr.py `
     --model facebook/detr-resnet-50 `
     --epochs 50 `
     --batch 4 `
-    --name exp1_baseline_5classes
+    --name exp1_baseline_5_classes
 ```
 
 **Mục đích**: Baseline để so sánh performance
@@ -323,7 +323,7 @@ python examples/train_yolo11.py `
     --model yolo11n.pt `
     --epochs 100 `
     --batch 16 `
-    --name exp2_finegrained_10classes
+    --name exp2_finegrained_10_classes
 
 # DETR
 python examples/train_detr.py `
@@ -333,7 +333,7 @@ python examples/train_detr.py `
     --model facebook/detr-resnet-50 `
     --epochs 50 `
     --batch 4 `
-    --name exp2_finegrained_10classes
+    --name exp2_finegrained_10_classes
 ```
 
 **Challenges**:

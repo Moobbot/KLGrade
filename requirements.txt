@@ -13,3 +13,4 @@ wandb>=0.16.0
 transformers>=4.57.3
 timm>=0.16.0
 pycocotools>=2.0.4
+wandb

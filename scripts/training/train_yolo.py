@@ -19,16 +19,18 @@ from src.datasets import (
     get_default_train_transform,
     get_default_val_transform,
 )
-from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_FILTERED
+from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
 from ultralytics import YOLO
 import torch
 
 
 def train_yolo11(
-    img_dir: str = "dataset/dataset_v1/images",
-    label_dir: str = "dataset/dataset_v1/labels",
-    use_labels_new: bool = False,
-    use_filtered: bool = False,
+    img_dir: str = "processed/knee/images_640",
+    label_dir: str = "processed/knee/labels_640",
+    use_5_class: bool = False,
+    use_10_class: bool = False,
+    use_4_class: bool = False,
+    use_8_class: bool = False,
     model_name: str = "yolo11n.pt",
     epochs: int = 100,
     img_size: int = 640,
@@ -43,7 +45,10 @@ def train_yolo11(
     Args:
         img_dir: Directory containing images
         label_dir: Base directory for labels
-        use_labels_new: Use labels_new (10 classes) instead of labels (5 classes)
+        use_5_class: Use 5-class dataset
+        use_10_class: Use 10-class dataset
+        use_4_class: Use 4-class dataset
+        use_8_class: Use 8-class dataset
         model_name: YOLO11 model variant (yolo11n.pt, yolo11s.pt, yolo11m.pt, etc.)
         epochs: Number of training epochs
         img_size: Input image size
@@ -58,14 +63,18 @@ def train_yolo11(
     print("=" * 60)
 
     # Determine class names and number of classes
-    if use_filtered:
-        class_names = CLASSES_FILTERED
-        num_classes = len(CLASSES_FILTERED)
-        label_subdir = "labels"  # Filtered dataset uses 'labels' folder
-    elif use_labels_new:
+    if use_10_class:
         class_names = CLASSES_10_CLASS
         num_classes = len(CLASSES_10_CLASS)
         label_subdir = "labels_new"
+    elif use_4_class:
+        class_names = CLASSES_4_CLASS
+        num_classes = len(CLASSES_4_CLASS)
+        label_subdir = "labels_4_class"
+    elif use_8_class:
+        class_names = CLASSES_8_CLASS
+        num_classes = len(CLASSES_8_CLASS)
+        label_subdir = "labels_8_class"
     else:
         class_names = CLASSES
         num_classes = len(CLASSES)
@@ -90,8 +99,9 @@ def train_yolo11(
 # Generated automatically
 
 path: {img_dir_abs.parent}  # Dataset root
-train: images  # Train images (relative to 'path')
-val: images    # Val images (relative to 'path')
+train: {f"splits/{label_subdir.replace('labels_', '')}/train.txt" if (img_dir_abs.parent / f"splits/{label_subdir.replace('labels_', '')}/train.txt").exists() else "images"}
+val: {f"splits/{label_subdir.replace('labels_', '')}/val.txt" if (img_dir_abs.parent / f"splits/{label_subdir.replace('labels_', '')}/val.txt").exists() else "images"}
+test: {f"splits/{label_subdir.replace('labels_', '')}/test.txt" if (img_dir_abs.parent / f"splits/{label_subdir.replace('labels_', '')}/test.txt").exists() else None}
 
 # Classes
 names:
@@ -198,7 +208,13 @@ if __name__ == "__main__":
     parser.add_argument("--img_dir", type=str, default="dataset/dataset_v1/images")
     parser.add_argument("--label_dir", type=str, default="dataset/dataset_v1/labels")
     parser.add_argument(
-        "--use_labels_new", action="store_true", help="Use labels_new (10 classes)"
+        "--use_10_class", action="store_true", help="Use 10-class dataset"
+    )
+    parser.add_argument(
+        "--use_4_class", action="store_true", help="Use 4-class dataset"
+    )
+    parser.add_argument(
+        "--use_8_class", action="store_true", help="Use 8-class dataset"
     )
     parser.add_argument(
         "--use_filtered", action="store_true", help="Use filtered dataset (7 classes)"
@@ -225,7 +241,9 @@ if __name__ == "__main__":
         train_yolo11(
             img_dir=args.img_dir,
             label_dir=args.label_dir,
-            use_labels_new=args.use_labels_new,
+            use_10_class=args.use_10_class,
+            use_4_class=args.use_4_class,
+            use_8_class=args.use_8_class,
             use_filtered=args.use_filtered,
             model_name=args.model,
             epochs=args.epochs,

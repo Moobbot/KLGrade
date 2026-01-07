@@ -13,7 +13,7 @@ CLASSES = {
 }
 
 # Dataset 2: 10-class (KL0-a → KL4-b) - Detailed structure classification
-# Used for: processed/knee_10class/
+# Used for: processed/knee_10_class/
 # Extended mapping for tag-style labels (e.g., "3a"/"3b") generated in label_new.
 # The base id is kept for compatibility while suffixes describe sub-structures (joint space vs osteophyte).
 CLASSES_10_CLASS = {
@@ -30,7 +30,7 @@ CLASSES_10_CLASS = {
 }
 
 # Dataset 3: 4-class (KL1-4, no KL0) - Focus on pathological cases
-# Used for: processed/knee_4class/
+# Used for: processed/knee_4_class/
 # Remapped from 5-class by removing KL0 and shifting down
 CLASSES_4_CLASS = {
     0: "KL1",  # Original class 1
@@ -40,7 +40,7 @@ CLASSES_4_CLASS = {
 }
 
 # Dataset 4: 8-class (KL1-a → KL4-b, no KL0) - Detailed + pathological focus
-# Used for: processed/knee_8class/
+# Used for: processed/knee_8_class/
 # Remapped from 10-class by removing KL0-a, KL0-b and shifting down
 CLASSES_8_CLASS = {
     0: "KL1-a",  # Original class 2

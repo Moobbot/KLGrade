@@ -393,28 +393,28 @@ processed/knee_8_class/     # 8 classes, 1,603 images
 .venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
     --img_dir processed\knee\images `
     --label_dir processed\knee\labels `
-    --out_dir splits\knee_5class `
+    --out_dir splits\knee_5_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Split 10-class dataset
 .venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
     --img_dir processed\knee_10_class\images `
     --label_dir processed\knee_10_class\labels `
-    --out_dir splits\knee_10class `
+    --out_dir splits\knee_10_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Split 4-class dataset
 .venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
     --img_dir processed\knee_4_class\images `
     --label_dir processed\knee_4_class\labels `
-    --out_dir splits\knee_4class `
+    --out_dir splits\knee_4_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Split 8-class dataset
 .venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
     --img_dir processed\knee_8_class\images `
     --label_dir processed\knee_8_class\labels `
-    --out_dir splits\knee_8class `
+    --out_dir splits\knee_8_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 ```
 
@@ -422,22 +422,22 @@ processed/knee_8_class/     # 8 classes, 1,603 images
 
 ```
 splits/
-├── knee_5class/
+├── knee_5_class/
 │   ├── train.txt (1,181 images)
 │   ├── val.txt (253 images)
 │   ├── test.txt (254 images)
 │   └── split_info.json
-├── knee_10class/
+├── knee_10_class/
 │   ├── train.txt (1,181 images)
 │   ├── val.txt (253 images)
 │   ├── test.txt (254 images)
 │   └── split_info.json
-├── knee_4class/
+├── knee_4_class/
 │   ├── train.txt (1,122 images)
 │   ├── val.txt (240 images)
 │   ├── test.txt (241 images)
 │   └── split_info.json
-└── knee_8class/
+└── knee_8_class/
     ├── train.txt (1,122 images)
     ├── val.txt (240 images)
     ├── test.txt (241 images)

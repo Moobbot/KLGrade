@@ -290,7 +290,7 @@ Training script tự động convert YOLO → COCO bằng `datasets.create_coco_
     --epochs 100 `
     --batch 16 `
     --imgsz 640 `
-    --name exp_baseline_5classes
+    --name exp_baseline_5_classes
 ```
 
 **Tham số chính**:

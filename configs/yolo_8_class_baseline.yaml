@@ -1,0 +1,62 @@
+# YOLOv11 Training Configuration - 8-class Baseline
+# Dataset: Knee OA Detection with A/B split, no KL0 (KL1-a → KL4-b)
+
+path: E:\CaoHoc\thesis\KLGrade
+train: splits/knee_8_class/train.txt
+val: splits/knee_8_class/val.txt
+test: splits/knee_8_class/test.txt
+
+# Dataset
+nc: 8
+names: ['KL1-a', 'KL1-b', 'KL2-a', 'KL2-b', 'KL3-a', 'KL3-b', 'KL4-a', 'KL4-b']
+
+# Model
+model: yolo11n.pt
+
+# Hyperparameters
+epochs: 100
+patience: 20
+batch: 16
+imgsz: 640
+device: 0
+
+# Optimizer
+optimizer: AdamW
+lr0: 0.001
+lrf: 0.01
+momentum: 0.937
+weight_decay: 0.0005
+
+# Loss
+box: 7.5
+cls: 0.5
+dfl: 1.5
+
+# Augmentation (DISABLED for baseline)
+hsv_h: 0.0
+hsv_s: 0.0
+hsv_v: 0.0
+degrees: 0.0
+translate: 0.0
+scale: 0.0
+shear: 0.0
+perspective: 0.0
+flipud: 0.0
+fliplr: 0.0
+mosaic: 0.0
+mixup: 0.0
+copy_paste: 0.0
+
+# Training
+save: True
+save_period: 10
+cache: False
+workers: 4
+project: runs/detect
+name: knee_8_class_baseline
+exist_ok: False
+pretrained: True
+verbose: True
+seed: 42
+deterministic: True
+plots: True

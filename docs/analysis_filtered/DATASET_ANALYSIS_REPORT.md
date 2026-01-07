@@ -1,6 +1,6 @@
 # Dataset Analysis Report
 
-**Created on**: 20/12/2025 
+**Created on**: 20/12/2025
 
 ## Class Distribution
 
@@ -11,14 +11,14 @@
 ### Per-Class Counts
 
 | Class | Count |
-|-------|-------|
-| 0 | 89 |
-| 1 | 771 |
-| 2 | 1303 |
-| 3 | 54 |
-| 4 | 521 |
-| 5 | 59 |
-| 6 | 272 |
+| ----- | ----- |
+| 0     | 89    |
+| 1     | 771   |
+| 2     | 1303  |
+| 3     | 54    |
+| 4     | 521   |
+| 5     | 59    |
+| 6     | 272   |
 
 ## Bounding Box Statistics
 
@@ -42,4 +42,3 @@
 ⚠️ **Many Small Objects**: Consider using feature pyramid networks or multi-scale training.
 
 📊 **Anchor Box Suggestions**: Use k-means clustering on bbox dimensions to optimize anchor boxes for YOLO.
-

@@ -8,10 +8,10 @@ Evaluates a trained DETR model on validation dataset and computes COCO metrics:
 
 Usage:
     python examples/evaluate_detr.py \
-        --model_path runs/detr/exp1_test_5classes/best_model.pt \
+        --model_path runs/detr/exp1_test_5_classes/best_model.pt \
         --img_dir dataset/dataset_v1/images \
         --label_dir dataset/dataset_v1/labels \
-        --output runs/detr/exp1_test_5classes/evaluation
+        --output runs/detr/exp1_test_5_classes/evaluation
 """
 
 import sys

@@ -1,0 +1,64 @@
+# YOLOv11 Training Configuration - 5-class Baseline
+# Dataset: Knee OA Detection (KL0-4)
+# Mode: Baseline (no augmentation)
+
+# Paths
+path: E:/CaoHoc/thesis/KLGrade
+train: processed/knee/dataset_yolo/images
+val: processed/knee/dataset_yolo/images
+test: processed/knee/dataset_yolo/images
+
+# Dataset
+nc: 5  # Number of classes
+names: ['KL0', 'KL1', 'KL2', 'KL3', 'KL4']  # Class names
+
+# Model
+model: yolo11n.pt  # Pretrained weights (nano for faster baseline)
+
+# Hyperparameters
+epochs: 100
+patience: 20  # Early stopping patience
+batch: 16  # Batch size
+imgsz: 640  # Image size
+device: 0  # GPU device
+
+# Optimizer
+optimizer: AdamW
+lr0: 0.001  # Initial learning rate
+lrf: 0.01  # Final learning rate (lr0 * lrf)
+momentum: 0.937
+weight_decay: 0.0005
+
+# Loss
+box: 7.5  # Box loss gain
+cls: 0.5  # Class loss gain
+dfl: 1.5  # Distribution focal loss gain
+
+# Augmentation (DISABLED for baseline)
+hsv_h: 0.0  # HSV-Hue augmentation
+hsv_s: 0.0  # HSV-Saturation
+hsv_v: 0.0  # HSV-Value
+degrees: 0.0  # Rotation
+translate: 0.0  # Translation
+scale: 0.0  # Scale
+shear: 0.0  # Shear
+perspective: 0.0  # Perspective
+flipud: 0.0  # Flip up-down
+fliplr: 0.0  # Flip left-right
+mosaic: 0.0  # Mosaic augmentation
+mixup: 0.0  # MixUp augmentation
+copy_paste: 0.0  # Copy-paste augmentation
+
+# Training
+save: True
+save_period: 10  # Save checkpoint every N epochs
+cache: False  # Cache images for faster training
+workers: 4  # Dataloader workers
+project: runs/detect  # Project directory
+name: knee_5_class_baseline  # Experiment name
+exist_ok: False  # Overwrite existing project
+pretrained: True  # Use pretrained weights
+verbose: True  # Verbose output
+seed: 42  # Random seed
+deterministic: True  # Deterministic mode
+plots: True  # Save plots
