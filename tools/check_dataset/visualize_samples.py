@@ -16,24 +16,25 @@ Format label được hỗ trợ:
 Usage (PowerShell examples):
 
   # Visualize knee labels trên ảnh knee crops
-  python check_dataset/visualize_yolo_boxes.py `
+  python tools/check_dataset/visualize_samples.py `
     --img_dir processed/knee/images `
     --label_dir processed/knee/labels `
     --out_dir check_vis/knee
 
   # Visualize label mới (đã phân tách a/b) từ labels_new
-  python check_dataset/visualize_yolo_boxes.py `
+  python tools/check_dataset/visualize_samples.py `
     --img_dir processed/knee/images `
     --label_dir processed/knee/labels_new `
     --out_dir check_vis/label_new
 
   # Visualize với nhiều thư mục label (so sánh)
-  python check_dataset/visualize_yolo_boxes.py `
+  python tools/check_dataset/visualize_samples.py `
     --img_dir dataset/dataset_v0/images `
     --label_dir dataset/dataset_v0/labels `
     --extra_label_dir dataset/dataset_v0/labels-knee `
     --out_dir check_vis/kl_full
 """
+
 import os
 import argparse
 import cv2
@@ -50,14 +51,14 @@ def parse_color(color_str: str):
 def normalize_label_token(token: str) -> str:
     """
     Chuẩn hóa token label để hiển thị.
-    
+
     Hỗ trợ cả format chuẩn (số nguyên) và format mở rộng (có suffix như "3a", "3b").
     - Nếu là số: chuyển về số nguyên nếu có thể
     - Nếu không phải số: giữ nguyên (ví dụ: "3a", "3b")
-    
+
     Args:
         token: Token đầu tiên trong dòng label (class_id hoặc class_id{suffix})
-        
+
     Returns:
         String đã chuẩn hóa để hiển thị
     """
@@ -73,14 +74,14 @@ def normalize_label_token(token: str) -> str:
 def parse_yolo_line(parts):
     """
     Parse một dòng label YOLO thành các thành phần.
-    
+
     Format hỗ trợ:
     - Chuẩn: "class_id x y w h"
     - Mở rộng: "class_id{suffix} x y w h" (ví dụ: "3a 0.5 0.5 0.1 0.1")
-    
+
     Args:
         parts: List các phần tử đã split từ dòng label
-        
+
     Returns:
         Tuple (label_token, x, y, w, h) nếu hợp lệ, None nếu không hợp lệ
         - label_token: class_id hoặc class_id{suffix} (đã normalize)
@@ -94,7 +95,12 @@ def parse_yolo_line(parts):
     except ValueError:
         return None
     # Validate: tọa độ phải trong [0, 1], w và h phải > 0
-    if not ((0.0 <= x <= 1.0) and (0.0 <= y <= 1.0) and (0.0 < w <= 1.0) and (0.0 < h <= 1.0)):
+    if not (
+        (0.0 <= x <= 1.0)
+        and (0.0 <= y <= 1.0)
+        and (0.0 < w <= 1.0)
+        and (0.0 < h <= 1.0)
+    ):
         return None
     return label_token, x, y, w, h
 
@@ -117,20 +123,53 @@ def draw_box(img, label, x, y, w, h, color=(255, 0, 0), thickness=2, font_scale=
     cv2.rectangle(img, (x1, y1), (x2, y2), color, thickness)
     (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, font_scale, 1)
     cv2.rectangle(img, (x1, y1 - th - 4), (x1 + tw + 4, y1), color, -1)
-    cv2.putText(img, label, (x1 + 2, y1 - 2), cv2.FONT_HERSHEY_SIMPLEX, font_scale, (255, 255, 255), 1, cv2.LINE_AA)
+    cv2.putText(
+        img,
+        label,
+        (x1 + 2, y1 - 2),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        font_scale,
+        (255, 255, 255),
+        1,
+        cv2.LINE_AA,
+    )
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Visualize YOLO labels on images and save overlays")
-    p.add_argument("--img_dir", required=True, help="Directory with images (.jpg/.png/.jpeg)")
-    p.add_argument("--label_dir", required=True, help="Directory with YOLO label .txt files (primary)")
+    p = argparse.ArgumentParser(
+        description="Visualize YOLO labels on images and save overlays"
+    )
+    p.add_argument(
+        "--img_dir", required=True, help="Directory with images (.jpg/.png/.jpeg)"
+    )
+    p.add_argument(
+        "--label_dir",
+        required=True,
+        help="Directory with YOLO label .txt files (primary)",
+    )
     p.add_argument("--out_dir", required=True, help="Directory to save visualizations")
-    p.add_argument("--color", default="255,0,0", help="RGB color for boxes, e.g., '255,0,0'")
+    p.add_argument(
+        "--color", default="255,0,0", help="RGB color for boxes, e.g., '255,0,0'"
+    )
     p.add_argument("--thickness", type=int, default=2)
     p.add_argument("--font_scale", type=float, default=0.5)
-    p.add_argument("--copy_missing", action="store_true", help="Also save images without labels into out_dir")
-    p.add_argument("--extra_label_dir", action="append", default=None, help="Additional label directory (repeatable) to overlay (e.g., knee labels)")
-    p.add_argument("--extra_color", action="append", default=None, help="RGB color for each extra_label_dir (repeatable), e.g., '0,255,0'")
+    p.add_argument(
+        "--copy_missing",
+        action="store_true",
+        help="Also save images without labels into out_dir",
+    )
+    p.add_argument(
+        "--extra_label_dir",
+        action="append",
+        default=None,
+        help="Additional label directory (repeatable) to overlay (e.g., knee labels)",
+    )
+    p.add_argument(
+        "--extra_color",
+        action="append",
+        default=None,
+        help="RGB color for each extra_label_dir (repeatable), e.g., '0,255,0'",
+    )
     return p.parse_args()
 
 
@@ -139,7 +178,11 @@ def main():
     color = parse_color(args.color)
     os.makedirs(args.out_dir, exist_ok=True)
 
-    img_files = [f for f in os.listdir(args.img_dir) if f.lower().endswith((".jpg", ".png", ".jpeg"))]
+    img_files = [
+        f
+        for f in os.listdir(args.img_dir)
+        if f.lower().endswith((".jpg", ".png", ".jpeg"))
+    ]
     img_files.sort()
 
     n_with = 0
@@ -154,7 +197,9 @@ def main():
     # default colors for extras if not provided
     default_palette = [(0, 255, 0), (0, 0, 255), (255, 255, 0), (255, 0, 255)]
     while len(extra_colors) < len(extra_dirs):
-        extra_colors.append(default_palette[min(len(extra_colors), len(default_palette) - 1)])
+        extra_colors.append(
+            default_palette[min(len(extra_colors), len(default_palette) - 1)]
+        )
 
     for fn in img_files:
         base = os.path.splitext(fn)[0]
