@@ -1,7 +1,7 @@
 # YOLOv11 Training Configuration - 8-class with Conservative Augmentation
 # Dataset: Knee OA Detection with A/B split, no KL0 (KL1-a → KL4-b)
 
-path: E:\CaoHoc\thesis\KLGrade
+path: .
 train: splits/knee_8_class/train.txt
 val: splits/knee_8_class/val.txt
 test: splits/knee_8_class/test.txt

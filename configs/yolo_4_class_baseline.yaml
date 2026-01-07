@@ -1,7 +1,7 @@
 # YOLOv11 Training Configuration - 4-class Baseline  
 # Dataset: Knee OA Detection (KL1-4, no KL0)
 
-path: E:\CaoHoc\thesis\KLGrade
+path: .
 train: splits/knee_4_class/train.txt
 val: splits/knee_4_class/val.txt
 test: splits/knee_4_class/test.txt

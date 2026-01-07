@@ -3,10 +3,10 @@
 # Mode: Conservative augmentation
 
 # Paths
-path: E:/CaoHoc/thesis/KLGrade
-train: processed/knee/dataset_yolo/images
-val: processed/knee/dataset_yolo/images
-test: processed/knee/dataset_yolo/images
+path: .
+train: processed/knee/images_640
+val: processed/knee/images_640
+test: processed/knee/images_640
 
 # Dataset
 nc: 5

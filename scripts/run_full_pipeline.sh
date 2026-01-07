@@ -12,7 +12,8 @@ echo "=================================================="
 # Environment Setup (Conda)
 # ============================================================================
 echo "Activating conda environment..."
-conda activate klgrade
+# run this in cmd: conda activate klgrade
+# conda activate klgrade
 
 # ============================================================================
 # STAGE 1: Initial Dataset Analysis
@@ -71,11 +72,12 @@ if [ -f "tools/check_dataset/resize_images.py" ]; then
         --out_dir processed/knee/images_640 \
         --size 640
     
-    # Also resize labels directory (copy, since labels are normalized)
+    # Copy labels (they're already normalized, no resize needed)
     mkdir -p processed/knee/labels_640
     cp -r processed/knee/labels/* processed/knee/labels_640/
     
     echo "   ✅ Images resized to 640x640"
+    echo "   ✅ Labels copied to labels_640/"
 else
     echo "   ❌ resize_images.py not found!"
     exit 1
@@ -94,6 +96,15 @@ cp -r processed/knee/images_640/* processed/knee/dataset_yolo/images/
 cp -r processed/knee/labels_640/* processed/knee/dataset_yolo/labels/
 
 echo "   ✅ Created: processed/knee/dataset_yolo/"
+
+# Analyze 5-class dataset
+if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
+    echo "   📊 Analyzing 5-class dataset..."
+    python tools/check_dataset/comprehensive_analysis.py \
+        --dataset_dir processed/knee/dataset_yolo \
+        --output analysis/results_5_class
+    echo "   ✅ Analysis saved: analysis/results_5_class/"
+fi
 
 # ============================================================================
 # STAGE 6: Create Stratified Splits (5-class)
@@ -145,6 +156,15 @@ python scripts/data_preparation/split_dataset.py \
 
 echo "   ✅ 10-class dataset created"
 
+# Analyze 10-class dataset
+if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
+    echo "   📊 Analyzing 10-class dataset..."
+    python tools/check_dataset/comprehensive_analysis.py \
+        --dataset_dir processed/knee_10_class \
+        --output analysis/results_10_class
+    echo "   ✅ Analysis saved: analysis/results_10_class/"
+fi
+
 # ============================================================================
 # STAGE 8: Create 4-class Dataset (filter KL0)
 # ============================================================================
@@ -154,18 +174,23 @@ echo "4️⃣  STAGE 8: Creating 4-class dataset (excluding KL0)..."
 mkdir -p processed/knee_4_class/images
 mkdir -p processed/knee_4_class/labels
 
-python scripts/data_preparation/filter_dataset.py \
-    --input_images processed/knee/images_640 \
-    --input_labels processed/knee/labels_640 \
-    --output_images processed/knee_4_class/images \
-    --output_labels processed/knee_4_class/labels \
-    --exclude_classes 0
+# filter_kl0.py expects input to have images/ and labels/ subdirectories
+# So we create a temp structure or use processed/knee directly
+# Since we have images_640 and labels_640, we'll create temp links
 
-# Remap labels (0,1,2,3,4 -> remove 0 -> 1,2,3,4 -> remap to 0,1,2,3)
-python scripts/data_preparation/remap_labels.py \
-    --label_dir processed/knee_4_class/labels \
-    --output_dir processed/knee_4_class/labels \
-    --class_mapping "1:0,2:1,3:2,4:3"
+mkdir -p processed/knee_temp/images
+mkdir -p processed/knee_temp/labels
+cp -r processed/knee/images_640/* processed/knee_temp/images/
+cp -r processed/knee/labels_640/* processed/knee_temp/labels/
+
+# Use filter_kl0.py to remove KL0 class (auto-remaps KL1-4 to 0-3)
+python scripts/preprocessing/filter_kl0.py \
+    --input processed/knee_temp \
+    --output processed/knee_4_class \
+    --num_classes 5
+
+# Clean up temp
+rm -rf processed/knee_temp
 
 # Create splits
 python scripts/data_preparation/split_dataset.py \
@@ -179,40 +204,55 @@ python scripts/data_preparation/split_dataset.py \
 
 echo "   ✅ 4-class dataset created"
 
+# Analyze 4-class dataset
+if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
+    echo "   📊 Analyzing 4-class dataset..."
+    python tools/check_dataset/comprehensive_analysis.py \
+        --dataset_dir processed/knee_4_class \
+        --output analysis/results_4class
+    echo "   ✅ Analysis saved: analysis/results_4class/"
+fi
+
 # ============================================================================
 # STAGE 9: Create 8-class Dataset (10-class without KL0-a/b)
 # ============================================================================
 echo ""
 echo "8️⃣  STAGE 9: Creating 8-class dataset..."
 
-mkdir -p processed/knee_8_class/images
-mkdir -p processed/knee_8_class/labels
-
-# Filter out classes 0 and 1 (KL0-a and KL0-b from 10-class)
-python scripts/data_preparation/filter_dataset.py \
-    --input_images processed/knee_10_class/images \
-    --input_labels processed/knee_10_class/labels \
-    --output_images processed/knee_8_class/images \
-    --output_labels processed/knee_8_class/labels \
-    --exclude_classes 0,1
-
-# Remap (remove 0,1 then remap remaining)
-python scripts/data_preparation/remap_labels.py \
-    --label_dir processed/knee_8_class/labels \
-    --output_dir processed/knee_8_class/labels \
-    --class_mapping "2:0,3:1,4:2,5:3,6:4,7:5,8:6,9:7"
-
-# Create splits
-python scripts/data_preparation/split_dataset.py \
-    --img_dir processed/knee_8_class/images \
-    --label_dir processed/knee_8_class/labels \
-    --out_dir splits/knee_8_class \
-    --train 0.7 \
-    --val 0.15 \
-    --test 0.15 \
-    --seed 42
-
-echo "   ✅ 8-class dataset created"
+# Check if 10-class dataset was created
+if [ -d "processed/knee_10_class/labels" ] && [ "$(ls -A processed/knee_10_class/labels)" ]; then
+    echo "   Creating 8-class from 10-class dataset..."
+    
+    # Use filter_kl0.py to remove KL0-a and KL0-b (classes 0,1)
+    python scripts/preprocessing/filter_kl0.py \
+        --input processed/knee_10_class \
+        --output processed/knee_8_class \
+        --num_classes 10
+    
+    # Create splits
+    python scripts/data_preparation/split_dataset.py \
+        --img_dir processed/knee_8_class/images \
+        --label_dir processed/knee_8_class/labels \
+        --out_dir splits/knee_8_class \
+        --train 0.7 \
+        --val 0.15 \
+        --test 0.15 \
+        --seed 42
+    
+    echo "   ✅ 8-class dataset created"
+    
+    # Analyze 8-class dataset
+    if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
+        echo "   📊 Analyzing 8-class dataset..."
+        python tools/check_dataset/comprehensive_analysis.py \
+            --dataset_dir processed/knee_8_class \
+            --output analysis/results_8_class
+        echo "   ✅ Analysis saved: analysis/results_8_class/"
+    fi
+else
+    echo "   ⚠️  10-class labels not found, skipping 8-class"
+    echo "   (This is expected if labels_new doesn't exist in dataset_v0)"
+fi
 
 # ============================================================================
 # STAGE 10: Fix Split Paths (Add Absolute Paths)
@@ -275,7 +315,8 @@ echo ""
 echo "🎯 Next Steps:"
 echo "  1. Test GPU: python scripts/test_yolo_gpu.py"
 echo "  2. Quick 2-epoch test: python scripts/test_all_configs.py"
-echo "  3. Start training: bash docs/TRAINING_COMMANDS_WANDB.sh"
+echo "  3. Start training: bash TRAINING_COMMANDS_WANDB.sh"
 echo ""
 echo "📖 Full documentation: PIPELINE.md"
 echo ""
+echo "===================================================="
