@@ -108,6 +108,16 @@ def run_inference(model, dataset, device: str = "cuda", conf_threshold: float = 
             # DETR has num_classes + 1 outputs (including no-object class)
             scores, labels = probs[:, :-1].max(-1)  # Exclude last class (no-object)
 
+            # Debug: Track max scores (only on first image)
+            if idx == 0:
+                max_score = scores.max().item() if len(scores) > 0 else 0.0
+                print(f"\n  Debug: Max score in first image: {max_score:.4f}")
+                print(f"  Debug: Num queries: {len(scores)}")
+                print(f"  Debug: Confidence threshold: {conf_threshold}")
+                print(
+                    f"  Debug: Scores > threshold: {(scores > conf_threshold).sum().item()}"
+                )
+
             # Filter by confidence threshold
             keep = scores > conf_threshold
 
@@ -208,10 +218,25 @@ def evaluate_coco(gt_json_path: str, predictions: list, output_dir: Path):
         coco_eval_cat.evaluate()
         coco_eval_cat.accumulate()
 
-        per_class_metrics[cat_name] = {
-            "mAP50-95": float(coco_eval_cat.stats[0]),
-            "mAP50": float(coco_eval_cat.stats[1]),
-        }
+        # Check if stats are available (might be empty if no predictions for this class)
+        if len(coco_eval_cat.stats) > 0:
+            per_class_metrics[cat_name] = {
+                "mAP50-95": (
+                    float(coco_eval_cat.stats[0])
+                    if coco_eval_cat.stats[0] >= 0
+                    else 0.0
+                ),
+                "mAP50": (
+                    float(coco_eval_cat.stats[1])
+                    if len(coco_eval_cat.stats) > 1 and coco_eval_cat.stats[1] >= 0
+                    else 0.0
+                ),
+            }
+        else:
+            per_class_metrics[cat_name] = {
+                "mAP50-95": 0.0,
+                "mAP50": 0.0,
+            }
 
     metrics["per_class"] = per_class_metrics
 
@@ -280,8 +305,8 @@ def main():
     parser.add_argument(
         "--conf_threshold",
         type=float,
-        default=0.5,
-        help="Confidence threshold for predictions",
+        default=0.01,
+        help="Confidence threshold for predictions (default 0.01 for undertrained models)",
     )
     parser.add_argument(
         "--device",
@@ -356,8 +381,15 @@ def main():
     # Step 4: Run inference
     predictions = run_inference(model, dataset, args.device, args.conf_threshold)
 
-    # Step 5: Evaluate with COCO metrics
+    # Save predictions for error analysis
     output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    predictions_file = output_dir / "predictions.json"
+    with open(predictions_file, "w") as f:
+        json.dump(predictions, f, indent=2)
+    print(f"✅ Predictions saved to {predictions_file}")
+
+    # Step 5: Evaluate with COCO metrics
     metrics = evaluate_coco(str(val_json), predictions, output_dir)
 
     # Print summary
