@@ -1,13 +1,13 @@
 {
   "metadata": {
-    "created_at": "2026-01-07T16:34:31.963244",
+    "created_at": "2026-01-08T02:42:36.886274",
     "script_version": "1.0",
     "description": "Stratified dataset split for object detection"
   },
   "configuration": {
-    "image_directory": "processed\\knee\\images",
-    "label_directory": "processed\\knee\\labels",
-    "output_directory": "splits\\knee_5_class",
+    "image_directory": "processed/knee/dataset_yolo/images",
+    "label_directory": "processed/knee/dataset_yolo/labels",
+    "output_directory": "splits/knee_5_class",
     "split_ratios": {
       "train": 0.7,
       "val": 0.15,
@@ -17,108 +17,108 @@
     "min_samples_per_class": 2
   },
   "summary": {
-    "total_images": 1688,
+    "total_images": 1690,
     "total_classes": 5,
     "splits": {
       "train": {
-        "num_images": 1181,
-        "percentage": 69.96
+        "num_images": 1183,
+        "percentage": 70.0
       },
       "val": {
         "num_images": 253,
-        "percentage": 14.99
+        "percentage": 14.97
       },
       "test": {
         "num_images": 254,
-        "percentage": 15.05
+        "percentage": 15.03
       }
     }
   },
   "class_distribution": {
     "total": {
       "0": 94,
-      "1": 624,
+      "1": 626,
       "2": 860,
       "3": 383,
-      "4": 226
+      "4": 227
     },
     "train": {
-      "0": 66,
-      "1": 448,
-      "2": 592,
-      "3": 260,
-      "4": 162
+      "0": 71,
+      "1": 458,
+      "2": 581,
+      "3": 264,
+      "4": 168
     },
     "val": {
-      "0": 15,
-      "1": 84,
-      "2": 147,
-      "3": 66,
-      "4": 27
+      "0": 11,
+      "1": 81,
+      "2": 141,
+      "3": 62,
+      "4": 31
     },
     "test": {
-      "0": 13,
-      "1": 92,
-      "2": 121,
+      "0": 12,
+      "1": 87,
+      "2": 138,
       "3": 57,
-      "4": 37
+      "4": 28
     }
   },
   "class_balance": {
     "class_0": {
       "total_instances": 94,
       "train": {
-        "count": 66,
-        "percentage": 70.21
+        "count": 71,
+        "percentage": 75.53
       },
       "val": {
-        "count": 15,
-        "percentage": 15.96
+        "count": 11,
+        "percentage": 11.7
       },
       "test": {
-        "count": 13,
-        "percentage": 13.83
+        "count": 12,
+        "percentage": 12.77
       }
     },
     "class_1": {
-      "total_instances": 624,
+      "total_instances": 626,
       "train": {
-        "count": 448,
-        "percentage": 71.79
+        "count": 458,
+        "percentage": 73.16
       },
       "val": {
-        "count": 84,
-        "percentage": 13.46
+        "count": 81,
+        "percentage": 12.94
       },
       "test": {
-        "count": 92,
-        "percentage": 14.74
+        "count": 87,
+        "percentage": 13.9
       }
     },
     "class_2": {
       "total_instances": 860,
       "train": {
-        "count": 592,
-        "percentage": 68.84
+        "count": 581,
+        "percentage": 67.56
       },
       "val": {
-        "count": 147,
-        "percentage": 17.09
+        "count": 141,
+        "percentage": 16.4
       },
       "test": {
-        "count": 121,
-        "percentage": 14.07
+        "count": 138,
+        "percentage": 16.05
       }
     },
     "class_3": {
       "total_instances": 383,
       "train": {
-        "count": 260,
-        "percentage": 67.89
+        "count": 264,
+        "percentage": 68.93
       },
       "val": {
-        "count": 66,
-        "percentage": 17.23
+        "count": 62,
+        "percentage": 16.19
       },
       "test": {
         "count": 57,
@@ -126,18 +126,18 @@
       }
     },
     "class_4": {
-      "total_instances": 226,
+      "total_instances": 227,
       "train": {
-        "count": 162,
-        "percentage": 71.68
+        "count": 168,
+        "percentage": 74.01
       },
       "val": {
-        "count": 27,
-        "percentage": 11.95
+        "count": 31,
+        "percentage": 13.66
       },
       "test": {
-        "count": 37,
-        "percentage": 16.37
+        "count": 28,
+        "percentage": 12.33
       }
     }
   }
