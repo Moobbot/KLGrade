@@ -135,14 +135,12 @@ mkdir -p processed/knee_10_class/labels
 # Copy images (shared)
 cp -r processed/knee_5_class/images/* processed/knee_10_class/images/
 
-# Check if labels_new exists in raw data
-if [ -d "dataset/dataset_v0/labels_new" ]; then
-    echo "   Using existing labels_new from dataset_v0"
-    cp -r dataset/dataset_v0/labels_new/* processed/knee_10_class/labels/
-else
-    echo "   ⚠️  labels_new not found, using 5-class as placeholder"
-    cp -r processed/knee_5_class/labels/* processed/knee_10_class/labels/
-fi
+# Generate 10-class labels (split 5 classes into a/b)
+echo "   Generating 10-class labels (splitting by shape)..."
+python tools/check_dataset/class_split_report.py \
+    --labels-dir processed/knee_5_class/labels \
+    --save-dir processed/knee_10_class/labels \
+    --limit 10
 
 # Create splits for 10-class
 python scripts/data_preparation/split_dataset.py \
@@ -209,8 +207,8 @@ if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
     echo "   📊 Analyzing 4-class dataset..."
     python tools/check_dataset/comprehensive_analysis.py \
         --dataset_dir processed/knee_4_class \
-        --output analysis/results_4class
-    echo "   ✅ Analysis saved: analysis/results_4class/"
+        --output analysis/results_4_class
+    echo "   ✅ Analysis saved: analysis/results_4_class/"
 fi
 
 # ============================================================================
@@ -255,14 +253,14 @@ else
 fi
 
 # ============================================================================
-# STAGE 10: Fix Split Paths (Add Absolute Paths)
+# STAGE 10: Fix Split Paths (DEPRECATED - handled by split_dataset.py)
 # ============================================================================
-echo ""
-echo "🔧 STAGE 10: Fixing split file paths..."
-
-python tools/fix_splits_paths.py
-
-echo "   ✅ All split files updated with absolute paths"
+# echo ""
+# echo "🔧 STAGE 10: Fixing split file paths..."
+#
+# python tools/fix_splits_paths.py
+#
+# echo "   ✅ All split files updated with absolute paths"
 
 # ============================================================================
 # STAGE 11: Verify All Configs

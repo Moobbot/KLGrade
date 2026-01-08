@@ -74,7 +74,7 @@ def parse_args():
 
 def load_image_class_mapping(
     img_dir: Path, label_dir: Path
-) -> Tuple[Dict[str, Set[int]], Dict[int, List[str]]]:
+) -> Tuple[Dict[str, Set[int]], Dict[int, List[str]], Dict[str, str]]:
     """
     Load mapping between images and their classes.
 
@@ -86,9 +86,11 @@ def load_image_class_mapping(
         Tuple of:
         - img_to_classes: Dict mapping image stem to set of class IDs
         - class_to_imgs: Dict mapping class ID to list of image stems
+        - stem_to_filename: Dict mapping image stem to filename (with extension)
     """
     img_to_classes = {}
     class_to_imgs = defaultdict(list)
+    stem_to_filename = {}
 
     # Get all images
     img_extensions = {".jpg", ".jpeg", ".png", ".bmp"}
@@ -105,6 +107,9 @@ def load_image_class_mapping(
         if not label_file.exists():
             missing_labels.append(stem)
             continue
+
+        # Store filename mapping
+        stem_to_filename[stem] = img_file.name
 
         # Read classes from label file
         classes = set()
@@ -128,7 +133,9 @@ def load_image_class_mapping(
 
     print(f"✅ Loaded {len(img_to_classes)} images with labels")
 
-    return img_to_classes, class_to_imgs
+    return img_to_classes, class_to_imgs, stem_to_filename
+
+    return img_to_classes, class_to_imgs, stem_to_filename
 
 
 def print_class_distribution(
@@ -284,30 +291,41 @@ def stratified_split(
 
     return train_stems, val_stems, test_stems
 
-
 def save_splits(
     train_stems: List[str],
     val_stems: List[str],
     test_stems: List[str],
     output_dir: Path,
+    stem_to_filename: Dict[str, str],
+    img_dir: Path
 ):
-    """Save split files."""
+    """Save split files with robust relative paths."""
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save train split
-    with open(output_dir / "train.txt", "w", encoding="utf-8") as f:
-        for stem in sorted(train_stems):
-            f.write(f"{stem}\n")
+    # Use posix path string for cross-platform compatibility
+    # Get relative path from current working directory (where script is run)
+    try:
+        # Try to make path relative to CWD if possible
+        rel_img_dir = img_dir.relative_to(Path.cwd())
+    except ValueError:
+        # If absolute path provided, try to make it relative or just use it as is
+        # Usually user runs script from project root
+        print(f"⚠️  Warning: {img_dir} is not relative to {Path.cwd()}. Using provided path.")
+        rel_img_dir = img_dir
 
-    # Save val split
-    with open(output_dir / "val.txt", "w", encoding="utf-8") as f:
-        for stem in sorted(val_stems):
-            f.write(f"{stem}\n")
+    rel_img_dir_str = str(rel_img_dir).replace("\\", "/")
 
-    # Save test split
-    with open(output_dir / "test.txt", "w", encoding="utf-8") as f:
-        for stem in sorted(test_stems):
-            f.write(f"{stem}\n")
+    def write_stems(stems, filename):
+        with open(output_dir / filename, "w", encoding="utf-8") as f:
+            for stem in sorted(stems):
+                # Construct relative path: images/filename.jpg
+                full_name = stem_to_filename.get(stem, f"{stem}.jpg") # Fallback to jpg
+                path_str = f"{rel_img_dir_str}/{full_name}"
+                f.write(f"{path_str}\n")
+
+    write_stems(train_stems, "train.txt")
+    write_stems(val_stems, "val.txt")
+    write_stems(test_stems, "test.txt")
 
     print(f"\n✅ Saved split files to {output_dir}")
     print(f"   train.txt: {len(train_stems)} images")
@@ -484,7 +502,7 @@ def main():
     print("Loading dataset...")
     print("=" * 70)
 
-    img_to_classes, class_to_imgs = load_image_class_mapping(img_dir, label_dir)
+    img_to_classes, class_to_imgs, stem_to_filename = load_image_class_mapping(img_dir, label_dir)
 
     # Show class statistics
     print(f"\n📊 Dataset statistics:")
@@ -523,7 +541,7 @@ def main():
     print("Saving splits...")
     print("=" * 70)
 
-    save_splits(train_stems, val_stems, test_stems, out_dir)
+    save_splits(train_stems, val_stems, test_stems, out_dir, stem_to_filename, img_dir)
 
     # Save split information
     save_split_info(

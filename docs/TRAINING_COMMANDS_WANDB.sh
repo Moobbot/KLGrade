@@ -67,7 +67,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E005_4class_baseline \
+  name=E005_4_class_baseline \
   exist_ok=False
 
 # E006: 8-class Baseline
@@ -123,7 +123,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E008_4class_conservative \
+  name=E008_4_class_conservative \
   exist_ok=False
 
 # E009: 8-class + Conservative Augmentation
