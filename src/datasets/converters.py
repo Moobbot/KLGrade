@@ -101,7 +101,8 @@ def create_coco_json(
     image_stems = None
     if split_file and Path(split_file).exists():
         with open(split_file, "r", encoding="utf-8") as f:
-            image_stems = set(line.strip() for line in f if line.strip())
+            # Extract filename stems from paths (split files contain full paths)
+            image_stems = set(Path(line.strip()).stem for line in f if line.strip())
 
     # Initialize COCO structure
     coco_data = {

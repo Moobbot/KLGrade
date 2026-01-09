@@ -309,6 +309,12 @@ def main():
         help="Use 8-class dataset (10-class without KL0-a/b)",
     )
     parser.add_argument(
+        "--split_dir",
+        type=str,
+        default="splits",
+        help="Directory containing split files (train.txt, val.txt)",
+    )
+    parser.add_argument(
         "--conf_threshold",
         type=float,
         default=0.01,
@@ -363,19 +369,14 @@ def main():
         print(f"\n⚠️  COCO validation annotations not found. Creating...")
         from src.datasets import create_coco_json
 
-        actual_label_dir = (
-            Path(args.label_dir).parent
-            / f"labels{label_suffix.replace('_filtered', '')}"
-        )
-        if args.use_filtered:
-            actual_label_dir = Path("dataset/dataset_filtered/labels")
+        actual_label_dir = Path(args.label_dir)
 
         create_coco_json(
             yolo_label_dir=str(actual_label_dir),
             img_dir=args.img_dir,
             output_path=str(val_json),
             class_names=class_names,
-            split_file="splits/val.txt",
+            split_file=str(Path(args.split_dir) / "val.txt"),
         )
 
     # Step 2: Load model

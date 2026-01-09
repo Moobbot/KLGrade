@@ -26,10 +26,16 @@ from torch.utils.data import DataLoader
 from transformers import DetrForObjectDetection, DetrImageProcessor
 from tqdm import tqdm
 import argparse
+import wandb
 
 
 def prepare_coco_annotations(
-    label_dir: str, img_dir: str, output_dir: str, use_labels_new: bool = False
+    label_dir: str, 
+    img_dir: str, 
+    output_dir: str, 
+    use_labels_new: bool = False,
+    split_dir: str = "splits",
+    num_classes: int = None
 ):
     """
     Convert YOLO labels to COCO JSON format.
@@ -39,12 +45,26 @@ def prepare_coco_annotations(
         img_dir: Directory containing images
         output_dir: Output directory for COCO JSON files
         use_labels_new: Use labels_new (10 classes) instead of labels (5 classes)
+        split_dir: Directory containing split files (train.txt, val.txt)
+        num_classes: Number of classes (overrides use_labels_new if provided)
     """
     output_path = Path(output_dir)
     output_path.mkdir(parents=True, exist_ok=True)
 
     # Determine class names and label subdirectory
-    if use_labels_new:
+    if num_classes is not None:
+        # Explicit class count provided - map to class configuration
+        from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
+        class_map = {
+            5: CLASSES,
+            10: CLASSES_10_CLASS,
+            4: CLASSES_4_CLASS,
+            8: CLASSES_8_CLASS,
+        }
+        class_names = class_map.get(num_classes, CLASSES)
+        label_subdir = "labels"
+        suffix = f"_{num_classes}class"
+    elif use_labels_new:
         class_names = CLASSES_10_CLASS
         label_subdir = "labels_new"
         suffix = "_new"
@@ -53,7 +73,11 @@ def prepare_coco_annotations(
         label_subdir = "labels"
         suffix = ""
 
-    actual_label_dir = Path(label_dir).parent / label_subdir
+    # Only modify label_dir if using subdirectory logic
+    if num_classes is None:
+        actual_label_dir = Path(label_dir).parent / label_subdir
+    else:
+        actual_label_dir = Path(label_dir)
 
     print(f"Converting YOLO labels to COCO format...")
     print(f"  Label dir: {actual_label_dir}")
@@ -65,7 +89,7 @@ def prepare_coco_annotations(
         img_dir=img_dir,
         output_path=str(output_path / f"annotations_train{suffix}.json"),
         class_names=class_names,
-        split_file="splits/train.txt",
+        split_file=str(Path(split_dir) / "train.txt"),
     )
 
     # Create annotations for val split
@@ -74,7 +98,7 @@ def prepare_coco_annotations(
         img_dir=img_dir,
         output_path=str(output_path / f"annotations_val{suffix}.json"),
         class_names=class_names,
-        split_file="splits/val.txt",
+        split_file=str(Path(split_dir) / "val.txt"),
     )
 
     return train_json, val_json
@@ -84,6 +108,8 @@ def train_detr(
     img_dir: str = "processed/knee/images",
     label_dir: str = "processed/knee/labels",
     use_labels_new: bool = False,
+    split_dir: str = "splits",
+    num_classes: int = None,
     model_name: str = "facebook/detr-resnet-50",
     epochs: int = 50,
     batch_size: int = 4,
@@ -98,6 +124,8 @@ def train_detr(
         img_dir: Directory containing images
         label_dir: Base directory for labels
         use_labels_new: Use labels_new (10 classes) instead of labels (5 classes)
+        split_dir: Directory containing split files (train.txt, val.txt)
+        num_classes: Number of classes (4, 5, 8, or 10) - overrides use_labels_new if provided
         model_name: HuggingFace DETR model name
         epochs: Number of training epochs
         batch_size: Batch size for training
@@ -111,22 +139,54 @@ def train_detr(
     print("=" * 60)
 
     # Determine class configuration
-    if use_labels_new:
+    from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
+    
+    if num_classes is not None:
+        class_map = {
+            5: CLASSES,
+            10: CLASSES_10_CLASS,
+            4: CLASSES_4_CLASS,
+            8: CLASSES_8_CLASS,
+        }
+        class_names = class_map.get(num_classes, CLASSES)
+        num_classes_actual = len(class_names)
+        label_suffix = f"_{num_classes}class"
+    elif use_labels_new:
         class_names = CLASSES_10_CLASS
-        num_classes = len(CLASSES_10_CLASS)
+        num_classes_actual = len(CLASSES_10_CLASS)
         label_suffix = "_new"
     else:
         class_names = CLASSES
-        num_classes = len(CLASSES)
+        num_classes_actual = len(CLASSES)
         label_suffix = ""
 
     print(f"\nConfiguration:")
     print(f"  Model: {model_name}")
-    print(f"  Classes: {num_classes}")
+    print(f"  Classes: {num_classes_actual}")
     print(f"  Batch size: {batch_size}")
     print(f"  Learning rate: {learning_rate}")
     print(f"  Epochs: {epochs}")
     print(f"  Device: {device}")
+
+    # Initialize WandB
+    run_name = f"DETR-{num_classes_actual}class-{Path(output_dir).name}"
+    wandb.init(
+        entity="ngotam2k1-thuyloi-university",
+        project="KLGrade-Knee-OA",
+        name=run_name,
+        config={
+            "model": model_name,
+            "num_classes": num_classes_actual,
+            "batch_size": batch_size,
+            "learning_rate": learning_rate,
+            "epochs": epochs,
+            "device": device,
+            "img_dir": img_dir,
+            "label_dir": label_dir,
+            "architecture": "DETR",
+        },
+    )
+    print(f"\n✅ WandB initialized: {run_name}")
 
     # Step 1: Prepare COCO annotations
     print("\n" + "=" * 60)
@@ -139,6 +199,8 @@ def train_detr(
         img_dir=img_dir,
         output_dir=coco_dir,
         use_labels_new=use_labels_new,
+        split_dir=split_dir,
+        num_classes=num_classes,
     )
 
     # Step 2: Load DETR processor and model
@@ -152,7 +214,7 @@ def train_detr(
     # Load pre-trained DETR model and modify for our number of classes
     model = DetrForObjectDetection.from_pretrained(
         model_name,
-        num_labels=num_classes,
+        num_labels=num_classes_actual,
         ignore_mismatched_sizes=True,  # Allow different number of classes
     )
     model.to(device)
@@ -268,6 +330,14 @@ def train_detr(
         # Update scheduler
         scheduler.step()
 
+        # Log metrics to WandB
+        wandb.log({
+            "epoch": epoch + 1,
+            "train/loss": avg_train_loss,
+            "val/loss": avg_val_loss,
+            "train/lr": scheduler.get_last_lr()[0],
+        })
+
         # Print epoch summary
         print(f"\nEpoch {epoch+1}/{epochs}:")
         print(f"  Train Loss: {avg_train_loss:.4f}")
@@ -303,6 +373,9 @@ def train_detr(
             )
             print(f"  💾 Saved checkpoint: {checkpoint_path}")
 
+    # Finish WandB run
+    wandb.finish()
+
     print("\n" + "=" * 60)
     print("✅ Training completed!")
     print(f"   Best validation loss: {best_val_loss:.4f}")
@@ -315,6 +388,9 @@ if __name__ == "__main__":
     parser.add_argument("--img_dir", type=str, default="processed/knee/images")
     parser.add_argument("--label_dir", type=str, default="processed/knee/labels")
     parser.add_argument("--use_labels_new", action="store_true")
+    parser.add_argument("--split_dir", type=str, default="splits")
+    parser.add_argument("--num_classes", type=int, default=None, choices=[4, 5, 8, 10],
+                       help="Number of classes (overrides use_labels_new)")
     parser.add_argument("--model", type=str, default="facebook/detr-resnet-50")
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch", type=int, default=4)
@@ -330,6 +406,8 @@ if __name__ == "__main__":
         img_dir=args.img_dir,
         label_dir=args.label_dir,
         use_labels_new=args.use_labels_new,
+        split_dir=args.split_dir,
+        num_classes=args.num_classes,
         model_name=args.model,
         epochs=args.epochs,
         batch_size=args.batch,

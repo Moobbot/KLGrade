@@ -131,6 +131,8 @@ names:
 
     # Train the model
     print("\n🚀 Starting training...")
+    print("✅ WandB integration enabled (Ultralytics YOLO built-in support)")
+    print("   Metrics will be automatically logged if WANDB_API_KEY is set")
     results = model.train(
         data=str(dataset_yaml_path),
         epochs=epochs,
