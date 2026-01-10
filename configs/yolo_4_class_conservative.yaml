@@ -2,9 +2,9 @@
 # Dataset: Knee OA Detection (KL1-4, no KL0)
 
 path: .
-train: splits/knee_4_class/train.txt
-val: splits/knee_4_class/val.txt
-test: splits/knee_4_class/test.txt
+train: processed/splits/knee_4_class/train.txt
+val: processed/splits/knee_4_class/val.txt
+test: processed/splits/knee_4_class/test.txt
 
 # Dataset
 nc: 4

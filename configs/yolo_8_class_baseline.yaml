@@ -2,9 +2,9 @@
 # Dataset: Knee OA Detection with A/B split, no KL0 (KL1-a → KL4-b)
 
 path: .
-train: splits/knee_8_class/train.txt
-val: splits/knee_8_class/val.txt
-test: splits/knee_8_class/test.txt
+train: processed/splits/knee_8_class/train.txt
+val: processed/splits/knee_8_class/val.txt
+test: processed/splits/knee_8_class/test.txt
 
 # Dataset
 nc: 8

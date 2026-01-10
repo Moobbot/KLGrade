@@ -1,0 +1,8 @@
+# Enhanced YOLO Dataset Config
+path: /home/ngoductam/KLGrade/processed/enhanced
+train: processed/splits/dataset_v0/train.txt if split_dir else 'images'
+val: processed/splits/dataset_v0/val.txt if split_dir else 'images'
+test: processed/splits/dataset_v0/test.txt if split_dir else None
+
+nc: 5
+names: [0, 1, 2, 3, 4]

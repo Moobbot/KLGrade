@@ -1,0 +1,6 @@
+# Enhanced YOLO Dataset Config
+nc: 5
+names: [0, 1, 2, 3, 4]
+train: /home/ngoductam/KLGrade/processed/enhanced/splits/dataset_v0/E_ENHANCED_001_v0_full_testfix/train.txt
+val: /home/ngoductam/KLGrade/processed/enhanced/splits/dataset_v0/E_ENHANCED_001_v0_full_testfix/val.txt
+test: /home/ngoductam/KLGrade/processed/enhanced/splits/dataset_v0/E_ENHANCED_001_v0_full_testfix/test.txt

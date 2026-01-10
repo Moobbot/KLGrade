@@ -22,6 +22,8 @@ from src.datasets import (
 from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
 from ultralytics import YOLO
 import torch
+import wandb
+import os
 
 
 def train_yolo11(
@@ -125,14 +127,32 @@ names:
     print(f"   Make sure your labels are in: {img_dir_abs.parent / label_subdir}")
     print(f"   Or create symlinks if needed.")
 
+    # Initialize WandB
+    wandb_project = os.getenv("WANDB_PROJECT", "KLGrade-Knee-OA")
+    print(f"\n📊 Initializing WandB Project: {wandb_project}")
+    print(f"   Experiment name: {name}")
+    
+    # Initialize wandb run
+    wandb.init(
+        project=wandb_project,
+        name=name,
+        config={
+            "model": model_name,
+            "epochs": epochs,
+            "batch_size": batch_size,
+            "img_size": img_size,
+            "num_classes": num_classes,
+            "class_names": list(class_names.values()),
+        }
+    )
+    
     # Load YOLO11 model
     print(f"\n📦 Loading YOLO11 model: {model_name}")
     model = YOLO(model_name)
 
     # Train the model
     print("\n🚀 Starting training...")
-    print("✅ WandB integration enabled (Ultralytics YOLO built-in support)")
-    print("   Metrics will be automatically logged if WANDB_API_KEY is set")
+    print("✅ WandB integration ENABLED - metrics will be logged to dashboard")
     results = model.train(
         data=str(dataset_yaml_path),
         epochs=epochs,
@@ -181,6 +201,10 @@ names:
     except Exception as e:
         print(f"⚠️  ONNX export failed: {e}")
 
+    # Finish WandB run
+    wandb.finish()
+    print("\n✅ WandB run finished - check dashboard for results")
+    
     print("\n" + "=" * 60)
     print("Training pipeline completed successfully!")
     print("=" * 60)
@@ -219,9 +243,6 @@ if __name__ == "__main__":
         "--use_8_class", action="store_true", help="Use 8-class dataset"
     )
     parser.add_argument(
-        "--use_filtered", action="store_true", help="Use filtered dataset (7 classes)"
-    )
-    parser.add_argument(
         "--model",
         type=str,
         default="yolo11n.pt",
@@ -246,7 +267,6 @@ if __name__ == "__main__":
             use_10_class=args.use_10_class,
             use_4_class=args.use_4_class,
             use_8_class=args.use_8_class,
-            use_filtered=args.use_filtered,
             model_name=args.model,
             epochs=args.epochs,
             img_size=args.img_size,

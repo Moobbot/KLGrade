@@ -53,7 +53,7 @@ graph LR
 | Stage                 | Input                | Output                             | Script                              | Có thể bỏ qua? |
 | --------------------- | -------------------- | ---------------------------------- | ----------------------------------- | -------------- |
 | **1. Analyze**        | Images + Labels      | `analysis.txt`                     | `check_dataset/analyze_dataset.py`  | ✅ Optional    |
-| **2. Split**          | Images + Labels      | `train.txt`, `val.txt`, `test.txt` | `split_dataset.py`                  | ❌ Required    |
+| **2. Split**          | Images + Labels      | `processed/splits/train.txt...` | `split_dataset.py`                  | ❌ Required    |
 | **3. Filter**         | Dataset              | Filtered dataset                   | `filter_dataset_by_class.py`        | ✅ Optional    |
 | **4. Remap**          | Labels               | Remapped labels                    | `remap_filtered_labels.py`          | ✅ Optional    |
 | **5. Train**          | Images + Labels      | Model `.pt`                        | `examples/train_*.py`               | ❌ Required    |
@@ -100,14 +100,13 @@ KLGrade/
 │       ├── labels/            # YOLO labels (5 classes)
 │       └── labels_new/        # YOLO labels (10 classes)
 │
-├── splits/                     # Train/val/test splits
-│   ├── train.txt
-│   ├── val.txt
-│   └── test.txt
-│
 ├── processed/                  # Processed data
 │   ├── coco/                  # COCO format annotations
-│   └── yolo11_labels.yaml     # YOLO config
+│   ├── yolo11_labels.yaml     # YOLO config
+│   └── splits/                # Train/val/test splits
+│       ├── train.txt
+│       ├── val.txt
+│       └── test.txt
 │
 ├── examples/                   # Training & evaluation scripts
 │   ├── train_yolo11.py
@@ -183,14 +182,14 @@ KLGrade/
 #### 2.1. Stratified split
 
 **Input**: Raw images + labels  
-**Output**: `splits/train.txt`, `splits/val.txt`, `splits/test.txt`
+**Output**: `processed/splits/train.txt`, `processed/splits/val.txt`, `processed/splits/test.txt`
 
 ```powershell
 # Split với tỷ lệ 70:20:10, stratified theo class
 .venv\Scripts\python.exe split_dataset.py `
     --image_dir dataset/dataset_v0/images `
     --label_dir dataset/dataset_v0/labels `
-    --output_dir splits `
+    --output_dir processed/splits `
     --train_ratio 0.7 `
     --val_ratio 0.2 `
     --test_ratio 0.1 `
@@ -203,7 +202,7 @@ KLGrade/
 # Kiểm tra phân bố classes sau khi split
 .venv\Scripts\python.exe check_dataset\class_split_report.py `
     --label_dir dataset/dataset_v0/labels `
-    --splits_dir splits
+    --splits_dir processed/splits
 ```
 
 **Output**: Báo cáo phân bố classes ở từng split

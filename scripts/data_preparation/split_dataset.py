@@ -44,8 +44,8 @@ def parse_args():
     parser.add_argument(
         "--out_dir",
         type=str,
-        default="splits",
-        help="Output directory for split files (default: splits)",
+        default="processed/splits",
+        help="Output directory for split files (default: processed/splits)",
     )
     parser.add_argument(
         "--train", type=float, default=0.7, help="Training set ratio (default: 0.7)"

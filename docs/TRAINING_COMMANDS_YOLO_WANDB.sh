@@ -22,11 +22,15 @@ python --version
 # ============================================================================
 
 echo "Setting up WandB..."
-export WANDB_API_KEY="wandb_v1_hello"
+export WANDB_API_KEY="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"
 export WANDB_PROJECT="KLGrade-Knee-OA"
 
 # Login to WandB
 wandb login $WANDB_API_KEY
+
+# Enable WandB in Ultralytics YOLO settings
+echo "Enabling WandB integration in Ultralytics YOLO..."
+yolo settings wandb=True
 
 echo "✅ WandB configured - Experiments will be logged to: https://wandb.ai"
 
@@ -46,7 +50,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E001_5class_baseline \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E001 complete!"
 echo ""
@@ -61,7 +68,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E004_10class_baseline \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E004 complete!"
 echo ""
@@ -76,7 +86,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E005_4_class_baseline \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E005 complete!"
 echo ""
@@ -91,7 +104,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E006_8class_baseline \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E006 complete!"
 echo ""
@@ -115,7 +131,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E002_5class_conservative \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E002 complete!"
 echo ""
@@ -130,7 +149,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E007_10class_conservative \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E007 complete!"
 echo ""
@@ -145,7 +167,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E008_4_class_conservative \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E008 complete!"
 echo ""
@@ -160,7 +185,10 @@ yolo detect train \
   device=0 \
   project=runs/detect \
   name=E009_8class_conservative \
-  exist_ok=False
+  exist_ok=False \
+  patience=50 \
+  save_period=10 \
+  plots=True
 
 echo "✅ E009 complete!"
 echo ""

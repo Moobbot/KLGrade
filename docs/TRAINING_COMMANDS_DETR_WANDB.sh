@@ -22,7 +22,7 @@ python --version
 # ============================================================================
 
 echo "Setting up WandB..."
-export WANDB_API_KEY="wandb_v1_hello"
+export WANDB_API_KEY="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"
 export WANDB_PROJECT="KLGrade-Knee-OA"
 
 # Login to WandB
@@ -41,7 +41,7 @@ echo "Training E010: DETR 5-class Baseline..."
 python scripts/training/train_detr.py \
   --img_dir processed/knee/dataset_yolo/images \
   --label_dir processed/knee/labels \
-  --split_dir splits/knee_5_class \
+  --split_dir processed/splits/knee_5_class \
   --num_classes 5 \
   --model facebook/detr-resnet-50 \
   --epochs 50 \
@@ -55,7 +55,7 @@ echo "Training E011: DETR 10-class Baseline..."
 python scripts/training/train_detr.py \
   --img_dir processed/knee_10_class/images \
   --label_dir processed/knee_10_class/labels \
-  --split_dir splits/knee_10_class \
+  --split_dir processed/splits/knee_10_class \
   --num_classes 10 \
   --model facebook/detr-resnet-50 \
   --epochs 50 \
@@ -69,7 +69,7 @@ echo "Training E012: DETR 4-class Baseline..."
 python scripts/training/train_detr.py \
   --img_dir processed/knee_4_class/images \
   --label_dir processed/knee_4_class/labels \
-  --split_dir splits/knee_4_class \
+  --split_dir processed/splits/knee_4_class \
   --num_classes 4 \
   --model facebook/detr-resnet-50 \
   --epochs 50 \
@@ -83,7 +83,7 @@ echo "Training E013: DETR 8-class Baseline..."
 python scripts/training/train_detr.py \
   --img_dir processed/knee_8_class/images \
   --label_dir processed/knee_8_class/labels \
-  --split_dir splits/knee_8_class \
+  --split_dir processed/splits/knee_8_class \
   --num_classes 8 \
   --model facebook/detr-resnet-50 \
   --epochs 50 \

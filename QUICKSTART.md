@@ -51,7 +51,7 @@ chmod +x scripts/run_full_pipeline.sh
 - `processed/knee_10_class/` - 10-class dataset
 - `processed/knee_4_class/` - 4-class dataset
 - `processed/knee_8_class/` - 8-class dataset
-- `splits/` - Train/val/test splits
+- `processed/splits/` - Train/val/test splits
 - `configs/` - YOLO configs (already exist)
 
 ## 🎯 Sau khi pipeline xong
@@ -130,12 +130,12 @@ KLGrade/
 │   ├── knee/                # 5-class crops
 │   ├── knee_10_class/       # 10-class dataset
 │   ├── knee_4_class/        # 4-class (no KL0)
-│   └── knee_8_class/        # 8-class (10-class no KL0)
-├── splits/                  # Train/val/test splits
-│   ├── knee_5_class/
-│   ├── knee_10_class/
-│   ├── knee_4_class/
-│   └── knee_8_class/
+│   ├── knee_8_class/        # 8-class (10-class no KL0)
+│   └── splits/             # Train/val/test splits
+│       ├── knee_5_class/
+│       ├── knee_10_class/
+│       ├── knee_4_class/
+│       └── knee_8_class/
 ├── configs/                 # YOLO config files
 └── runs/                    # Training results (created during training)
 ```
