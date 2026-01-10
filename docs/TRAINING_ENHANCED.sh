@@ -20,8 +20,22 @@ python --version
 # ============================================================================
 
 echo "Setting up WandB..."
-export WANDB_API_KEY="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"
-export WANDB_PROJECT="KLGrade-Knee-OA"
+# Load WandB credentials from .wandb.env
+if [ -f ".wandb.env" ]; then
+    set -a
+    source .wandb.env
+    set +a
+    echo "✅ Loaded WandB credentials from .wandb.env"
+else
+    echo "❌ Error: .wandb.env file not found"
+    exit 1
+fi
+
+# Verify credentials are loaded
+if [ -z "$WANDB_API_KEY" ]; then
+    echo "❌ Error: WANDB_API_KEY not set"
+    exit 1
+fi
 
 wandb login $WANDB_API_KEY
 yolo settings wandb=True

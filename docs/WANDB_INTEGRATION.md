@@ -1,93 +1,53 @@
 # WandB Integration Guide
 
-## Setup (One-time)
-
-### 1. Activate Virtual Environment
+## 🚀 Quick Start
 
 ```bash
-# IMPORTANT: Always activate .venv first!
-source .venv/bin/activate
+# 1. Verify credentials
+cat .wandb.env
+
+# 2. Run training
+bash docs/TRAINING_COMMANDS_YOLO_WANDB.sh
+
+# 3. View dashboard
+# https://wandb.ai/ngotam2481-thuyloi-university/KLGrade-Knee-OA
 ```
 
-### 2. Install WandB
+## Available Scripts
 
 ```bash
-pip install wandb
+# YOLO
+bash docs/TRAINING_COMMANDS_YOLO_WANDB.sh
+bash docs/TRAINING_ENHANCED.sh
+
+# DETR
+bash docs/TRAINING_COMMANDS_DETR_WANDB.sh
+bash docs/EVALUATION_COMMANDS_DETR.sh
 ```
 
-### 3. Login
+**Tự động:**
+- ✅ Load `.wandb.env`
+- ✅ Login WandB
+- ✅ Log metrics, images, models
 
+## Troubleshooting
+
+### ".wandb.env not found"
 ```bash
-# Method 1: Using environment variable (recommended for servers)
-export WANDB_API_KEY="wandb_v1_Hello"
-wandb login $WANDB_API_KEY
-
-# Method 2: Interactive login
-wandb login
-# Then paste your key when prompted
+ls -la .wandb.env  # Check exists
 ```
 
-### 4. Set Project Name
-
+### "WANDB_API_KEY not set"
 ```bash
-export WANDB_PROJECT="KLGrade-Knee-OA"
+cat .wandb.env  # Verify WANDB_API_KEY=wandb_v1_xxx
 ```
 
-## ✅ Automatic Integration
-
-**Good news**: YOLO v8+ has built-in WandB support! Just login and it will automatically:
-
-- Log all metrics (mAP, loss, precision, recall...)
-- Upload training curves
-- Save model checkpoints
-- Track hyperparameters
-- Log validation images with predictions
-
-## Usage
-
-### Option 1: Use the provided script
-
+### Dashboard empty
 ```bash
-chmod +x docs/TRAINING_COMMANDS_WANDB.sh
-./docs/TRAINING_COMMANDS_WANDB.sh
+yolo settings wandb=True  # Enable WandB for YOLO
 ```
 
-### Option 2: Manual commands
+## Links
 
-```bash
-# Set API key first
-export WANDB_API_KEY="wandb_v1_hello"
-wandb login $WANDB_API_KEY
-
-# Then run any YOLO training command
-yolo detect train data=configs/yolo_5_class_baseline.yaml epochs=100 ...
-```
-
-## View Results
-
-Access your experiments at:
-
-```
-https://wandb.ai/your-username/KLGrade-Knee-OA
-```
-
-## What Gets Logged
-
-- **Metrics**: mAP50, mAP50-95, precision, recall, losses
-- **Hyperparameters**: learning rate, batch size, augmentation settings
-- **System info**: GPU usage, memory, training time
-- **Media**: Training/validation images with bounding boxes
-- **Model**: Checkpoints automatically saved
-
-## Disable WandB (if needed)
-
-```bash
-export WANDB_MODE=disabled
-```
-
-## Tips
-
-1. **Compare runs**: Click "Compare" in WandB to see multiple experiments side-by-side
-2. **Custom tags**: Add tags in WandB UI to organize experiments
-3. **Note taking**: Add notes directly in WandB dashboard
-4. **Share results**: Generate shareable report links
+- [WANDB_FIX.md](WANDB_FIX.md) - Detailed info
+- [WandB Docs](https://docs.wandb.ai/)

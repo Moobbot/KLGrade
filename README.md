@@ -88,6 +88,22 @@ pip install -r requirements.txt
 
 **Chi tiết dependencies**: Xem [DEPENDENCIES.md](DEPENDENCIES.md)
 
+### 📊 WandB Logging
+
+```bash
+# Verify credentials
+cat .wandb.env
+
+# Run training - auto-logs to WandB
+bash docs/TRAINING_COMMANDS_YOLO_WANDB.sh
+```
+
+**Dashboard:** https://wandb.ai/ngotam2481-thuyloi-university/KLGrade-Knee-OA
+
+**Docs:**
+- [WANDB_INTEGRATION.md](docs/WANDB_INTEGRATION.md)
+- [WANDB_FIX.md](docs/WANDB_FIX.md) - Troubleshooting & detailed info
+
 ---
 
 ## 📂 Cấu trúc Project
@@ -589,10 +605,19 @@ python -m pycocotools.coco --help
 
 ## 📖 Tài liệu Chi tiết
 
-- **[DATA_PREPARATION_GUIDE.md](DATA_PREPARATION_GUIDE.md)** - Hướng dẫn chi tiết về data preparation
-- **[DEPENDENCIES.md](DEPENDENCIES.md)** - Cài đặt và dependencies
-- **[datasets/README.md](datasets/README.md)** - Dataset modules documentation
-- **[check_dataset/PREPROCESSING_LABELS.md](check_dataset/PREPROCESSING_LABELS.md)** - Preprocessing guide
+### Core Guides
+- **[FULL_PIPELINE_GUIDE.md](docs/FULL_PIPELINE_GUIDE.md)** - Complete workflow
+- **[DATA_PREPARATION.md](docs/DATA_PREPARATION.md)** - Data setup
+- **[WANDB_INTEGRATION.md](docs/WANDB_INTEGRATION.md)** - WandB logging
+
+### Training Scripts
+- **[TRAINING_COMMANDS_YOLO_WANDB.sh](docs/TRAINING_COMMANDS_YOLO_WANDB.sh)** - YOLO
+- **[TRAINING_COMMANDS_DETR_WANDB.sh](docs/TRAINING_COMMANDS_DETR_WANDB.sh)** - DETR
+- **[TRAINING_ENHANCED.sh](docs/TRAINING_ENHANCED.sh)** - Enhanced preprocessing
+
+### Configuration
+- **[CONFIG_SUMMARY.md](docs/CONFIG_SUMMARY.md)** - Config overview
+- **[DEPENDENCIES.md](docs/DEPENDENCIES.md)** - Dependencies
 
 ---
 
