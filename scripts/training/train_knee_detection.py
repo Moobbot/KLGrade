@@ -220,7 +220,9 @@ def train_knee_yolo(
         
         # 6. Validate & Log Metrics
         print("\n📊 Validating...")
-        metrics = model.val()
+        # Save validation results to project/val/name
+        val_project = str(Path(project) / "val")
+        metrics = model.val(project=val_project, name=name)
         
         # Extract meaningful metrics
         evaluation = {

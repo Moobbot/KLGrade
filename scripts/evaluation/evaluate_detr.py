@@ -329,7 +329,7 @@ def main():
     parser.add_argument(
         "--output",
         type=str,
-        required=True,
+        default="runs/detr/val/eval",
         help="Output directory for evaluation results",
     )
 

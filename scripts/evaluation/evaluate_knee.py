@@ -111,7 +111,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Evaluate Knee Detection Model")
     parser.add_argument("--model", type=str, required=True, help="Path to .pt model file")
     parser.add_argument("--split", type=str, default="test", choices=["train", "val", "test"], help="Dataset split to use")
-    parser.add_argument("--project", type=str, default="runs/evaluate", help="Output directory")
+    parser.add_argument("--project", type=str, default="runs/evaluate/val", help="Output directory")
     parser.add_argument("--name", type=str, default="knee_eval", help="Experiment name")
     parser.add_argument("--device", type=str, default="0", help="GPU device")
     

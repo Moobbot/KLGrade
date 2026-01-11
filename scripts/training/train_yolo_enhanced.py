@@ -167,7 +167,8 @@ def train_yolo_enhanced(
     
     # Validate
     print("\n📊 Running validation...")
-    metrics = model.val()
+    val_project = str(Path(project) / "val")
+    metrics = model.val(project=val_project, name=name)
     
     print(f"\n✅ Training completed!")
     print(f"  mAP50: {metrics.box.map50:.4f}")

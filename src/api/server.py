@@ -1,81 +1,92 @@
+
 from fastapi import FastAPI, File, UploadFile, HTTPException, Form
 from pydantic import BaseModel
-from typing import Optional
-from src.api.inference import YOLOModel
+from typing import Optional, List
+from src.api.pipeline import KneePipeline
 from src.api.utils import read_image_file, encode_image_base64
 import uvicorn
+import cv2
 
-app = FastAPI(title="YOLO Inference API", description="API for Knee Osteoarthritis Detection")
-model_instance = None
+app = FastAPI(title="Knee KL Grading Pipeline API", description="Two-stage pipeline: Knee Detection -> KL Grading")
+pipeline_instance = None
 
-class Prediction(BaseModel):
-    class_id: int
-    class_name: str
-    confidence: float
-    bbox: dict
+class KLGrade(BaseModel):
+    grade_class: str
+    grade_conf: float
+    grade_id: int
+    grade_bbox: List[int]
 
-class InferenceResponse(BaseModel):
+class KneePrediction(BaseModel):
+    knee_bbox: List[int]
+    knee_conf: float
+    kl_grade: Optional[KLGrade]
+
+class PipelineResponse(BaseModel):
     filename: str
-    predictions: list[Prediction]
+    predictions: List[KneePrediction]
     image_base64: Optional[str] = None
 
-def load_model(model_path: str):
-    global model_instance
-    model_instance = YOLOModel(model_path)
+def load_pipeline(knee_path: str, grade_path: str):
+    global pipeline_instance
+    pipeline_instance = KneePipeline(knee_path, grade_path)
 
-@app.post("/predict", response_model=InferenceResponse)
-async def predict(
+@app.post("/predict_pipeline", response_model=PipelineResponse)
+async def predict_pipeline(
     file: UploadFile = File(...),
-    conf: float = Form(0.25),
+    knee_conf: float = Form(0.25),
+    grade_conf: float = Form(0.25),
     return_image: bool = Form(False)
 ):
-    global model_instance
-    if model_instance is None:
-        raise HTTPException(status_code=500, detail="Model not loaded")
+    global pipeline_instance
+    if pipeline_instance is None:
+        raise HTTPException(status_code=500, detail="Pipeline not initialized")
 
     contents = await file.read()
     image_rgb = read_image_file(contents, file.filename)
     
-    # Run Inference
-    results = model_instance.predict(image_rgb, conf=conf)
+    # Run Pipeline
+    results = pipeline_instance.process(image_rgb, knee_conf=knee_conf, grade_conf=grade_conf)
     
-    if not results:
-        return InferenceResponse(filename=file.filename, predictions=[])
-        
-    result = results[0]
+    # Format Response
     predictions = []
-    
-    # Extract boxes
-    boxes = result.boxes
-    for i in range(len(boxes)):
-        box = boxes[i]
-        xyxy = box.xyxy[0].cpu().numpy().tolist()
-        cls_id = int(box.cls[0].item())
-        conf_score = float(box.conf[0].item())
-        
-        # Use config mapping if available, fallback to model names
-        # YOLOModel handled mapping resolution, but result logic uses internal IDs.
-        # So we map cls_id -> mapped name
-        class_name = model_instance.class_mapping.get(cls_id, str(cls_id))
-        
-        predictions.append(Prediction(
-            class_id=cls_id,
-            class_name=class_name,
-            confidence=conf_score,
-            bbox={
-                "x1": xyxy[0],
-                "y1": xyxy[1],
-                "x2": xyxy[2],
-                "y2": xyxy[3]
-            }
+    for res in results:
+        # Construct Pydantic model
+        grade_info = res.get("kl_grade")
+        kl_obj = None
+        if grade_info:
+            kl_obj = KLGrade(
+                grade_class=grade_info["grade_class"],
+                grade_conf=grade_info["grade_conf"],
+                grade_id=grade_info["grade_id"],
+                grade_bbox=grade_info.get("grade_bbox", [])
+            )
+            
+        predictions.append(KneePrediction(
+            knee_bbox=res["knee_bbox"],
+            knee_conf=res["knee_conf"],
+            kl_grade=kl_obj
         ))
         
     encoded_image = None
-    if return_image:
-        annotated_bgr = result.plot()
-        encoded_image = encode_image_base64(annotated_bgr)
+    if return_image and len(predictions) > 0:
+        # Draw on image (Convert RGB back to BGR for OpenCV drawing/encoding)
+        vis_img = cv2.cvtColor(image_rgb, cv2.COLOR_RGB2BGR)
         
-    return InferenceResponse(
+        for p in predictions:
+            # Draw bbox
+            x1, y1, x2, y2 = p.knee_bbox
+            cv2.rectangle(vis_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            
+            # Draw Label
+            label = "Knee"
+            if p.kl_grade:
+                label += f" | {p.kl_grade.grade_class} ({p.kl_grade.grade_conf:.2f})"
+            
+            cv2.putText(vis_img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (0, 255, 0), 2)
+            
+        encoded_image = encode_image_base64(vis_img)
+        
+    return PipelineResponse(
         filename=file.filename,
         predictions=predictions,
         image_base64=encoded_image
@@ -83,8 +94,8 @@ async def predict(
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "model_loaded": model_instance is not None}
+    return {"status": "ok", "pipeline_loaded": pipeline_instance is not None}
 
-def start_api_server(host: str, port: int, model_path: str):
-    load_model(model_path)
+def start_api_server(host: str, port: int, knee_model: str, grade_model: str):
+    load_pipeline(knee_model, grade_model)
     uvicorn.run(app, host=host, port=port)

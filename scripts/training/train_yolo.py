@@ -186,7 +186,8 @@ def train_yolo11(
 
     # Validate the model
     print("\n📊 Running validation...")
-    metrics = model.val()
+    val_project = str(Path(project) / "val")
+    metrics = model.val(project=val_project, name=name)
 
     print(f"\n   mAP50: {metrics.box.map50:.4f}")
     print(f"   mAP50-95: {metrics.box.map:.4f}")
