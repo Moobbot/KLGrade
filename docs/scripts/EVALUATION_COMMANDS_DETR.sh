@@ -60,7 +60,7 @@ echo ""
 echo "Evaluating E010: DETR 5-class Baseline..."
 python scripts/evaluation/evaluate_detr.py \
   --model_path runs/detr/E010_5class_baseline/best_model.pt \
-  --img_dir processed/knee/dataset_yolo/images \
+  --img_dir processed/knee/images \
   --label_dir processed/knee/labels \
   --split_dir splits/knee_5_class \
   --conf_threshold 0.01 \

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Enhanced YOLO Training with CLAHE + Data Balancing
 # Based on Yolo_Detection_XuongKhop_v2.ipynb techniques
-# chmod +x docs/TRAINING_ENHANCED.sh
+# chmod +x docs/scripts/TRAINING_ENHANCED.sh
 set -e
 
 # ============================================================================
@@ -9,6 +9,7 @@ set -e
 # ============================================================================
 
 echo "Activating conda environment..."
+# Initialize conda for bash (if not already done)
 eval "$(conda shell.bash hook)"
 conda activate klgrade
 
@@ -56,52 +57,17 @@ echo "  ✅ CLAHE (Contrast Limited Adaptive Histogram Equalization)"
 echo "  ✅ Gaussian Blur (noise reduction)"
 echo "  ✅ Data Balancing (flip augmentation for minority classes)"
 echo "  ✅ Label Scaling (proper bbox adjustment after resize)"
+echo "  ✅ Advanced Augmentation (Mosaic, Mixup, HSV, Geometric)"
+echo "  ✅ Cosine Annealing Learning Rate"
 echo ""
 echo "========================================================================"
 echo ""
 
-# E_ENHANCED_001: Dataset V0 with Full Enhancement
-echo "Training E_ENHANCED_001: Dataset V0 + CLAHE + Balancing..."
+# E_ENHANCED_001: 5-class Baseline (Matches E001)
+echo "Training E_ENHANCED_001: YOLO 5-class + CLAHE + Balancing..."
 python scripts/training/train_yolo_enhanced.py \
-  --img_dir dataset/dataset_v0/images \
-  --label_dir dataset/dataset_v0/labels \
-  --split_dir processed/splits/dataset_v0 \
-  --num_classes 5 \
-  --model yolo11l.pt \
-  --epochs 100 \
-  --batch 8 \
-  --imgsz 640 \
-  --device 0 \
-  --project runs/detect \
-  --name yolo11l_E_ENHANCED_001_v0_full
-
-echo "✅ E_ENHANCED_001 complete!"
-echo ""
-
-# E_ENHANCED_002: Dataset V0 with Preprocessing Only (no balancing)
-echo "Training E_ENHANCED_002: Dataset V0 + CLAHE (no balancing)..."
-python scripts/training/train_yolo_enhanced.py \
-  --img_dir dataset/dataset_v0/images \
-  --label_dir dataset/dataset_v0/labels \
-  --split_dir processed/splits/dataset_v0 \
-  --num_classes 5 \
-  --model yolo11l.pt \
-  --epochs 100 \
-  --batch 8 \
-  --imgsz 640 \
-  --device 0 \
-  --project runs/detect \
-  --name yolo11l_E_ENHANCED_002_v0_clahe_only \
-  --no-balancing
-
-echo "✅ E_ENHANCED_002 complete!"
-echo ""
-
-# E_ENHANCED_003: Processed knee_5_class with Enhancement
-echo "Training E_ENHANCED_003: knee_5_class + CLAHE + Balancing..."
-python scripts/training/train_yolo_enhanced.py \
-  --img_dir processed/knee/dataset_yolo/images \
-  --label_dir processed/knee/dataset_yolo/labels \
+  --img_dir processed/knee/images \
+  --label_dir processed/knee/labels \
   --split_dir processed/splits/knee_5_class \
   --num_classes 5 \
   --model yolo11l.pt \
@@ -110,18 +76,13 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name yolo11l_E_ENHANCED_003_knee5_full
+  --name E_ENHANCED_001_5class_full
 
-echo "✅ E_ENHANCED_003 complete!"
+echo "✅ E_ENHANCED_001 complete!"
 echo ""
 
-
-# ============================================================================
-# Additional Splits Experiments (10-class, 4-class, 8-class)
-# ============================================================================
-
-# E_ENHANCED_004: 10-class Split
-echo "Training E_ENHANCED_004: knee_10_class + CLAHE + Balancing..."
+# E_ENHANCED_004: 10-class Baseline (Matches E004)
+echo "Training E_ENHANCED_004: YOLO 10-class + CLAHE + Balancing..."
 python scripts/training/train_yolo_enhanced.py \
   --img_dir processed/knee_10_class/images \
   --label_dir processed/knee_10_class/labels \
@@ -133,13 +94,13 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name yolo11l_E_ENHANCED_004_knee10_full
+  --name E_ENHANCED_004_10class_full
 
 echo "✅ E_ENHANCED_004 complete!"
 echo ""
 
-# E_ENHANCED_005: 4-class Split
-echo "Training E_ENHANCED_005: knee_4_class + CLAHE + Balancing..."
+# E_ENHANCED_005: 4-class Baseline (Matches E005)
+echo "Training E_ENHANCED_005: YOLO 4-class + CLAHE + Balancing..."
 python scripts/training/train_yolo_enhanced.py \
   --img_dir processed/knee_4_class/images \
   --label_dir processed/knee_4_class/labels \
@@ -151,13 +112,13 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name yolo11l_E_ENHANCED_005_knee4_full
+  --name E_ENHANCED_005_4class_full
 
 echo "✅ E_ENHANCED_005 complete!"
 echo ""
 
-# E_ENHANCED_006: 8-class Split
-echo "Training E_ENHANCED_006: knee_8_class + CLAHE + Balancing..."
+# E_ENHANCED_006: 8-class Baseline (Matches E006)
+echo "Training E_ENHANCED_006: YOLO 8-class + CLAHE + Balancing..."
 python scripts/training/train_yolo_enhanced.py \
   --img_dir processed/knee_8_class/images \
   --label_dir processed/knee_8_class/labels \
@@ -169,7 +130,7 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name yolo11l_E_ENHANCED_006_knee8_full
+  --name E_ENHANCED_006_8class_full
 
 echo "✅ E_ENHANCED_006 complete!"
 echo ""
@@ -184,9 +145,10 @@ echo "✅ ENHANCED TRAINING EXPERIMENTS COMPLETE!"
 echo "========================================================================"
 echo ""
 echo "Results saved to: runs/detect/"
-echo "  - yolo11l_E_ENHANCED_001_v0_full/"
-echo "  - yolo11l_E_ENHANCED_002_v0_clahe_only/"
-echo "  - yolo11l_E_ENHANCED_003_knee5_full/"
+echo "  - E_ENHANCED_001_5class_full/"
+echo "  - E_ENHANCED_004_10class_full/"
+echo "  - E_ENHANCED_005_4class_full/"
+echo "  - E_ENHANCED_006_8class_full/"
 echo ""
 echo "Enhanced Features Applied:"
 echo "  📊 CLAHE - Better contrast for medical images"
@@ -194,12 +156,8 @@ echo "  🔍 Gaussian Blur - Noise reduction"
 echo "  ⚖️  Data Balancing - Flip augmentation for minority classes"
 echo "  📏 Label Scaling - Proper bbox adjustment"
 echo ""
-echo "Processed Data Location:"
-echo "  - processed/enhanced/images/"
-echo "  - processed/enhanced/labels/"
-echo ""
 echo "WandB Dashboard:"
-echo "  https://wandb.ai/ngotam2k1-thuyloi-university/KLGrade-Knee-OA"
+echo "  https://wandb.ai/ngotam20082001/KLGrade-Knee-OA"
 echo ""
 echo "========================================================================"
 
@@ -208,18 +166,7 @@ echo "========================================================================"
 # ============================================================================
 
 # Run all experiments:
-# bash docs/TRAINING_ENHANCED.sh
+# bash docs/scripts/TRAINING_ENHANCED.sh
 
 # Run in background:
-# nohup bash docs/TRAINING_ENHANCED.sh > training_enhanced.log 2>&1 &
-
-# Run single experiment:
-# python scripts/training/train_yolo_enhanced.py \
-#   --img_dir dataset/dataset_v0/images \
-#   --label_dir dataset/dataset_v0/labels \
-#   --split_dir processed/splits/dataset_v0 \
-#   --num_classes 5 \
-#   --epochs 100 \
-#   --batch 16 \
-#   --device 0 \
-#   --name test_enhanced
+# nohup bash docs/scripts/TRAINING_ENHANCED.sh > training_enhanced.log 2>&1 &

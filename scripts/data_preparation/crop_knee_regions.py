@@ -344,6 +344,7 @@ def crop_knee_regions(
     # Detailed logging
     skipped_files = []
     dropped_labels_log = []
+    expanded_files_log = []
 
     # Process each image
     for img_path in tqdm(images, desc="Cropping"):
@@ -389,6 +390,34 @@ def crop_knee_regions(
         kl_boxes = load_yolo_boxes(kl_label_path)
 
         # Process EACH knee box from this image
+        # Assign KL labels to the closest knee (based on center distance)
+        knee_assignments = {i: [] for i in range(len(knee_boxes))}
+        if knee_boxes and kl_boxes:
+            # Get knee centers
+            knee_centers = []
+            for kb in knee_boxes:
+                k_cx = kb["x"] * img_w
+                k_cy = kb["y"] * img_h
+                knee_centers.append((k_cx, k_cy))
+
+            # Assign each KL label to closest knee
+            for kl_box in kl_boxes:
+                kl_cx = kl_box["x"] * img_w
+                kl_cy = kl_box["y"] * img_h
+
+                min_dist = float("inf")
+                best_knee_idx = -1
+
+                for idx, (k_cx, k_cy) in enumerate(knee_centers):
+                    dist = ((kl_cx - k_cx) ** 2 + (kl_cy - k_cy) ** 2) ** 0.5
+                    if dist < min_dist:
+                        min_dist = dist
+                        best_knee_idx = idx
+
+                if best_knee_idx != -1:
+                    knee_assignments[best_knee_idx].append(kl_box)
+
+        # Process EACH knee box from this image
         for knee_idx, knee_box in enumerate(knee_boxes):
             # Convert knee box to pixel coordinates
             kx1, ky1, kx2, ky2 = yolo_to_xyxy(knee_box, img_w, img_h)
@@ -400,38 +429,48 @@ def crop_knee_regions(
             knee_h = ky2 - ky1
             knee_size = max(knee_w, knee_h)
 
-            # Expand knee box to include NEARBY KL labels only
-            # (not labels from far away that belong to another knee)
-            if kl_boxes:
-                for kl_box in kl_boxes:
-                    kl_x_center = kl_box["x"] * img_w
-                    kl_y_center = kl_box["y"] * img_h
+            # Store original coordinates to check for expansion later
+            orig_kx1, orig_ky1, orig_kx2, orig_ky2 = kx1, ky1, kx2, ky2
 
-                    # Check if KL label center is within reasonable distance from knee center
-                    # Use 1.5x knee size as max distance threshold
-                    distance = (
-                        (kl_x_center - knee_cx) ** 2 + (kl_y_center - knee_cy) ** 2
-                    ) ** 0.5
-                    max_distance = knee_size * 0.75  # 75% of knee size
-
-                    if distance > max_distance:
-                        # KL label is too far, likely belongs to other knee
-                        continue
-
-                    # KL label is nearby, include it in crop
+            # Expand knee box to include ASSIGNED KL labels
+            assigned_labels = knee_assignments[knee_idx]
+            if assigned_labels:
+                for kl_box in assigned_labels:
                     kl_w = kl_box["w"] * img_w
                     kl_h = kl_box["h"] * img_h
+                    kl_x_center = kl_box["x"] * img_w
+                    kl_y_center = kl_box["y"] * img_h
 
                     kl_x1 = kl_x_center - kl_w / 2
                     kl_y1 = kl_y_center - kl_h / 2
                     kl_x2 = kl_x_center + kl_w / 2
                     kl_y2 = kl_y_center + kl_h / 2
 
-                    # Expand knee box to include this nearby KL box
-                    kx1 = min(kx1, kl_x1)
-                    ky1 = min(ky1, kl_y1)
-                    kx2 = max(kx2, kl_x2)
-                    ky2 = max(ky2, kl_y2)
+                    # Expand knee box to include this assigned KL box
+                    # Add 10% padding relative to the KL label size
+                    kl_size = max(kl_w, kl_h)
+                    padding = kl_size * 0.1
+
+                    kx1 = min(kx1, kl_x1 - padding)
+                    ky1 = min(ky1, kl_y1 - padding)
+                    kx2 = max(kx2, kl_x2 + padding)
+                    ky2 = max(ky2, kl_y2 + padding)
+
+            # Check if expansion happened (with 1px tolerance for float precision)
+            tolerance = 1.0
+            if (
+                kx1 < orig_kx1 - tolerance
+                or ky1 < orig_ky1 - tolerance
+                or kx2 > orig_kx2 + tolerance
+                or ky2 > orig_ky2 + tolerance
+            ):
+                expanded_files_log.append(
+                    {
+                        "file": f"{stem}_knee{knee_idx}",
+                        "original_box": (orig_kx1, orig_ky1, orig_kx2, orig_ky2),
+                        "expanded_box": (kx1, ky1, kx2, ky2),
+                    }
+                )
 
             # Expand to square with margin
             crop_x1, crop_y1, crop_x2, crop_y2 = expand_to_square(
@@ -463,7 +502,7 @@ def crop_knee_regions(
 
             # Transform KL labels to this crop
             transformed_boxes, dropped_boxes = transform_labels_to_crop(
-                kl_boxes, crop_x1, crop_y1, crop_x2, crop_y2, img_w, img_h
+                assigned_labels, crop_x1, crop_y1, crop_x2, crop_y2, img_w, img_h
             )
             stats["total_kl_boxes_transformed"] += len(transformed_boxes)
             stats["total_kl_boxes_dropped"] += len(dropped_boxes)
@@ -542,6 +581,15 @@ def crop_knee_regions(
             json.dump(dropped_labels_log, f, indent=2)
         print(
             f"📝 Saved dropped labels log ({len(dropped_labels_log)} labels): {drop_log_path}"
+        )
+
+    # Save expanded files log
+    if expanded_files_log:
+        expanded_log_path = output_dir / "expanded_files.json"
+        with open(expanded_log_path, "w") as f:
+            json.dump(expanded_files_log, f, indent=2)
+        print(
+            f"📝 Saved expanded files log ({len(expanded_files_log)} files - labels outside original knee box): {expanded_log_path}"
         )
 
     print("=" * 80)

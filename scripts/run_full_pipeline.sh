@@ -84,37 +84,14 @@ else
 fi
 
 # ============================================================================
-# STAGE 5: Create Standard YOLO Structure (5-class)
+# STAGE 5: Create Stratified Splits (5-class)
 # ============================================================================
 echo ""
-echo "📁 STAGE 5: Creating standard YOLO structure..."
-
-mkdir -p processed/knee/dataset_yolo/images
-mkdir -p processed/knee/dataset_yolo/labels
-
-cp -r processed/knee_5_class/images/* processed/knee/dataset_yolo/images/
-cp -r processed/knee_5_class/labels/* processed/knee/dataset_yolo/labels/
-
-echo "   ✅ Created: processed/knee/dataset_yolo/"
-
-# Analyze 5-class dataset
-if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
-    echo "   📊 Analyzing 5-class dataset..."
-    python tools/check_dataset/comprehensive_analysis.py \
-        --dataset_dir processed/knee/dataset_yolo \
-        --output analysis/results_5_class
-    echo "   ✅ Analysis saved: analysis/results_5_class/"
-fi
-
-# ============================================================================
-# STAGE 6: Create Stratified Splits (5-class)
-# ============================================================================
-echo ""
-echo "🎲 STAGE 6: Creating stratified train/val/test splits (5-class)..."
+echo "🎲 STAGE 5: Creating stratified train/val/test splits (5-class)..."
 
 python scripts/data_preparation/split_dataset.py \
-    --img_dir processed/knee/dataset_yolo/images \
-    --label_dir processed/knee/dataset_yolo/labels \
+    --img_dir processed/knee_5_class/images \
+    --label_dir processed/knee_5_class/labels \
     --out_dir splits/knee_5_class \
     --train 0.7 \
     --val 0.15 \
@@ -124,10 +101,10 @@ python scripts/data_preparation/split_dataset.py \
 echo "   ✅ Splits created: splits/knee_5_class/"
 
 # ============================================================================
-# STAGE 7: Create 10-class Dataset
+# STAGE 6: Create 10-class Dataset
 # ============================================================================
 echo ""
-echo "🔟 STAGE 7: Creating 10-class dataset..."
+echo "🔟 STAGE 6: Creating 10-class dataset..."
 
 mkdir -p processed/knee_10_class/images
 mkdir -p processed/knee_10_class/labels
@@ -164,10 +141,10 @@ if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
 fi
 
 # ============================================================================
-# STAGE 8: Create 4-class Dataset (filter KL0)
+# STAGE 7: Create 4-class Dataset (filter KL0)
 # ============================================================================
 echo ""
-echo "4️⃣  STAGE 8: Creating 4-class dataset (excluding KL0)..."
+echo "4️⃣  STAGE 7: Creating 4-class dataset (excluding KL0)..."
 
 mkdir -p processed/knee_4_class/images
 mkdir -p processed/knee_4_class/labels
@@ -212,10 +189,10 @@ if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
 fi
 
 # ============================================================================
-# STAGE 9: Create 8-class Dataset (10-class without KL0-a/b)
+# STAGE 8: Create 8-class Dataset (10-class without KL0-a/b)
 # ============================================================================
 echo ""
-echo "8️⃣  STAGE 9: Creating 8-class dataset..."
+echo "8️⃣  STAGE 8: Creating 8-class dataset..."
 
 # Check if 10-class dataset was created
 if [ -d "processed/knee_10_class/labels" ] && [ "$(ls -A processed/knee_10_class/labels)" ]; then
@@ -253,20 +230,20 @@ else
 fi
 
 # ============================================================================
-# STAGE 10: Fix Split Paths (DEPRECATED - handled by split_dataset.py)
+# STAGE 9: Fix Split Paths (DEPRECATED - handled by split_dataset.py)
 # ============================================================================
 # echo ""
-# echo "🔧 STAGE 10: Fixing split file paths..."
+# echo "🔧 STAGE 9: Fixing split file paths..."
 #
 # python tools/fix_splits_paths.py
 #
 # echo "   ✅ All split files updated with absolute paths"
 
 # ============================================================================
-# STAGE 11: Verify All Configs
+# STAGE 10: Verify All Configs
 # ============================================================================
 echo ""
-echo "✅ STAGE 11: Verifying YOLO configs..."
+echo "✅ STAGE 10: Verifying YOLO configs..."
 
 configs=(
     "configs/yolo_5_class_baseline.yaml"
@@ -297,7 +274,7 @@ echo "✨ Complete Pipeline Finished!"
 echo "===================================================="
 echo ""
 echo "📊 Generated Datasets:"
-echo "  - 5-class:  processed/knee/dataset_yolo/ (~1688 images)"
+echo "  - 5-class:  processed/knee_5_class/ (~1688 images)"
 echo "  - 10-class: processed/knee_10_class/"
 echo "  - 4-class:  processed/knee_4_class/ (no KL0)"
 echo "  - 8-class:  processed/knee_8_class/ (10-class, no KL0)"

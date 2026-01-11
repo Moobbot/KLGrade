@@ -110,7 +110,7 @@ def fix_splits_to_relative():
     print("\n" + "=" * 60)
     print("✅ All split files now use relative paths!")
     print("\nExample:")
-    print("  processed/knee/dataset_yolo/images/1234.jpg")
+    print("  processed/knee/images/1234.jpg")
     print("  (works on both Windows and Linux)")
 
 

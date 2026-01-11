@@ -34,7 +34,7 @@ echo ""
 
 # Run training with WandB enabled
 python scripts/training/train_yolo.py \
-  --img_dir processed/knee/dataset_yolo/images \
+  --img_dir processed/knee/images \
   --label_dir processed/knee/labels \
   --model yolo11n.pt \
   --epochs 2 \

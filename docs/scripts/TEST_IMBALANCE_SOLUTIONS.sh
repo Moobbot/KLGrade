@@ -35,7 +35,7 @@ Testing DETR with Class Imbalance Solutions
 # Test 1: RFS Sampler only (2 epochs)
 echo "Test 1: RFS Sampler (Repeat Factor Sampling)"
 python scripts/training/train_detr.py \
-  --img_dir processed/knee/dataset_yolo/images \
+  --img_dir processed/knee/images \
   --label_dir processed/knee/labels \
   --split_dir processed/splits/knee_5_class \
   --num_classes 5 \
