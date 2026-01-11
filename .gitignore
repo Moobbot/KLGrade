@@ -22,3 +22,5 @@ check_vis
 .DS_Store
 
 wandb
+
+.wandb.env
