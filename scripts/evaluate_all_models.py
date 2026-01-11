@@ -12,6 +12,10 @@ import yaml
 import subprocess
 import argparse
 import sys
+import json
+
+# Ensure project root
+sys.path.append(os.getcwd())
 
 def get_best_pt_files(runs_dir: Path):
     """Find all best.pt files in runs directory."""
@@ -35,9 +39,6 @@ def find_dataset_config_from_args(model_dir: Path, processed_dir: Path):
     experiment_name = model_dir.name
     
     # 1. Try to find dataset matching experiment name in processed/matches
-    # This is a heuristic: if we named the experiment 'knee_4_class', maybe the dataset is 'splits/knee_4_class'
-    
-    # Common locations for splits
     potential_split_dirs = [
         processed_dir / "splits" / experiment_name,
         processed_dir / "enhanced" / "splits" / "dataset_v0" / experiment_name,
@@ -45,14 +46,12 @@ def find_dataset_config_from_args(model_dir: Path, processed_dir: Path):
         processed_dir / "enhanced" / "splits" / "knee_5_class" / experiment_name,
     ]
     
-    for split_dir in potential_split_dirs:
-        if split_dir.exists() and (split_dir / "val.txt").exists():
-            print(f"  Found matching split dir: {split_dir}")
-            # We still need nc and names. Try to find a config in the run dir or assume defaults?
-            # Better to get nc/names from args.yaml
+    split_dir = None
+    for d in potential_split_dirs:
+        if d.exists() and (d / "val.txt").exists():
+            print(f"  Found matching split dir: {d}")
+            split_dir = d
             break
-    else:
-        split_dir = None
 
     if not args_path.exists():
         print(f"  ⚠️ No args.yaml found in {model_dir}")
@@ -67,17 +66,12 @@ def find_dataset_config_from_args(model_dir: Path, processed_dir: Path):
         print("  ⚠️ No data config in args.yaml")
         return None
         
-    # Fix relative paths from args.yaml (which might be relative to where training started)
-    # We assume training started from project root
     project_root = Path.cwd() 
     full_data_config_path = project_root / data_config_path
     
     if not full_data_config_path.exists():
-        print(f"  ⚠️ Config file not found: {full_data_config_path}")
-        # Try to find it in configs/ dir if it's just a filename
         if (project_root / "configs" / Path(data_config_path).name).exists():
            full_data_config_path = project_root / "configs" / Path(data_config_path).name
-           print(f"  Found config in configs/: {full_data_config_path}")
         else:
            return None
 
@@ -88,36 +82,25 @@ def find_dataset_config_from_args(model_dir: Path, processed_dir: Path):
     nc = data_config.get('nc')
     names = data_config.get('names')
     
-    # If we found a split dir, use it strictly for the paths
     if split_dir:
         return split_dir, nc, names
         
-    # Otherwise, try to infer real paths from the config
-    # The config might point to 'processed/splits/...'
-    # We need to verify if those paths exist
-    
     val_path = data_config.get('val')
     if not val_path:
         return None
         
-    # Check if val_path is absolute or relative
-    # If it depends on 'path', construct it
     base_path = data_config.get('path', '')
     
     if base_path:
-        # data_config['path'] could be absolute or relative
         candidate_path = Path(str(base_path)) / str(val_path)
         if not candidate_path.exists():
-             # Try relative to project root
              candidate_path = project_root / str(base_path) / str(val_path)
     else:
         candidate_path = project_root / str(val_path)
         
     if candidate_path.exists():
-        # Parent directory of the split file is what we want
         return candidate_path.parent, nc, names
         
-    print(f"  Could not resolve valid dataset path from config: {full_data_config_path}")
     return None
 
 
@@ -144,15 +127,12 @@ def main():
         model_dir = weight_path.parent.parent
         print(f"\nProcessing: {model_dir.name}")
         
-        # Check if already evaluated (check for metrics.json)
         eval_output_dir = project_root / "runs/evaluate" / model_dir.name
         metrics_file = eval_output_dir / "metrics.json"
         
         if eval_output_dir.exists() and metrics_file.exists():
              print("  ✅ Already evaluated (metrics.json exists). Skipping re-run.")
              skipped_count += 1
-             # Read metrics for summary
-             import json
              try:
                  with open(metrics_file, 'r') as f:
                      m = json.load(f)
@@ -176,7 +156,6 @@ def main():
             
         dataset_dir, nc, names = dataset_info
         
-        # Format names list for CLI argument
         names_str = ",".join(str(n) for n in names) if isinstance(names, list) else str(names)
         if isinstance(names, dict):
              names_str = ",".join(names.values())
@@ -197,12 +176,9 @@ def main():
             print("  CMD:", " ".join(cmd))
         else:
             try:
-                # Run evaluation
                 subprocess.run(cmd, check=True)
                 success_count += 1
                 
-                # Read newly created metrics
-                import json
                 if metrics_file.exists():
                      with open(metrics_file, 'r') as f:
                          m = json.load(f)
@@ -217,10 +193,8 @@ def main():
                 print("  ❌ Evaluation script failed.")
                 fail_count += 1
 
-    # Write summary to file
     summary_file = project_root / "evaluation_summary.txt"
     if results_list:
-        # Sort by mAP50-95 descending
         results_list.sort(key=lambda x: x["mAP50-95"], reverse=True)
         
         with open(summary_file, "w") as f:

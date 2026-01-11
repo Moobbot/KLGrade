@@ -5,7 +5,7 @@ Moves cropped knee images without KL grade labels to a separate folder.
 This is a post-processing step after crop_knee_regions.py.
 
 Usage:
-    python scripts/preprocessing/filter_no_labels.py --input processed/knee
+    python scripts/data_preparation/filter_no_labels.py --input processed/knee
 """
 
 import sys

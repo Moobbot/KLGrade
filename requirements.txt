@@ -13,3 +13,9 @@ wandb>=0.16.0
 transformers>=4.57.3
 timm>=0.16.0
 pycocotools>=2.0.4
+pydicom
+fastapi>=0.100.0
+uvicorn>=0.20.0
+python-multipart>=0.0.6
+pydantic>=2.0.0
+PyYAML>=6.0

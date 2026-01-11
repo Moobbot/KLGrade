@@ -5,8 +5,8 @@ Creates filtered datasets by removing images with only KL0 labels
 and remapping remaining class IDs.
 
 Usage:
-    python scripts/preprocessing/filter_kl0.py --input processed/knee --output processed/knee_4_class
-    python scripts/preprocessing/filter_kl0.py --input processed/knee_10_class --output processed/knee_8_class --num_classes 10
+    python scripts/data_preparation/filter_kl0.py --input processed/knee --output processed/knee_4_class
+    python scripts/data_preparation/filter_kl0.py --input processed/knee_10_class --output processed/knee_8_class --num_classes 10
 """
 
 import sys

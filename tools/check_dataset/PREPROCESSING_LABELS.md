@@ -139,7 +139,7 @@ Sử dụng `visualize_yolo_boxes.py` để xem kết quả trên ảnh:
 python check_dataset/visualize_yolo_boxes.py `
   --img_dir processed/knee/images `
   --label_dir processed/knee/labels_new `
-  --out_dir check_vis/label_new
+  --out_dir check_vis/labels_10_class
 ```
 
 Script này hỗ trợ cả format chuẩn và format mở rộng (có suffix), nên có thể visualize trực tiếp label mới.

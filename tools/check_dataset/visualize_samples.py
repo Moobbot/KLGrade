@@ -21,11 +21,11 @@ Usage (PowerShell examples):
     --label_dir processed/knee/labels `
     --out_dir check_vis/knee
 
-  # Visualize label mới (đã phân tách a/b) từ labels_new
+  # Visualize label mới (đã phân tách a/b) từ labels_10_class
   python tools/check_dataset/visualize_samples.py `
     --img_dir processed/knee/images `
-    --label_dir processed/knee/labels_new `
-    --out_dir check_vis/label_new
+    --label_dir processed/knee/labels_10_class `
+    --out_dir check_vis/label_10_class
 
   # Visualize với nhiều thư mục label (so sánh)
   python tools/check_dataset/visualize_samples.py `

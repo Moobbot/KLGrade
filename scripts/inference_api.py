@@ -1,10 +1,7 @@
 #!/usr/bin/env python3
 """
 Inference API Script
-
-Run inference on a single image (PNG, JPG, DICOM) and output:
-1. Annotated image (result.png)
-2. JSON result (result.json)
+Refactored to use src.api logic.
 
 Usage:
     python scripts/inference_api.py \
@@ -14,45 +11,17 @@ Usage:
 """
 
 import argparse
-from pathlib import Path
-import json
-import numpy as np
-import cv2
-from PIL import Image
 import sys
+import os
+import json
+import cv2
+from pathlib import Path
 
-# Try imports
-try:
-    import pydicom
-except ImportError:
-    pydicom = None
+# Ensure project root in python path
+sys.path.append(os.getcwd())
 
-from ultralytics import YOLO
-
-def read_dicom_image(dicom_path):
-    """
-    Read a DICOM file and convert to RGB numpy array (0-255).
-    """
-    if pydicom is None:
-        raise ImportError("pydicom is not installed. Please run: pip install pydicom")
-        
-    ds = pydicom.dcmread(dicom_path)
-    pixel_array = ds.pixel_array
-    
-    # Normalize to 0-255
-    if pixel_array.max() > 0:
-        pixel_array = (pixel_array / pixel_array.max()) * 255.0
-    
-    pixel_array = pixel_array.astype(np.uint8)
-    
-    # Convert to 3-channel RGB if it's grayscale
-    if len(pixel_array.shape) == 2:
-        image_rgb = cv2.cvtColor(pixel_array, cv2.COLOR_GRAY2RGB)
-    else:
-        # Assuming already RGB or handled
-        image_rgb = pixel_array
-        
-    return image_rgb
+from src.api.utils import read_image_file
+from src.api.inference import YOLOModel
 
 def run_inference(source: str, model_path: str, output_dir: str, conf_threshold: float = 0.25):
     """
@@ -64,34 +33,24 @@ def run_inference(source: str, model_path: str, output_dir: str, conf_threshold:
     
     print(f"I: Processing {source_path}")
     
-    # Load Image
-    if source_path.suffix.lower() == '.dcm':
-        print("I: Detected DICOM file")
-        try:
-            image_obj = read_dicom_image(source_path)
-        except Exception as e:
-            print(f"E: Failed to read DICOM: {e}")
-            return False
-    else:
-        # Standard image
-        try:
-            image_obj = cv2.imread(str(source_path))
-            if image_obj is None:
-                raise ValueError("Could not read image with cv2")
-            image_obj = cv2.cvtColor(image_obj, cv2.COLOR_BGR2RGB)
-        except Exception as e:
-            print(f"E: Failed to read image: {e}")
-            return False
+    # Read Image using shared util
+    try:
+        with open(source_path, "rb") as f:
+            file_bytes = f.read()
+        image_rgb = read_image_file(file_bytes, source_path.name)
+    except Exception as e:
+        print(f"E: Failed to read image: {e}")
+        return False
 
     # Load Model
     try:
-        model = YOLO(model_path)
+        model = YOLOModel(model_path)
     except Exception as e:
         print(f"E: Failed to load model: {e}")
         return False
         
     # Run Inference
-    results = model.predict(image_obj, conf=conf_threshold, verbose=False)
+    results = model.predict(image_rgb, conf=conf_threshold)
     
     if not results:
         print("W: No results returned")
@@ -99,12 +58,10 @@ def run_inference(source: str, model_path: str, output_dir: str, conf_threshold:
         
     result = results[0]
     
-    # Save Annotated Image
-    annotated_frame = result.plot()
-    # plot returns BGR usually if using cv2 backend, but let's check. 
-    # Ultralytics plot() returns numpy array in BGR.
+    # Save Annotated Image (BGR for cv2)
+    annotated_bgr = result.plot()
     output_image_path = output_path / "result.png"
-    cv2.imwrite(str(output_image_path), annotated_frame)
+    cv2.imwrite(str(output_image_path), annotated_bgr)
     print(f"S: Saved image to {output_image_path}")
     
     # Extract Data for JSON
@@ -113,18 +70,15 @@ def run_inference(source: str, model_path: str, output_dir: str, conf_threshold:
         "predictions": []
     }
     
-    # Boxes
     boxes = result.boxes
     for i in range(len(boxes)):
         box = boxes[i]
-        # box.xyxy provides [x1, y1, x2, y2]
-        # box.cls provides class index
-        # box.conf provides confidence
-        
         xyxy = box.xyxy[0].cpu().numpy().tolist()
         cls_id = int(box.cls[0].item())
         conf = float(box.conf[0].item())
-        class_name = result.names[cls_id]
+        
+        # Use class mapping from YOLOModel wrapper
+        class_name = model.class_mapping.get(cls_id, str(cls_id))
         
         prediction = {
             "class_id": cls_id,
@@ -139,7 +93,6 @@ def run_inference(source: str, model_path: str, output_dir: str, conf_threshold:
         }
         json_data["predictions"].append(prediction)
         
-    # Save JSON
     output_json_path = output_path / "result.json"
     with open(output_json_path, "w") as f:
         json.dump(json_data, f, indent=4)

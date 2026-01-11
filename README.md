@@ -114,7 +114,7 @@ KLGrade/
 │   └── dataset_v0/
 │       ├── images/            # Ảnh X-quang (.jpg)
 │       ├── labels/            # YOLO labels (5 classes)
-│       └── labels_new/        # YOLO labels (10 classes)
+│       └── labels_10_class/   # YOLO labels (10 classes)
 │
 ├── processed/                  # Processed data
 │   ├── coco/                  # COCO format annotations
@@ -124,20 +124,19 @@ KLGrade/
 │       ├── val.txt
 │       └── test.txt
 │
-├── examples/                   # Training & evaluation scripts
-│   ├── train_yolo11.py
-│   ├── train_detr.py
-│   ├── evaluate_detr.py
-│   ├── validate_yolo.py
-│   ├── error_analysis.py
-│   └── visualize_predictions.py
+├── scripts/                    # Entry points & Wrappers
+│   ├── data_preparation/      # Data prep (crop, filter, split)
+│   ├── training/              # Training scripts (YOLO, DETR)
+│   ├── evaluation/            # Evaluation scripts
+│   └── legacy/                # Old scripts
 │
-├── datasets/                   # Dataset modules
-│   ├── coco_dataset.py
-│   ├── converters.py
-│   └── detr_transforms.py
+├── src/                        # Core Logic Modules
+│   ├── api/                   # API logic
+│   ├── data/                  # Data modules (loader, splitter, etc.)
+│   ├── training/              # Training logic (Trainer classes)
+│   └── evaluation/            # Evaluation logic
 │
-├── check_dataset/             # Data validation tools
+├── tools/check_dataset/        # Data validation tools
 │   ├── analyze_dataset.py
 │   ├── visualize_yolo_boxes.py
 │   └── class_split_report.py
@@ -147,9 +146,6 @@ KLGrade/
 │   └── detr/                  # DETR runs
 │
 ├── config.py                  # Cấu hình classes
-├── split_dataset.py           # Split train/val/test
-├── filter_dataset_by_class.py # Filter classes
-├── remap_filtered_labels.py   # Remap class IDs
 └── requirements.txt           # Dependencies
 ```
 
@@ -202,13 +198,13 @@ KLGrade/
 
 ```powershell
 # Split với tỷ lệ 70:20:10, stratified theo class
-.venv\Scripts\python.exe split_dataset.py `
-    --image_dir dataset/dataset_v0/images `
+.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
+    --img_dir dataset/dataset_v0/images `
     --label_dir dataset/dataset_v0/labels `
     --output_dir processed/splits `
-    --train_ratio 0.7 `
-    --val_ratio 0.2 `
-    --test_ratio 0.1 `
+    --train 0.7 `
+    --val 0.2 `
+    --test 0.1 `
     --seed 42
 ```
 
@@ -233,7 +229,7 @@ KLGrade/
 
 ```powershell
 # Ví dụ: Chỉ giữ lại KL-0,1,2,3,4 (5 classes chính)
-.venv\Scripts\python.exe filter_dataset_by_class.py `
+.venv\Scripts\python.exe scripts\data_preparation\filter_dataset.py `
     --input_dir dataset/dataset_v0 `
     --output_dir dataset/dataset_filtered `
     --classes_to_keep 0,1,2,3,4
@@ -247,7 +243,7 @@ KLGrade/
 
 ```powershell
 # Remap class IDs về dạng liên tục
-.venv\Scripts\python.exe remap_filtered_labels.py `
+.venv\Scripts\python.exe scripts\data_preparation\remap_labels.py `
     --label_dir dataset/dataset_filtered/labels `
     --output_dir dataset/dataset_filtered/labels_remapped
 ```
@@ -299,7 +295,7 @@ Training script tự động convert YOLO → COCO bằng `datasets.create_coco_
 
 ```powershell
 # Baseline - 5 classes
-.venv\Scripts\python.exe examples\train_yolo11.py `
+.venv\Scripts\python.exe scripts\training\train_yolo.py `
     --data processed/yolo11_labels.yaml `
     --model yolo11n.pt `
     --epochs 100 `
@@ -323,7 +319,7 @@ Training script tự động convert YOLO → COCO bằng `datasets.create_coco_
 
 ```powershell
 # Baseline - ResNet-50 backbone
-.venv\Scripts\python.exe examples\train_detr.py `
+.venv\Scripts\python.exe scripts\training\train_detr.py `
     --img_dir dataset/dataset_v0/images `
     --label_dir dataset/dataset_v0/labels `
     --model facebook/detr-resnet-50 `
@@ -373,7 +369,7 @@ YOLO tự động evaluate trong quá trình training và lưu metrics:
 **Script**: `examples/evaluate_detr.py`
 
 ```powershell
-.venv\Scripts\python.exe examples\evaluate_detr.py `
+.venv\Scripts\python.exe scripts\evaluation\evaluate_detr.py `
     --model_path runs/detr/exp_baseline/best_model.pt `
     --img_dir dataset/dataset_v0/images `
     --label_dir dataset/dataset_v0/labels `
@@ -405,13 +401,13 @@ YOLO tự động evaluate trong quá trình training và lưu metrics:
 
 ```powershell
 # Phân tích DETR
-.venv\Scripts\python.exe examples\error_analysis.py `
+.venv\Scripts\python.exe scripts\evaluation\error_analysis.py `
     --predictions runs/detr/exp_baseline/evaluation/predictions.json `
     --ground_truth processed/coco/annotations_val.json `
     --output runs/detr/exp_baseline/error_analysis
 
 # Phân tích YOLO
-.venv\Scripts\python.exe examples\error_analysis.py `
+.venv\Scripts\python.exe scripts\evaluation\error_analysis.py `
     --predictions runs/detect/exp_baseline/validation/val/predictions.json `
     --ground_truth processed/coco/annotations_val.json `
     --output runs/detect/exp_baseline/error_analysis
@@ -437,7 +433,7 @@ YOLO tự động evaluate trong quá trình training và lưu metrics:
 
 ```powershell
 # Vẽ predictions lên ảnh (side-by-side với ground truth)
-.venv\Scripts\python.exe examples\visualize_predictions.py `
+.venv\Scripts\python.exe scripts\evaluation\visualize_predictions.py `
     --predictions runs/detr/exp_baseline/evaluation/predictions.json `
     --ground_truth processed/coco/annotations_val.json `
     --img_dir dataset/dataset_v0/images `

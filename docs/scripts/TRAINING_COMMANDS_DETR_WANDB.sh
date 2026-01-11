@@ -53,8 +53,8 @@ echo "Starting DETR Baseline Training Phase..."
 # E010: 5-class Baseline
 echo "Training E010: DETR 5-class Baseline..."
 python scripts/training/train_detr.py \
-  --img_dir processed/knee/dataset_yolo/images \
-  --label_dir processed/knee/labels \
+  --img_dir processed/knee_5_class/images \
+  --label_dir processed/knee_5_class/labels \
   --split_dir processed/splits/knee_5_class \
   --num_classes 5 \
   --model facebook/detr-resnet-50 \

@@ -39,7 +39,7 @@ echo "✂️  STAGE 2: Cropping knee regions from full X-rays..."
 echo "   Input: dataset/dataset_v0/"
 echo "   Output: processed/knee/"
 
-python scripts/preprocessing/crop_knee_regions.py \
+python scripts/data_preparation/crop_knee_regions.py \
     --dataset_dir dataset/dataset_v0 \
     --output_dir processed/knee \
     --margin 0.15 \
@@ -53,7 +53,7 @@ echo "   ✅ Knee cropping complete"
 echo ""
 echo "🗑️  STAGE 3: Filtering images without labels..."
 
-python scripts/preprocessing/filter_no_labels.py \
+python scripts/data_preparation/filter_no_labels.py \
     --input processed/knee
 
 echo "   ✅ Filtered: images WITH labels remain in processed/knee/"
@@ -182,7 +182,7 @@ cp -r processed/knee_5_class/images/* processed/knee_temp/images/
 cp -r processed/knee_5_class/labels/* processed/knee_temp/labels/
 
 # Use filter_kl0.py to remove KL0 class (auto-remaps KL1-4 to 0-3)
-python scripts/preprocessing/filter_kl0.py \
+python scripts/data_preparation/filter_kl0.py \
     --input processed/knee_temp \
     --output processed/knee_4_class \
     --num_classes 5
@@ -222,7 +222,7 @@ if [ -d "processed/knee_10_class/labels" ] && [ "$(ls -A processed/knee_10_class
     echo "   Creating 8-class from 10-class dataset..."
     
     # Use filter_kl0.py to remove KL0-a and KL0-b (classes 0,1)
-    python scripts/preprocessing/filter_kl0.py \
+    python scripts/data_preparation/filter_kl0.py \
         --input processed/knee_10_class \
         --output processed/knee_8_class \
         --num_classes 10

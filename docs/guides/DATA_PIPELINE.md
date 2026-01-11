@@ -31,9 +31,9 @@ Complete pipeline for processing knee osteoarthritis X-ray dataset from raw imag
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir dataset\dataset_v0 `
-    --output analysis\dataset_v0
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir dataset/dataset_v0 `
+    --output analysis/dataset_v0
 ```
 
 **Output:**
@@ -58,9 +58,9 @@ Complete pipeline for processing knee osteoarthritis X-ray dataset from raw imag
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe scripts\preprocessing\crop_knee_regions.py `
-    --dataset_dir dataset\dataset_v0 `
-    --output_dir processed\knee `
+python scripts/data_preparation/crop_knee_regions.py `
+    --dataset_dir dataset/dataset_v0 `
+    --output_dir processed/knee `
     --margin 0.15 `
     --min_size 300
 ```
@@ -124,8 +124,8 @@ processed/knee/
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe scripts\preprocessing\filter_no_labels.py `
-    --input processed\knee
+python scripts/data_preparation/filter_no_labels.py `
+    --input processed/knee
 ```
 
 **Output:**
@@ -153,10 +153,10 @@ processed/knee/
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe tools\check_dataset\visualize_samples.py `
-    --img_dir processed\knee\images `
-    --label_dir processed\knee\labels `
-    --out_dir analysis\knee\visualizations `
+python tools/check_dataset/visualize_samples.py `
+    --img_dir processed/knee/images `
+    --label_dir processed/knee/labels `
+    --out_dir analysis/knee/visualizations `
     --color blue `
     --thickness 2
 ```
@@ -182,9 +182,9 @@ processed/knee/
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe tools\check_dataset\resize_images.py `
-    --in_dir processed\knee\images `
-    --out_dir processed\knee_5_class\images `
+python tools/check_dataset/resize_images.py `
+    --in_dir processed/knee/images `
+    --out_dir processed/knee_5_class/images `
     --size 640
 ```
 
@@ -211,9 +211,9 @@ processed/knee_5_class/images/  (1,688 images at 640x640)
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe tools\check_dataset\validate_dataset.py `
-    --img_dir processed\knee\images `
-    --label_dir processed\knee\labels
+python tools/check_dataset/validate_dataset.py `
+    --img_dir processed/knee/images `
+    --label_dir processed/knee/labels
 ```
 
 **Checks:**
@@ -232,9 +232,9 @@ processed/knee_5_class/images/  (1,688 images at 640x640)
 **Command:**
 
 ```powershell
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir processed\knee `
-    --output analysis\knee
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir processed/knee `
+    --output analysis/knee
 ```
 
 **Output:**
@@ -253,20 +253,20 @@ processed/knee_5_class/images/  (1,688 images at 640x640)
 
 ```powershell
 # Run class split
-.venv\Scripts\python.exe tools\check_dataset\class_split_report.py `
-    --labels-dir processed\knee\labels `
-    --save-dir processed\knee\labels_10_class `
+python tools/check_dataset/class_split_report.py `
+    --labels-dir processed/knee/labels `
+    --save-dir processed/knee/labels_10_class `
     --limit 10
 
 # Create separate 10-class dataset (Copy images for reuse, Move labels)
-New-Item -ItemType Directory -Path "processed\knee_10_class\images", "processed\knee_10_class\labels" -Force
-Copy-Item "processed\knee_5_class\images\*" "processed\knee_10_class\images\" -Force
-Move-Item "processed\knee\labels_10_class\*" "processed\knee_10_class\labels\" -Force
+New-Item -ItemType Directory -Path "processed/knee_10_class/images", "processed/knee_10_class/labels" -Force
+Copy-Item "processed/knee_5_class/images/*" "processed/knee_10_class/images/" -Force
+Move-Item "processed/knee/labels_10_class/*" "processed/knee_10_class/labels/" -Force
 
 # Analyze 10-class dataset
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir processed\knee_10_class `
-    --output analysis\knee_10_class
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir processed/knee_10_class `
+    --output analysis/knee_10_class
 ```
 
 **Features:**
@@ -314,25 +314,25 @@ Total: 1,688 images, 3,141 boxes
 
 ```powershell
 # Create 4-class dataset (KL1-4 only)
-.venv\Scripts\python.exe scripts\preprocessing\filter_kl0.py `
-    --input processed\knee `
-    --output processed\knee_4_class `
+python scripts/data_preparation/filter_kl0.py `
+    --input processed/knee `
+    --output processed/knee_4_class `
     --num_classes 5
 
 # Create 8-class dataset (KL1-a through KL4-b only)
-.venv\Scripts\python.exe scripts\preprocessing\filter_kl0.py `
-    --input processed\knee_10_class `
-    --output processed\knee_8_class `
+python scripts/data_preparation/filter_kl0.py `
+    --input processed/knee_10_class `
+    --output processed/knee_8_class `
     --num_classes 10
 
 # Analyze filtered datasets
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir processed\knee_4_class `
-    --output analysis\knee_4_class
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir processed/knee_4_class `
+    --output analysis/knee_4_class
 
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir processed\knee_8_class `
-    --output analysis\knee_8_class
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir processed/knee_8_class `
+    --output analysis/knee_8_class
 ```
 
 **Features:**
@@ -390,31 +390,31 @@ processed/knee_8_class/     # 8 classes, 1,603 images
 
 ```powershell
 # Split 5-class dataset
-.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
-    --img_dir processed\knee\images `
-    --label_dir processed\knee\labels `
-    --out_dir processed\splits\knee_5_class `
+python scripts/data_preparation/split_dataset.py `
+    --img_dir processed/knee/images `
+    --label_dir processed/knee/labels `
+    --out_dir processed/splits/knee_5_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Split 10-class dataset
-.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
-    --img_dir processed\knee_10_class\images `
-    --label_dir processed\knee_10_class\labels `
-    --out_dir processed\splits\knee_10_class `
+python scripts/data_preparation/split_dataset.py `
+    --img_dir processed/knee_10_class/images `
+    --label_dir processed/knee_10_class/labels `
+    --out_dir processed/splits/knee_10_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Split 4-class dataset
-.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
-    --img_dir processed\knee_4_class\images `
-    --label_dir processed\knee_4_class\labels `
-    --out_dir processed\splits\knee_4_class `
+python scripts/data_preparation/split_dataset.py `
+    --img_dir processed/knee_4_class/images `
+    --label_dir processed/knee_4_class/labels `
+    --out_dir processed/splits/knee_4_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 
 # Split 8-class dataset
-.venv\Scripts\python.exe scripts\data_preparation\split_dataset.py `
-    --img_dir processed\knee_8_class\images `
-    --label_dir processed\knee_8_class\labels `
-    --out_dir processed\splits\knee_8_class `
+python scripts/data_preparation/split_dataset.py `
+    --img_dir processed/knee_8_class/images `
+    --label_dir processed/knee_8_class/labels `
+    --out_dir processed/splits/knee_8_class `
     --train 0.7 --val 0.15 --test 0.15 --seed 42
 ```
 
@@ -470,44 +470,44 @@ Run all stages sequentially to create all 4 dataset variants:
 
 ```powershell
 # Stage 1: Analyze original dataset
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir dataset\dataset_v0 `
-    --output analysis\dataset_v0
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir dataset/dataset_v0 `
+    --output analysis/dataset_v0
 
 # Stage 2: Crop knee regions
-.venv\Scripts\python.exe scripts\preprocessing\crop_knee_regions.py `
-    --dataset_dir dataset\dataset_v0 `
-    --output_dir processed\knee `
+python scripts/data_preparation/crop_knee_regions.py `
+    --dataset_dir dataset/dataset_v0 `
+    --output_dir processed/knee `
     --margin 0.15 `
     --min_size 300
 
 # Stage 3: Filter no-labels
-.venv\Scripts\python.exe scripts\preprocessing\filter_no_labels.py `
-    --input processed\knee
+python scripts/data_preparation/filter_no_labels.py `
+    --input processed/knee
 
 # Stage 4: Visualize samples (quality check)
-.venv\Scripts\python.exe tools\check_dataset\visualize_samples.py `
-    --img_dir processed\knee\images `
-    --label_dir processed\knee\labels `
-    --out_dir analysis\knee\visualizations `
+python tools/check_dataset/visualize_samples.py `
+    --img_dir processed/knee/images `
+    --label_dir processed/knee/labels `
+    --out_dir analysis/knee/visualizations `
     --color blue `
     --thickness 2
 
 # Stage 5: Resize to 640x640
-.venv\Scripts\python.exe tools\check_dataset\resize_images.py `
-    --in_dir processed\knee\images `
-    --out_dir processed\knee_5_class\images `
+python tools/check_dataset/resize_images.py `
+    --in_dir processed/knee/images `
+    --out_dir processed/knee_5_class/images `
     --size 640
 
 # Stage 6: Validate
-.venv\Scripts\python.exe tools\check_dataset\validate_dataset.py `
-    --img_dir processed\knee_5_class\images `
-    --label_dir processed\knee_5_class\labels
+python tools/check_dataset/validate_dataset.py `
+    --img_dir processed/knee_5_class/images `
+    --label_dir processed/knee_5_class/labels
 
 # Stage 7: Final analysis
-.venv\Scripts\python.exe tools\check_dataset\comprehensive_analysis.py `
-    --dataset_dir processed\knee `
-    --output analysis\knee
+python tools/check_dataset/comprehensive_analysis.py `
+    --dataset_dir processed/knee `
+    --output analysis/knee
 ```
 
 ---
@@ -558,7 +558,7 @@ KLGrade/
 │   ├── knee_4_class/                  # 4-class analysis
 │   └── knee_8_class/                  # 8-class analysis
 │
-├── scripts/preprocessing/
+├── scripts/data_preparation/
 │   ├── crop_knee_regions.py         # Multi-knee cropping
 │   ├── filter_no_labels.py          # Post-crop filtering
 │   └── filter_kl0.py                # Remove KL0 classes
@@ -654,7 +654,7 @@ After running pipeline, verify:
    ```powershell
    python tools/check_dataset/class_split_report.py `
        --labels-dir processed/knee/labels `
-       --save-dir processed/knee/labels_new
+    --save-dir processed/knee/labels_10_class
    ```
 
 2. **Data Splitting:**

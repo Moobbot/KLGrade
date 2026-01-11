@@ -16,7 +16,7 @@ Kết quả:
 - Square crops ready for training
 
 Usage:
-    python scripts/preprocessing/crop_knee_regions.py \
+    python scripts/data_preparation/crop_knee_regions.py \
         --dataset_dir dataset/dataset_v0 \
         --output_dir processed/knee \
         --margin 0.15 \

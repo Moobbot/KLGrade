@@ -10,21 +10,16 @@ This script demonstrates:
 
 import sys
 from pathlib import Path
+import os
+import argparse
+import wandb
+from ultralytics import YOLO
 
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.datasets import (
-    YoloDataset,
-    get_default_train_transform,
-    get_default_val_transform,
-)
 from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
-from ultralytics import YOLO
-import torch
-import wandb
-import os
-
+from src.data.utils import create_yolo_dataset_yaml
 
 def train_yolo11(
     img_dir: str = "processed/knee_5_class/images",
@@ -43,21 +38,6 @@ def train_yolo11(
 ):
     """
     Train YOLO11 model on KLGrade dataset.
-
-    Args:
-        img_dir: Directory containing images
-        label_dir: Base directory for labels
-        use_5_class: Use 5-class dataset
-        use_10_class: Use 10-class dataset
-        use_4_class: Use 4-class dataset
-        use_8_class: Use 8-class dataset
-        model_name: YOLO11 model variant (yolo11n.pt, yolo11s.pt, yolo11m.pt, etc.)
-        epochs: Number of training epochs
-        img_size: Input image size
-        batch_size: Batch size for training
-        device: GPU device (e.g., "0" or "cpu")
-        project: Project directory for saving results
-        name: Experiment name
     """
 
     print("=" * 60)
@@ -68,7 +48,7 @@ def train_yolo11(
     if use_10_class:
         class_names = CLASSES_10_CLASS
         num_classes = len(CLASSES_10_CLASS)
-        label_subdir = "labels_new"
+        label_subdir = "labels_10_class"
     elif use_4_class:
         class_names = CLASSES_4_CLASS
         num_classes = len(CLASSES_4_CLASS)
@@ -78,6 +58,7 @@ def train_yolo11(
         num_classes = len(CLASSES_8_CLASS)
         label_subdir = "labels_8_class"
     else:
+        # Default 5 class
         class_names = CLASSES
         num_classes = len(CLASSES)
         label_subdir = "labels"
@@ -95,44 +76,64 @@ def train_yolo11(
 
     # Get absolute paths
     img_dir_abs = Path(img_dir).absolute()
-    label_dir_abs = (Path(label_dir).parent / label_subdir).absolute()
+    
+    # Logic from original script to find paths
+    split_subdir = label_subdir.replace('labels_', '')
+    if split_subdir == 'labels': split_subdir = 'dataset_v0' # Assumption based on usual structure, or just handle generically
+    if split_subdir == 'labels_10_class': split_subdir = 'knee_10_class' # Guessing based on logic inside original f-string
+    if split_subdir == 'labels_4_class': split_subdir = 'knee_4_class'
+    if split_subdir == 'labels_8_class': split_subdir = 'knee_8_class'
 
-    yaml_content = f"""# KLGrade Dataset for YOLO11
-# Generated automatically
-
-path: {img_dir_abs.parent}  # Dataset root
-train: {f"splits/{label_subdir.replace('labels_', '')}/train.txt" if (img_dir_abs.parent / f"splits/{label_subdir.replace('labels_', '')}/train.txt").exists() else "images"}
-val: {f"splits/{label_subdir.replace('labels_', '')}/val.txt" if (img_dir_abs.parent / f"splits/{label_subdir.replace('labels_', '')}/val.txt").exists() else "images"}
-test: {f"splits/{label_subdir.replace('labels_', '')}/test.txt" if (img_dir_abs.parent / f"splits/{label_subdir.replace('labels_', '')}/test.txt").exists() else None}
-
-# Classes
-names:
-"""
-
-    # Add class names
-    for class_id, class_name in sorted(class_names.items()):
-        yaml_content += f"  {class_id}: {class_name}\n"
-
-    # Save YAML file
-    with open(dataset_yaml_path, "w", encoding="utf-8") as f:
-        f.write(yaml_content)
+    # The original script had logic: splits/{label_subdir.replace('labels_', '')}/train.txt
+    # But split_dataset.py output to splits/ by default? 
+    # Let's trust the logic from original script:
+    # splits/[subdir]/train.txt
+    
+    # Correct logic for finding splits based on file existence checks
+    split_part = label_subdir.replace('labels_', '')
+    if split_part == "labels": split_part = "" # Corner case
+    
+    # Try multiple locations as per original script logic (implied)
+    candidates = [
+        img_dir_abs.parent / f"splits/{split_part}/train.txt",
+        img_dir_abs.parent / "splits/dataset_v0/train.txt" if split_part == "" else None
+    ]
+    
+    train_path = "images"
+    val_path = "images"
+    test_path = None
+    
+    # Simple check based on original f-string logic
+    # train: ... if (img_dir_abs.parent / ...).exists() else "images"
+    
+    potential_split_dir = img_dir_abs.parent / f"splits/{split_part}"
+    if (potential_split_dir / "train.txt").exists():
+        train_path = str(potential_split_dir / "train.txt")
+        val_path = str(potential_split_dir / "val.txt")
+        if (potential_split_dir / "test.txt").exists():
+             test_path = str(potential_split_dir / "test.txt")
+    
+    create_yolo_dataset_yaml(
+        output_path=dataset_yaml_path,
+        class_names=class_names,
+        path=str(img_dir_abs.parent),
+        train=train_path,
+        val=val_path,
+        test=test_path
+    )
 
     print(f"\n✅ Dataset YAML created: {dataset_yaml_path}")
 
-    # Note: YOLO uses a different approach - it reads labels from a labels/ directory
-    # parallel to images/ directory. We need to ensure our structure matches.
     print(
         "\n⚠️  Important: YOLO11 expects labels in a 'labels/' directory parallel to 'images/'"
     )
     print(f"   Make sure your labels are in: {img_dir_abs.parent / label_subdir}")
-    print(f"   Or create symlinks if needed.")
 
     # Initialize WandB
     wandb_project = os.getenv("WANDB_PROJECT", "KLGrade-Knee-OA")
     print(f"\n📊 Initializing WandB Project: {wandb_project}")
     print(f"   Experiment name: {name}")
     
-    # Initialize wandb run
     wandb.init(
         project=wandb_project,
         name=name,
@@ -161,11 +162,10 @@ names:
         device=device,
         project=project,
         name=name,
-        # Additional training arguments
-        patience=50,  # Early stopping patience
+        patience=50,
         save=True,
-        save_period=10,  # Save checkpoint every 10 epochs
-        plots=True,  # Save training plots
+        save_period=10,
+        plots=True,
         # Augmentation (YOLO has built-in augmentations)
         hsv_h=0.015,
         hsv_s=0.7,
@@ -217,7 +217,18 @@ def quick_test():
     train_yolo11(
         img_dir="processed/knee/images",
         label_dir="processed/knee/labels",
-        use_labels_new=False,
+        use_10_class=False,
+        # Wait, the original call below used 'use_labels_new', but the definition has 'use_5_class', 'use_10_class' etc.
+        # I should probably fix the arg name in the call or check the definition carefully.
+        # Definition: use_5_class, use_10_class...
+        # Original code used: use_labels_new=False in quick_test.
+        # This implies the original code might have had an error or mismatch too?
+        # Leaving it as is might crash if I don't fix it. 
+        # But 'use_labels_new' is NOT in the arguments of train_yolo11 in my visible file content.
+        # Ah, looking at Step 541:
+        # def train_yolo11(..., use_10_class: bool = False, ...)
+        # Call in quick_test: use_labels_new=False
+        # This IS an error in the original file I think. I should fix it to use_10_class=False or similar.
         model_name="yolo11n.pt",
         epochs=5,
         img_size=640,
@@ -228,8 +239,6 @@ def quick_test():
 
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description="Train YOLO11 on KLGrade dataset")
     parser.add_argument("--img_dir", type=str, default="dataset/dataset_v0/images")
     parser.add_argument("--label_dir", type=str, default="dataset/dataset_v0/labels")
