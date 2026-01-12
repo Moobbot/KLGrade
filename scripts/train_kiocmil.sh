@@ -54,8 +54,8 @@ $PYTHON_EXEC src/training/train_kiocmil.py \
     --img_dir dataset/dataset_v0/images \
     --knee_labels dataset/dataset_v0/labels-knee \
     --lesion_labels dataset/dataset_v0/labels_new \
-    --train_split splits/train.txt \
-    --val_split splits/val.txt \
+    --train_split splits/knee_full_10_class/train.txt \
+    --val_split splits/knee_full_10_class/val.txt \
     --backbone resnet18 \
     --save_dir runs/kiocmil_v1 \
     --batch_size 8 \

@@ -7,7 +7,7 @@
 # Explicitly use the conda environment python
 PYTHON_EXEC="/home/ngoductam/miniconda3/envs/klgrade/bin/python"
 
-SPLIT_FILE=${1:-"splits/val.txt"}
+SPLIT_FILE=${1:-"splits/knee_full_10_class/test.txt"}
 MODEL_PATH=${2:-"runs/kiocmil_v1/best_model.pth"}
 
 # Check if we are in the project root (src exists)

@@ -6,18 +6,35 @@ Dataset:
 - labels-knee: dataset/dataset_v0/labels-knee/
 - Class tại: src/config.py
 
-- Cần chạy 
-python scripts/data_preparation/crop_knee_regions.py \
-    --dataset_dir dataset/dataset_v0 \
-    --output_dir processed/knee-full \
-    --margin 0.15 \
-    --min_size 300
+# 00) Các bước chuẩn bị dữ liệu (Data Preparation)
 
-để tạo dataset knee-full 10 class
+Trước khi train model, bạn cần chạy 2 lệnh sau để tạo nhãn và phân chia tập dữ liệu:
 
-python scripts/data_preparation/filter_no_labels.py \
-    --input processed/knee-full
----
+1.  **Tạo nhãn 10-class từ các file lesion YOLO gốc:**
+    Lệnh này sẽ quét thư mục `dataset/dataset_v0/labels`, phân loại lesion dựa trên kích thước (gai vs khe khớp) và tạo ra bộ nhãn mới trong `dataset/dataset_v0/labels_new`.
+
+    ```bash
+    python tools/check_dataset/class_split_report.py \
+        --labels-dir dataset/dataset_v0/labels \
+        --save-dir dataset/dataset_v0/labels_new \
+        --limit 10
+    ```
+
+2.  **Chia Dataset (Train/Val/Test):**
+    Lệnh này chia dữ liệu dựa trên file ảnh và nhãn gối (để đảm bảo ảnh có gối mới được dùng), output ra thư mục `splits/knee_full_10_class`.
+
+    ```bash
+    python scripts/data_preparation/split_dataset.py \
+        --img_dir dataset/dataset_v0/images \
+        --label_dir dataset/dataset_v0/labels-knee \
+        --out_dir splits/knee_full_10_class \
+        --train 0.7 \
+        --val 0.15 \
+        --test 0.15 \
+        --seed 42
+    ```
+    *Lưu ý: Sau khi chạy, file split sẽ nằm ở `splits/knee_full_10_class/train.txt`, v.v.*
+
 
 # Kiến trúc đề xuất: **Knee Instance Object–Context MIL Network (KIOCMIL)**
 
@@ -51,9 +68,9 @@ python scripts/data_preparation/filter_no_labels.py \
 
 * `y10 ∈ {0..9}` theo ảnh (10-class KL)
 
-**Lưu ý quan trọng**
+**Yêu cầu xử lý:**
 
-* Dataset của bạn có lợi thế: bbox khe/gai giúp model “nhìn đúng chỗ”, hạn chế học theo shortcut.
+* Dataset có lợi thế: bbox khe/gai giúp model “nhìn đúng chỗ”, hạn chế học theo shortcut. Tận dụng triệt để thông tin này.
 
 ---
 
@@ -63,7 +80,7 @@ python scripts/data_preparation/filter_no_labels.py \
 
 * Convert `(xc,yc,w,h)` normalized → `(x1,y1,x2,y2)` pixel.
 
-**Lưu ý**
+**Yêu cầu kỹ thuật:**
 
 * Luôn `clip` bbox vào khung ảnh.
 * Bỏ bbox quá nhỏ (noise): `area < MIN_BOX_PX^2`.
@@ -88,7 +105,7 @@ Với mỗi lesion bbox:
 2. nếu center nằm trong knee bbox nào → gán knee đó
 3. nếu không nằm trong cái nào → gán theo knee có khoảng cách center nhỏ nhất
 
-**Lưu ý**
+**Yêu cầu gán:**
 
 * Tránh dùng IoU thuần vì lesion box nhỏ, IoU dễ ~0.
 * Nếu ảnh lateral chỉ có 1 knee bbox thì gán thẳng.
@@ -104,7 +121,7 @@ Mỗi knee instance `k` tạo 3 loại crop (token):
 * `CTX_BOX = expand(knee_box, scale=2.0)`
   (lateral có thể 2.2)
 
-**Lưu ý**
+**Yêu cầu Context:**
 
 * Context giúp model hiểu alignment, độ xoay, chất lượng chụp.
 * Đừng expand quá lớn → dính nền nhiều, tăng noise.
@@ -119,11 +136,10 @@ Mỗi knee instance `k` tạo 3 loại crop (token):
 
   * lấy “horizontal band” quanh trung tâm của knee_box (22% height) để đại diện khe.
 
-**Lưu ý**
+**Yêu cầu JS Token:**
 
 * JS bbox thường cực nhỏ → crop nhỏ dễ bị mất signal khi resize.
-
-  * Khuyến nghị: khi crop JS patch, **pad** thêm 10–20% bbox trước khi resize.
+* **Bắt buộc**: khi crop JS patch, **pad** thêm 10–20% bbox trước khi resize.
 
 ## 3.3 Osteophyte token (OST)
 
@@ -133,7 +149,7 @@ Mỗi knee instance `k` tạo 3 loại crop (token):
 
   * crop 2 “corner patches” ở rìa mâm chày (medial/lateral) hoặc patch biên trên của tibia trong knee_box.
 
-**Lưu ý**
+**Yêu cầu OST Token:**
 
 * OST xuất hiện ở rìa xương: patch “biên” tốt hơn patch trung tâm.
 * Nếu bbox OST có thể nằm cả femur/tibia → giữ multi-patch, đừng chọn 1 box duy nhất.
@@ -147,7 +163,7 @@ Mỗi knee instance `k` tạo 3 loại crop (token):
 * 1 backbone CNN chung (ResNet/ConvNeXt/EfficientNet)
 * Mỗi patch (CTX/JS/OST) → feature vector `d` (vd 256)
 
-**Lưu ý**
+**Yêu cầu Encoder:**
 
 * Shared encoder giúp nhất quán đặc trưng giữa tokens và giảm tham số.
 
@@ -164,9 +180,9 @@ Có 2 lựa chọn:
 * Transformer-lite 1–2 layer cho tokens `[ctx, js, ost]`
 * lấy token đã attention làm `f_knee`
 
-**Lưu ý**
+**Lựa chọn:**
 
-* Option A đủ mạnh cho luận văn và dễ debug.
+* Option A đủ mạnh cho luận văn và dễ debug (Recommended).
 * Option B đẹp để viết paper “object-context interaction”.
 
 ---
@@ -189,7 +205,7 @@ Bạn sẽ có `K` knee instances (K=1 hoặc 2). Mỗi instance có feature `f_
 * Tính trọng số `w_i = softmax(g(f_knee_i))`
 * `f_img = Σ w_i f_knee_i`
 
-**Lưu ý**
+**Lựa chọn Pooling:**
 
 * Nếu bilateral nhưng label theo ảnh, attention pooling thường ổn hơn khi 2 gối khác nhau nhẹ.
 * Bạn có thể train cả 2 và chọn tốt nhất.
@@ -218,7 +234,7 @@ Từ `f_img` dự đoán:
 
 * `L = L10 + 0.5*Lgrade + 0.25*Ltype`
 
-**Lưu ý**
+**Thiết kế Loss:**
 
 * Head_type làm “regularizer” rất mạnh: ép model phân biệt đúng bản chất a/b, giảm nhầm lẫn.
 

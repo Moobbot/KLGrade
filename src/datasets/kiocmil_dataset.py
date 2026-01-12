@@ -75,7 +75,7 @@ class KiocmilDataset(Dataset):
     def _load_image_list(self, split_file: Optional[str]) -> List[str]:
         if split_file and os.path.exists(split_file):
             with open(split_file, "r") as f:
-                stems = [line.strip() for line in f if line.strip()]
+                stems = [Path(line.strip()).stem for line in f if line.strip()]
 
             # Find images
             files = []
