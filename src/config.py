@@ -70,3 +70,13 @@ NUM_CLASSES = len(CLASSES) + 1  # +1 for background
 # Training hyperparameters
 BATCH_SIZE = 1
 EPOCHS = 30
+
+# Detection Classes (Lesions)
+# Updated based on tools/check_dataset/class_split_report.py
+# Even classes (0, 2, 4, 6, 8) -> Suffix 'a' -> Osteophytes
+# Odd classes (1, 3, 5, 7, 9) -> Suffix 'b' -> Joint Space Narrowing
+OST_CLASSES = {0, 2, 4, 6, 8}
+JS_CLASSES = {1, 3, 5, 7, 9}
+
+# Knee detection class (in `dataset/dataset_v0/labels-knee/`)
+KNEE_CLASS_ID = 0
