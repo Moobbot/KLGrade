@@ -426,7 +426,7 @@ def main():
     # WandB
     parser.add_argument("--no_wandb", action="store_true")
     parser.add_argument("--wandb_project", default="klgrade-kiocmil")
-    parser.add_argument("--wandb_entity", default="your-entity")
+    parser.add_argument("--wandb_entity", default="ngotam2k1-thuyloi-university")
     parser.add_argument("--wandb_name", default="kiocmil_cada_baseline")
 
     args = parser.parse_args()
