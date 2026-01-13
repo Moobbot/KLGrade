@@ -4,9 +4,87 @@ import torchvision.models as models
 from typing import List, Dict
 
 
+class AttentionPool(nn.Module):
+    """
+    Enhanced Attention-based pooling for MIL (Multiple Instance Learning).
+    Uses multi-head attention to learn diverse feature patterns and better handle
+    minority classes in imbalanced datasets.
+    """
+
+    def __init__(self, input_dim, hidden_dim=128, num_heads=4, dropout=0.2):
+        super(AttentionPool, self).__init__()
+        self.input_dim = input_dim
+        self.num_heads = num_heads
+        self.hidden_dim = hidden_dim
+
+        # Multi-head self-attention
+        self.multihead_attn = nn.MultiheadAttention(
+            embed_dim=input_dim, num_heads=num_heads, dropout=dropout, batch_first=True
+        )
+
+        # Learnable query for pooling
+        self.query = nn.Parameter(torch.randn(1, 1, input_dim))
+
+        # Additional projection for refined features (optional)
+        self.feature_refine = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
+            nn.ReLU(),
+            nn.Dropout(dropout),
+            nn.Linear(hidden_dim, input_dim),
+        )
+
+    def forward(self, features):
+        """
+        Args:
+            features: (K, D) tensor where K is number of instances, D is feature dim
+
+        Returns:
+            pooled: (D,) pooled feature vector
+            weights: (K,) attention weights (for visualization)
+        """
+        if features.dim() == 1:
+            # Single instance, return as-is
+            return features, torch.ones(1, device=features.device)
+
+        # Add batch dimension: (1, K, D)
+        x = features.unsqueeze(0)
+
+        # Expand query to match batch
+        query = self.query.expand(x.size(0), -1, -1)  # (1, 1, D)
+
+        # Multi-head attention: query attends to all knee features
+        # attn_output: (1, 1, D), attn_weights: (1, 1, K)
+        attn_output, attn_weights = self.multihead_attn(
+            query=query,
+            key=x,
+            value=x,
+            need_weights=True,
+            average_attn_weights=True,  # Average across heads for visualization
+        )
+
+        # Refine features (optional enhancement)
+        refined = self.feature_refine(attn_output)
+
+        # Squeeze batch and sequence dimensions
+        pooled = refined.squeeze(0).squeeze(0)  # (D,)
+        weights = attn_weights.squeeze(0).squeeze(0)  # (K,)
+
+        return pooled, weights
+
+
 class KiocmilModel(nn.Module):
-    def __init__(self, backbone_name="resnet18", num_classes=10, feature_dim=256):
+    def __init__(
+        self,
+        backbone_name="resnet18",
+        num_classes=10,
+        feature_dim=256,
+        use_attention=True,
+    ):
         super(KiocmilModel, self).__init__()
+        self.backbone_name = backbone_name
+        self.feature_dim = feature_dim
+        self.use_attention = use_attention
 
         # 1. Backbone
         if backbone_name == "resnet18":
@@ -36,16 +114,17 @@ class KiocmilModel(nn.Module):
         )
 
         # 3. Heads
-        # 10-class (KL0-a ... KL4-b)
+        # Attention pooling for MIL (Enhanced with multi-head attention)
+        if use_attention:
+            self.attention_pool = AttentionPool(
+                input_dim=feature_dim, hidden_dim=128, num_heads=4, dropout=0.2
+            )
+
+        # Head: 10-class
         self.head_10 = nn.Linear(feature_dim, num_classes)
-
-        # Grade (0-4)
+        # Head: 5-class (grade 0..4)
         self.head_grade = nn.Linear(feature_dim, 5)
-
-        # Type (0: JS, 1: OST) - Logic in Object-Context.txt:
-        # "type_ost = 1 nếu y10 chẵn (a), 0 nếu lẻ (b)"
-        # Wait, usually a/b means separate types.
-        # Here we verify if we want 1 or 2 outputs. Binary -> 1 output.
+        # Head: binary type (Ost vs JS)
         self.head_type = nn.Linear(feature_dim, 1)
 
     def forward_features(self, x_batch):
@@ -193,8 +272,14 @@ class KiocmilModel(nn.Module):
                 continue
 
             stack_knees = torch.stack(knees)  # (K, Dim)
-            # Max Pool over knees
-            f_img = torch.max(stack_knees, dim=0)[0]
+
+            # MIL Pooling: Attention or Max
+            if self.use_attention:
+                f_img, _ = self.attention_pool(stack_knees)
+            else:
+                # Max Pool over knees
+                f_img = torch.max(stack_knees, dim=0)[0]
+
             img_features.append(f_img)
 
         final_emb = torch.stack(img_features)  # (B, Dim)

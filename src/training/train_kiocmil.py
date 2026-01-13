@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, WeightedRandomSampler
 from pathlib import Path
 import argparse
 import time
@@ -18,6 +18,8 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
 from src.models.kiocmil_model import KiocmilModel
 from src.config import PROJECT_ROOT
+from src.training.focal_loss import FocalLoss, compute_class_weights
+from src.training.early_stopping import EarlyStopping
 
 
 class KiocmilTrainer:
@@ -38,12 +40,26 @@ class KiocmilTrainer:
 
         # Data
         print("Initializing Datasets...")
+
+        # Import transforms
+        from src.datasets.kiocmil_transforms import get_kiocmil_transforms
+
+        # Get augmentation level from args (default: strong)
+        aug_level = getattr(args, "augmentation_level", "strong")
+        use_clahe = getattr(args, "use_clahe", True)
+
+        # TEMPORARY: Disable transforms for baseline test
+        # TODO: Fix augmentation pipeline later
+        train_transform = None
+        val_transform = None
+        print("⚠️  Transforms DISABLED for baseline test")
+
         self.train_dataset = KiocmilDataset(
             img_dir=args.img_dir,
             knee_label_dir=args.knee_labels,
             lesion_label_dir=args.lesion_labels,
             split_file=args.train_split,
-            transform=None,  # Add augmentation later if needed
+            transform=train_transform,  # Apply augmentation
             ctx_size=(384, 384),
             patch_size=(224, 224),
         )
@@ -52,7 +68,7 @@ class KiocmilTrainer:
             knee_label_dir=args.knee_labels,
             lesion_label_dir=args.lesion_labels,
             split_file=args.val_split,
-            transform=None,
+            transform=val_transform,  # Only CLAHE + normalization
             ctx_size=(384, 384),
             patch_size=(224, 224),
         )
@@ -88,10 +104,29 @@ class KiocmilTrainer:
             .to(self.device)
         )
 
+        # WeightedRandomSampler for class oversampling
+        use_oversampling = getattr(args, "use_oversampling", False)
+        if use_oversampling:
+            print("\n📊 Applying WeightedRandomSampler for class oversampling...")
+            # Compute sample weights: inverse frequency
+            sample_weights = [class_weights_raw[label] for label in labels]
+            sampler = WeightedRandomSampler(
+                weights=sample_weights,
+                num_samples=len(sample_weights),
+                replacement=True,  # Allow oversampling
+            )
+            shuffle = False  # Mutually exclusive with sampler
+            print(
+                f"✅ Oversampling enabled: minority classes will be sampled more frequently"
+            )
+        else:
+            print("\nWeightedRandomSampler disabled (use --use_oversampling to enable)")
+
         self.train_loader = DataLoader(
             self.train_dataset,
             batch_size=args.batch_size,
             shuffle=shuffle,
+            sampler=sampler,  # Use sampler if oversampling enabled
             collate_fn=collate_kiocmil,
             num_workers=4,
         )
@@ -112,10 +147,26 @@ class KiocmilTrainer:
             self.model.parameters(), lr=args.lr, weight_decay=1e-4
         )
 
-        # Criterions
-        self.crit_10 = nn.CrossEntropyLoss()
-        self.crit_grade = nn.CrossEntropyLoss()
-        self.crit_type = nn.BCEWithLogitsLoss()
+        # Criterions - Use Focal Loss for classification tasks
+        # Compute alpha from class weights for Focal Loss
+        alpha_10 = compute_class_weights(self.class_counts, mode="inverse", smooth=1.0)
+        print(f"Focal Loss alpha (10-class): {alpha_10}")
+
+        # Grade weights (5-class: 0-4)
+        grade_counts = {i // 2: 0 for i in range(10)}
+        for cls, cnt in self.class_counts.items():
+            grade_counts[cls // 2] += cnt
+        alpha_grade = compute_class_weights(grade_counts, mode="inverse", smooth=1.0)
+        print(f"Focal Loss alpha (5-grade): {alpha_grade}")
+
+        self.crit_10 = FocalLoss(alpha=alpha_10.tolist(), gamma=2.0)
+        self.crit_grade = FocalLoss(alpha=alpha_grade.tolist(), gamma=2.0)
+        self.crit_type = nn.BCEWithLogitsLoss()  # Keep BCE for binary classification
+
+        # Early Stopping
+        self.early_stopping = EarlyStopping(
+            patience=5, mode="max", delta=0.001, verbose=True
+        )
 
     def compute_loss(self, outputs, target_10):
         # target_10: (B) values 0-9
@@ -243,6 +294,27 @@ class KiocmilTrainer:
             # Always save last
             torch.save(self.model.state_dict(), self.save_dir / "last_model.pth")
 
+            # Early Stopping Check
+            should_stop = self.early_stopping(
+                val_acc,
+                model=self.model,
+                save_path=self.save_dir / "early_stop_best.pth",
+            )
+
+            if should_stop:
+                print(f"\n⏹️  Early stopping triggered at epoch {epoch}")
+                print(f"Best validation accuracy: {self.early_stopping.val_best:.4f}")
+                if not self.args.no_wandb:
+                    wandb.log(
+                        {
+                            "early_stop_epoch": epoch,
+                            "best_val_acc": self.early_stopping.val_best,
+                        }
+                    )
+                break
+
+        print(f"\n✅ Training completed. Best accuracy: {best_acc:.4f}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -267,6 +339,31 @@ if __name__ == "__main__":
     parser.add_argument("--wandb_name", type=str, default=None)
     parser.add_argument("--no_wandb", action="store_true", help="Disable WandB logging")
 
+    # Augmentation configs
+    parser.add_argument(
+        "--augmentation_level",
+        type=str,
+        default="strong",
+        choices=["basic", "medium", "strong"],
+        help="Data augmentation level",
+    )
+    parser.add_argument(
+        "--use_clahe", action="store_true", default=True, help="Use CLAHE preprocessing"
+    )
+    parser.add_argument(
+        "--no_clahe", action="store_true", help="Disable CLAHE preprocessing"
+    )
+    parser.add_argument(
+        "--use_oversampling",
+        action="store_true",
+        help="Use WeightedRandomSampler to oversample minority classes",
+    )
+
     args = parser.parse_args()
+
+    # Handle CLAHE flag
+    if args.no_clahe:
+        args.use_clahe = False
+
     trainer = KiocmilTrainer(args)
     trainer.run()
