@@ -193,28 +193,59 @@ class KiocmilDatasetV2(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # (H, W, 3) uint8
         h_img, w_img = image.shape[:2]
 
-        # 2. Apply Geometric Augmentation to FULL IMAGE (if training)
-        if self.geometric_transform is not None:
-            try:
-                augmented = self.geometric_transform(image=image)
-                image = augmented["image"]  # Still numpy uint8
-            except Exception as e:
-                warnings.warn(f"Geometric augmentation failed: {e}")
-                # Continue with original image
-
-        # Update image dimensions after augmentation
-        # Geometric transforms (resize, affine, etc.) can change image size
-        h_img, w_img = image.shape[:2]
-
-        # 3. Load Bboxes (YOLO format)
-        knee_boxes, _ = self._load_yolo_boxes(knee_path)
+        # 2. Load Bboxes BEFORE any transforms (YOLO format)
+        knee_boxes, knee_classes = self._load_yolo_boxes(knee_path)
         lesion_boxes, lesion_ids = self._load_yolo_boxes(lesion_path)
 
-        # Convert to Pascal VOC format using UPDATED dimensions
+        # 3. Apply Geometric Augmentation to BOTH image AND bboxes together
+        if self.geometric_transform is not None:
+            try:
+                # Combine all bboxes and labels for transformation
+                all_bboxes = knee_boxes + lesion_boxes
+                all_labels = [0] * len(knee_boxes) + lesion_ids  # 0 = knee class marker
+
+                # Apply transform to image + bboxes
+                transformed = self.geometric_transform(
+                    image, bboxes=all_bboxes, class_labels=all_labels
+                )
+
+                image = transformed["image"]  # Still numpy uint8
+                all_bboxes = transformed.get("bboxes", [])
+                all_labels = transformed.get("class_labels", [])
+
+                # Split back into knee and lesion bboxes
+                # Note: Some bboxes may be dropped by min_visibility/min_area filters
+                num_knees_orig = len(knee_boxes)
+                knee_boxes_transformed = []
+                lesion_boxes_transformed = []
+                lesion_ids_transformed = []
+
+                for bbox, label in zip(all_bboxes, all_labels):
+                    if label == 0:  # Knee bbox
+                        knee_boxes_transformed.append(bbox)
+                    else:  # Lesion bbox
+                        lesion_boxes_transformed.append(bbox)
+                        lesion_ids_transformed.append(label)
+
+                # Update to use transformed bboxes
+                knee_boxes = knee_boxes_transformed
+                lesion_boxes = lesion_boxes_transformed
+                lesion_ids = lesion_ids_transformed
+
+            except Exception as e:
+                warnings.warn(
+                    f"Geometric augmentation failed: {e}. Using original image/bboxes."
+                )
+                # Continue with original image and bboxes
+
+        # Update image dimensions after potential transformation
+        h_img, w_img = image.shape[:2]
+
+        # 4. Convert transformed YOLO bboxes to Pascal VOC format using NEW (transformed) dimensions
         knee_boxes_px = [self._yolo_to_pascal(b, w_img, h_img) for b in knee_boxes]
         lesion_boxes_px = [self._yolo_to_pascal(b, w_img, h_img) for b in lesion_boxes]
 
-        # 4. Extract Knee Instances and Generate Tokens
+        # 5. Extract Knee Instances and Generate Tokens
         knee_data = []
 
         for k_box in knee_boxes_px:

@@ -200,8 +200,29 @@ class KiocmilModel(nn.Module):
 
         # 2. Run Backbone
         # Concatenate lists
-        if not all_ctx:  # Should not happen if data exists
-            return None
+        if (
+            not all_ctx
+        ):  # No knees detected (rare edge case with aggressive augmentation)
+            # Return dummy predictions instead of None to avoid crashes
+            batch_size = len(batch_data)
+            dummy_logits_10 = torch.zeros(batch_size, 10).to(
+                device if device else torch.device("cpu")
+            )
+            dummy_logits_grade = torch.zeros(batch_size, 5).to(
+                device if device else torch.device("cpu")
+            )
+            dummy_logits_type = torch.zeros(batch_size, 1).to(
+                device if device else torch.device("cpu")
+            )
+            dummy_embedding = torch.zeros(batch_size, self.feature_dim).to(
+                device if device else torch.device("cpu")
+            )
+            return {
+                "logits_10": dummy_logits_10,
+                "logits_grade": dummy_logits_grade,
+                "logits_type": dummy_logits_type,
+                "embedding": dummy_embedding,
+            }
 
         t_ctx = torch.stack(all_ctx)
         t_js = (

@@ -65,19 +65,43 @@ class GeometricAugmentation:
         else:
             raise ValueError(f"Unknown augmentation level: {self.level}")
 
-        return A.Compose(transforms)
+        return A.Compose(
+            transforms,
+            bbox_params=A.BboxParams(
+                format="yolo",  # Input format is YOLO (cx, cy, w, h) normalized [0-1]
+                label_fields=[
+                    "class_labels"
+                ],  # Track class IDs with bbox transformations
+                min_visibility=0.3,  # Drop bboxes that are <30% visible after transform
+                min_area=100,  # Drop very small bboxes (in pixels after transform)
+            ),
+        )
 
-    def __call__(self, image: np.ndarray) -> dict:
+    def __call__(
+        self, image: np.ndarray, bboxes: list = None, class_labels: list = None
+    ) -> dict:
         """
-        Apply geometric augmentation to an image.
+        Apply geometric augmentation to image and optionally to bboxes.
 
         Args:
             image: Input image as numpy array (H, W, 3) uint8
+            bboxes: Optional list of bboxes in YOLO format [[cx, cy, w, h], ...]
+            class_labels: Optional list of class IDs for each bbox
 
         Returns:
-            Dictionary with 'image' key containing augmented image (H, W, 3) uint8
+            Dictionary with keys:
+                - 'image': Augmented image (H, W, 3) uint8
+                - 'bboxes': Transformed bboxes (if provided)
+                - 'class_labels': Class labels for transformed bboxes (if provided)
         """
-        return self.transform(image=image)
+        if bboxes is None or len(bboxes) == 0:
+            # No bboxes provided, transform image only
+            return self.transform(image=image)
+        else:
+            # Transform both image and bboxes
+            if class_labels is None:
+                class_labels = [0] * len(bboxes)  # Default class
+            return self.transform(image=image, bboxes=bboxes, class_labels=class_labels)
 
 
 class PhotometricAugmentation:
