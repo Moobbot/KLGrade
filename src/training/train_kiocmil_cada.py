@@ -224,51 +224,51 @@ class KiocmilCADATrainer:
 
             self.optimizer.zero_grad()
 
-            try:
-                # Forward pass
-                output = self.model(batch_data)
+            # Forward pass
+            output = self.model(batch_data)
 
-                # Compute losses
-                logits_10 = output["logits_10"]
-                logits_grade = output["logits_grade"]
-                logits_type = output["logits_type"]
+            # Compute losses
+            logits_10 = output["logits_10"]
+            logits_grade = output["logits_grade"]
+            logits_type = output["logits_type"]
 
-                # Create dummy targets for now (would come from dataset)
-                batch_size = logits_10.shape[0]
-                target_10 = torch.randint(0, 10, (batch_size,)).to(self.device)
-                target_grade = torch.randint(0, 5, (batch_size,)).to(self.device)
-                target_type = torch.randint(0, 2, (batch_size,)).to(self.device).float()
+            # Get real targets
+            labels = [item["label"] for item in batch_data]
+            target_10 = torch.tensor(labels, device=self.device).long()
+            batch_size = target_10.shape[0]
 
-                # Weighted loss
-                loss_10 = self.ce_loss(logits_10, target_10)
-                loss_grade = self.ce_loss(logits_grade, target_grade)
-                loss_type = nn.BCEWithLogitsLoss()(
-                    logits_type, target_type.unsqueeze(-1)
-                )
+            # Map 10-class (0-9) to 5-grade (0-4) and type (0=Ost, 1=JS)
+            # Even: a (Ost), Odd: b (JS)
+            # 0,1 -> Grade 0
+            # 2,3 -> Grade 1
+            # ...
+            target_grade = target_10 // 2
+            target_type = (target_10 % 2).float()  # 0 for 'a', 1 for 'b'
 
-                loss = 0.5 * loss_10 + 0.3 * loss_grade + 0.2 * loss_type
+            # Weighted loss
+            loss_10 = self.ce_loss(logits_10, target_10)
+            loss_grade = self.ce_loss(logits_grade, target_grade)
+            loss_type = nn.BCEWithLogitsLoss()(logits_type, target_type.unsqueeze(-1))
 
-                # Backward
-                loss.backward()
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
-                self.optimizer.step()
+            loss = 0.5 * loss_10 + 0.3 * loss_grade + 0.2 * loss_type
 
-                # Metrics
-                total_loss += loss.item()
-                pred_10 = logits_10.argmax(dim=1)
-                correct_10 += (pred_10 == target_10).sum().item()
-                total_samples += batch_size
+            # Backward
+            loss.backward()
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)
+            self.optimizer.step()
 
-                pbar.set_postfix(
-                    {
-                        "loss": loss.item(),
-                        "acc": correct_10 / total_samples if total_samples > 0 else 0,
-                    }
-                )
+            # Metrics
+            total_loss += loss.item()
+            pred_10 = logits_10.argmax(dim=1)
+            correct_10 += (pred_10 == target_10).sum().item()
+            total_samples += batch_size
 
-            except Exception as e:
-                self.logger.warning(f"Batch {batch_idx} error: {e}")
-                continue
+            pbar.set_postfix(
+                {
+                    "loss": loss.item(),
+                    "acc": correct_10 / total_samples if total_samples > 0 else 0,
+                }
+            )
 
         avg_loss = total_loss / max(1, batch_idx + 1)
         avg_acc = correct_10 / max(1, total_samples)
@@ -297,9 +297,13 @@ class KiocmilCADATrainer:
                     logits_10 = output["logits_10"]
                     logits_grade = output["logits_grade"]
 
-                    batch_size = logits_10.shape[0]
-                    target_10 = torch.randint(0, 10, (batch_size,)).to(self.device)
-                    target_grade = torch.randint(0, 5, (batch_size,)).to(self.device)
+                    # Get real targets
+                    labels = [item["label"] for item in batch_data]
+                    target_10 = torch.tensor(labels, device=self.device).long()
+                    batch_size = target_10.shape[0]
+
+                    # Map to grade
+                    target_grade = target_10 // 2
 
                     loss_10 = self.ce_loss(logits_10, target_10)
                     loss_grade = self.ce_loss(logits_grade, target_grade)
@@ -375,7 +379,7 @@ class KiocmilCADATrainer:
                 print(f"Checkpoint saved: {checkpoint_path}")
 
             # Early stopping
-            self.early_stopping(val_loss, self.model, self.save_dir)
+            self.early_stopping(val_loss, self.model, self.save_dir / "best_model.pt")
             if self.early_stopping.early_stop:
                 print("Early stopping triggered!")
                 break
@@ -426,7 +430,7 @@ def main():
     # WandB
     parser.add_argument("--no_wandb", action="store_true")
     parser.add_argument("--wandb_project", default="klgrade-kiocmil")
-    parser.add_argument("--wandb_entity", default="ngotam2k1-thuyloi-university")
+    parser.add_argument("--wandb_entity", default=None)
     parser.add_argument("--wandb_name", default="kiocmil_cada_baseline")
 
     args = parser.parse_args()

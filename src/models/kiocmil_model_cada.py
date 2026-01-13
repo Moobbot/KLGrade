@@ -266,8 +266,8 @@ class KiocmilModelCADA(nn.Module):
                 all_ctx.append(ctx)
 
                 # JS lesions
-                js = knee.get("js", torch.empty(0, 3, 224, 224).to(device))
-                js_bboxes = knee.get("js_bboxes", torch.empty(0, 4).to(device))
+                js = knee["js"].to(device)
+                js_bboxes = knee["js_bboxes"].to(device)
                 n_js = js.shape[0] if js.numel() > 0 else 0
 
                 if n_js > 0:
@@ -275,8 +275,8 @@ class KiocmilModelCADA(nn.Module):
                     all_js_bboxes.append(js_bboxes)
 
                 # Ost lesions
-                ost = knee.get("ost", torch.empty(0, 3, 224, 224).to(device))
-                ost_bboxes = knee.get("ost_bboxes", torch.empty(0, 4).to(device))
+                ost = knee["ost"].to(device)
+                ost_bboxes = knee["ost_bboxes"].to(device)
                 n_ost = ost.shape[0] if ost.numel() > 0 else 0
 
                 if n_ost > 0:
@@ -301,6 +301,8 @@ class KiocmilModelCADA(nn.Module):
         # 2. Extract features from patches
         t_ctx = torch.stack(all_ctx)
         f_ctx_all = self.forward_features(t_ctx)  # (Total_Knees, feature_dim)
+        if b_idx == 0:
+            pass  # removed debug print
 
         t_js = torch.cat(all_js) if all_js else torch.empty(0, 3, 224, 224).to(device)
         f_js_all = self.forward_features(t_js)  # (Total_JS, feature_dim)
@@ -319,8 +321,13 @@ class KiocmilModelCADA(nn.Module):
         )
 
         # 3. Assemble knee features with CADA
-        knee_features_list = []
         batch_knee_map = [[] for _ in range(B)]
+
+        # Lists for batched fusion
+        ctx_list = []
+        js_agg_list = []
+        ost_agg_list = []
+        b_idx_list = []
 
         for info in patch_map:
             # Context feature
@@ -342,7 +349,6 @@ class KiocmilModelCADA(nn.Module):
                 contextualized_js = []
                 for j in range(len(feats_js)):
                     lesion_feat = feats_js[j]  # (feature_dim,)
-                    lesion_bbox = bboxes_js[j, :2]  # (2,) - cx, cy only
 
                     # NOTE: Would need context_feature_map for true deformable attention
                     # For now, use standard processing
@@ -378,7 +384,6 @@ class KiocmilModelCADA(nn.Module):
                 contextualized_ost = []
                 for j in range(len(feats_ost)):
                     lesion_feat = feats_ost[j]  # (feature_dim,)
-                    lesion_bbox = bboxes_ost[j, :2]  # (2,) - cx, cy only
 
                     ctx_aware_feat = (
                         lesion_feat + f_local_ctx
@@ -394,14 +399,27 @@ class KiocmilModelCADA(nn.Module):
             else:
                 f_ost_agg = torch.zeros_like(f_local_ctx)
 
-            # 4. Fuse context + aggregated lesions
-            f_knee = self.fusion_transformer(
-                context=f_local_ctx,
-                js_lesions=f_js_agg,
-                ost_lesions=f_ost_agg,
-            )
+            # Collect for batched fusion
+            ctx_list.append(f_local_ctx)
+            js_agg_list.append(f_js_agg)
+            ost_agg_list.append(f_ost_agg)
+            b_idx_list.append(info["b_idx"])
 
-            batch_knee_map[info["b_idx"]].append(f_knee)
+        # 4. Fuse context + aggregated lesions (Batched)
+        if ctx_list:
+            t_contexts = torch.stack(ctx_list)  # (Total_Knees, C)
+            t_js_agg = torch.stack(js_agg_list)
+            t_ost_agg = torch.stack(ost_agg_list)
+
+            f_knees = self.fusion_transformer(
+                context=t_contexts,
+                js_lesions=t_js_agg,
+                ost_lesions=t_ost_agg,
+            )  # (Total_Knees, C)
+
+            # Distribute back to batches
+            for i, b_idx in enumerate(b_idx_list):
+                batch_knee_map[b_idx].append(f_knees[i])
 
         # 5. Image-level aggregation (over knees)
         img_features = []

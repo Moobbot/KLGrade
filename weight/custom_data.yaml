@@ -1,0 +1,9 @@
+names:
+- lv_1
+- lv_2
+- lv_3
+- lv_4
+nc: 4
+test: processed/knee/test/images
+train: processed/knee/train/images
+val: processed/knee/val/images

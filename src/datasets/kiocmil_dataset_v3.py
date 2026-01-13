@@ -195,17 +195,53 @@ class KiocmilDatasetV3(Dataset):
         H, W = image.shape
         image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
-        # Apply geometric transforms to full image
-        if self.geometric_transform:
-            transformed = self.geometric_transform(image=image_rgb)
-            image_rgb = transformed["image"]
-
-        # Load bounding boxes
+        # Load bounding boxes first
         knee_path = self.knee_label_dir / f"{stem}.txt"
         lesion_path = self.lesion_label_dir / f"{stem}.txt"
 
         knee_boxes, _ = self._load_yolo_boxes(knee_path)
         lesion_boxes, lesion_classes = self._load_yolo_boxes(lesion_path)
+
+        # Apply geometric transforms to full image AND bboxes
+        if self.geometric_transform:
+            # Combine bboxes for transform
+            all_boxes = []
+            all_classes = []
+
+            # Add knee boxes (class 999 to distinguish)
+            for box in knee_boxes:
+                all_boxes.append(box)
+                all_classes.append(999)
+
+            # Add lesion boxes
+            for box, cls in zip(lesion_boxes, lesion_classes):
+                all_boxes.append(box)
+                all_classes.append(cls)
+
+            # Transform
+            if all_boxes:
+                transformed = self.geometric_transform(
+                    image=image_rgb, bboxes=all_boxes, class_labels=all_classes
+                )
+                image_rgb = transformed["image"]
+                transformed_boxes = transformed["bboxes"]
+                transformed_classes = transformed["class_labels"]
+
+                # Separate back
+                knee_boxes = []
+                lesion_boxes = []
+                lesion_classes = []
+
+                for box, cls in zip(transformed_boxes, transformed_classes):
+                    if cls == 999:
+                        knee_boxes.append(list(box))
+                    else:
+                        lesion_boxes.append(list(box))
+                        lesion_classes.append(cls)
+            else:
+                # No boxes, just transform image
+                transformed = self.geometric_transform(image=image_rgb)
+                image_rgb = transformed["image"]
 
         if not knee_boxes:
             # No knees, return empty
