@@ -203,25 +203,26 @@ class KiocmilModel(nn.Module):
         if (
             not all_ctx
         ):  # No knees detected (rare edge case with aggressive augmentation)
-            # Return dummy predictions instead of None to avoid crashes
+            # Return dummy predictions with proper gradient tracking
+            # Create zero embeddings and pass through heads to maintain gradient graph
+            model_device = next(self.parameters()).device
             batch_size = len(batch_data)
-            dummy_logits_10 = torch.zeros(batch_size, 10).to(
-                device if device else torch.device("cpu")
+
+            # Create dummy embeddings that require grad
+            dummy_emb = torch.zeros(
+                batch_size, self.feature_dim, device=model_device, requires_grad=True
             )
-            dummy_logits_grade = torch.zeros(batch_size, 5).to(
-                device if device else torch.device("cpu")
-            )
-            dummy_logits_type = torch.zeros(batch_size, 1).to(
-                device if device else torch.device("cpu")
-            )
-            dummy_embedding = torch.zeros(batch_size, self.feature_dim).to(
-                device if device else torch.device("cpu")
-            )
+
+            # Pass through model heads to get outputs with gradients
+            dummy_logits_10 = self.head_10(dummy_emb)
+            dummy_logits_grade = self.head_grade(dummy_emb)
+            dummy_logits_type = self.head_type(dummy_emb)
+
             return {
                 "logits_10": dummy_logits_10,
                 "logits_grade": dummy_logits_grade,
                 "logits_type": dummy_logits_type,
-                "embedding": dummy_embedding,
+                "embedding": dummy_emb,
             }
 
         t_ctx = torch.stack(all_ctx)
