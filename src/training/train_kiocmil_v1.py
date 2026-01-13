@@ -19,6 +19,7 @@ from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
 from src.models.kiocmil_model import KiocmilModel
 from src.config import PROJECT_ROOT
 from src.training.focal_loss import FocalLoss, compute_class_weights
+
 from src.training.early_stopping import EarlyStopping
 from src.utils.logging_utils import get_next_log_dir, save_training_config
 import logging
@@ -360,8 +361,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--lesion_labels", type=str, default="dataset/dataset_v0/labels_new"
     )
-    parser.add_argument("--train_split", type=str, default="splits/train.txt")
-    parser.add_argument("--val_split", type=str, default="splits/val.txt")
+    parser.add_argument(
+        "--train_split", type=str, default="splits/knee_full_10_class/train.txt"
+    )
+    parser.add_argument(
+        "--val_split", type=str, default="splits/knee_full_10_class/val.txt"
+    )
     parser.add_argument("--backbone", type=str, default="resnet18")
     parser.add_argument("--save_dir", type=str, default="runs/kiocmil_exp1")
     parser.add_argument("--batch_size", type=int, default=2)  # Small batch for MIL

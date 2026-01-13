@@ -22,6 +22,7 @@ from src.config import PROJECT_ROOT
 from src.training.focal_loss import FocalLoss, compute_class_weights
 from src.training.early_stopping import EarlyStopping
 from src.utils.logging_utils import get_next_log_dir, save_training_config
+import logging
 
 
 class KiocmilTrainer:
@@ -34,6 +35,18 @@ class KiocmilTrainer:
         # Create versioned log directory with module name
         self.log_dir = get_next_log_dir("log", module_name="kiocmil")
         print(f"\n📁 Logging to: {self.log_dir}")
+
+        # Setup file logging
+        log_file = self.log_dir / "training.log"
+        logging.basicConfig(
+            level=logging.INFO,
+            format="%(asctime)s - %(levelname)s - %(message)s",
+            handlers=[
+                logging.FileHandler(log_file),
+                logging.StreamHandler(),  # Also print to console
+            ],
+        )
+        self.logger = logging.getLogger(__name__)
 
         # Save training configuration
         self._save_config()
@@ -59,6 +72,7 @@ class KiocmilTrainer:
 
         config_file = save_training_config(self.log_dir, self.args, additional_info)
         print(f"💾 Config saved to: {config_file}")
+        self.logger.info(f"Config saved to: {config_file}")
 
         # Data
         print("Initializing Datasets...")
@@ -342,9 +356,9 @@ class KiocmilTrainer:
             train_loss = self.train_epoch(epoch)
             val_loss, val_acc = self.validate()
 
-            print(
-                f"Epoch {epoch}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}, Val Acc={val_acc:.4f}"
-            )
+            msg = f"Epoch {epoch}: Train Loss={train_loss:.4f}, Val Loss={val_loss:.4f}, Val Acc={val_acc:.4f}"
+            print(msg)
+            self.logger.info(msg)
 
             if not self.args.no_wandb:
                 wandb.log(
@@ -359,7 +373,9 @@ class KiocmilTrainer:
             if val_acc > best_acc:
                 best_acc = val_acc
                 torch.save(self.model.state_dict(), self.save_dir / "best_model.pth")
-                print("Saved Best Model")
+                msg = f"Saved Best Model (Acc: {best_acc:.4f})"
+                print(msg)
+                self.logger.info(msg)
 
             # Always save last
             torch.save(self.model.state_dict(), self.save_dir / "last_model.pth")
@@ -372,8 +388,12 @@ class KiocmilTrainer:
             )
 
             if should_stop:
-                print(f"\n⏹️  Early stopping triggered at epoch {epoch}")
-                print(f"Best validation accuracy: {self.early_stopping.val_best:.4f}")
+                msg = f"⏹️  Early stopping triggered at epoch {epoch}"
+                print(f"\n{msg}")
+                self.logger.info(msg)
+                msg = f"Best validation accuracy: {self.early_stopping.val_best:.4f}"
+                print(msg)
+                self.logger.info(msg)
                 if not self.args.no_wandb:
                     wandb.log(
                         {
@@ -383,7 +403,9 @@ class KiocmilTrainer:
                     )
                 break
 
-        print(f"\n✅ Training completed. Best accuracy: {best_acc:.4f}")
+        msg = f"✅ Training completed. Best accuracy: {best_acc:.4f}"
+        print(f"\n{msg}")
+        self.logger.info(msg)
 
 
 if __name__ == "__main__":

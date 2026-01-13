@@ -202,11 +202,15 @@ class KiocmilDatasetV2(Dataset):
                 warnings.warn(f"Geometric augmentation failed: {e}")
                 # Continue with original image
 
+        # Update image dimensions after augmentation
+        # Geometric transforms (resize, affine, etc.) can change image size
+        h_img, w_img = image.shape[:2]
+
         # 3. Load Bboxes (YOLO format)
         knee_boxes, _ = self._load_yolo_boxes(knee_path)
         lesion_boxes, lesion_ids = self._load_yolo_boxes(lesion_path)
 
-        # Convert to Pascal VOC format
+        # Convert to Pascal VOC format using UPDATED dimensions
         knee_boxes_px = [self._yolo_to_pascal(b, w_img, h_img) for b in knee_boxes]
         lesion_boxes_px = [self._yolo_to_pascal(b, w_img, h_img) for b in lesion_boxes]
 
