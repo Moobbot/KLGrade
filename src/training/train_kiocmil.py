@@ -16,10 +16,12 @@ from collections import Counter
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
+from src.datasets.kiocmil_dataset_v2 import KiocmilDatasetV2  # NEW: V2 dataset
 from src.models.kiocmil_model import KiocmilModel
 from src.config import PROJECT_ROOT
 from src.training.focal_loss import FocalLoss, compute_class_weights
 from src.training.early_stopping import EarlyStopping
+from src.utils.logging_utils import get_next_log_dir, save_training_config
 
 
 class KiocmilTrainer:
@@ -29,6 +31,13 @@ class KiocmilTrainer:
         self.save_dir = Path(args.save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
 
+        # Create versioned log directory with module name
+        self.log_dir = get_next_log_dir("log", module_name="kiocmil")
+        print(f"\n📁 Logging to: {self.log_dir}")
+
+        # Save training configuration
+        self._save_config()
+
         # WandB Init
         if not args.no_wandb:
             wandb.init(
@@ -37,41 +46,102 @@ class KiocmilTrainer:
                 name=args.wandb_name,
                 config=vars(args),
             )
+            # Log the log directory to wandb
+            wandb.config.update({"log_dir": str(self.log_dir)})
+
+    def _save_config(self):
+        """Save training configuration to log directory"""
+        additional_info = {
+            "device": str(self.device),
+            "save_dir": str(self.save_dir),
+            "log_dir": str(self.log_dir),
+        }
+
+        config_file = save_training_config(self.log_dir, self.args, additional_info)
+        print(f"💾 Config saved to: {config_file}")
 
         # Data
         print("Initializing Datasets...")
 
-        # Import transforms
-        from src.datasets.kiocmil_transforms import get_kiocmil_transforms
-
-        # Get augmentation level from args (default: strong)
+        # Get augmentation settings
         aug_level = getattr(args, "augmentation_level", "strong")
         use_clahe = getattr(args, "use_clahe", True)
+        use_v2 = getattr(args, "use_v2_dataset", False)
 
-        # TEMPORARY: Disable transforms for baseline test
-        # TODO: Fix augmentation pipeline later
-        train_transform = None
-        val_transform = None
-        print("⚠️  Transforms DISABLED for baseline test")
+        if use_v2:
+            print("✅ Using V2 Dataset with fixed augmentation pipeline")
+            # Import v2 transforms
+            from src.datasets.kiocmil_transforms_v2 import (
+                get_geometric_transforms,
+                get_photometric_transforms,
+            )
 
-        self.train_dataset = KiocmilDataset(
-            img_dir=args.img_dir,
-            knee_label_dir=args.knee_labels,
-            lesion_label_dir=args.lesion_labels,
-            split_file=args.train_split,
-            transform=train_transform,  # Apply augmentation
-            ctx_size=(384, 384),
-            patch_size=(224, 224),
-        )
-        self.val_dataset = KiocmilDataset(
-            img_dir=args.img_dir,
-            knee_label_dir=args.knee_labels,
-            lesion_label_dir=args.lesion_labels,
-            split_file=args.val_split,
-            transform=val_transform,  # Only CLAHE + normalization
-            ctx_size=(384, 384),
-            patch_size=(224, 224),
-        )
+            # Create separate geometric and photometric transforms for training
+            geometric_train = (
+                get_geometric_transforms(level=aug_level)
+                if aug_level != "none"
+                else None
+            )
+            photometric_train = (
+                get_photometric_transforms(level=aug_level, use_clahe=use_clahe)
+                if aug_level != "none"
+                else None
+            )
+
+            print(
+                f"  Geometric Augmentation: {aug_level if geometric_train else 'None'}"
+            )
+            print(
+                f"  Photometric Augmentation: {aug_level if photometric_train else 'None'} (CLAHE: {use_clahe})"
+            )
+
+            self.train_dataset = KiocmilDatasetV2(
+                img_dir=args.img_dir,
+                knee_label_dir=args.knee_labels,
+                lesion_label_dir=args.lesion_labels,
+                split_file=args.train_split,
+                geometric_transform=geometric_train,
+                photometric_transform=photometric_train,
+                ctx_size=(384, 384),
+                patch_size=(224, 224),
+            )
+            self.val_dataset = KiocmilDatasetV2(
+                img_dir=args.img_dir,
+                knee_label_dir=args.knee_labels,
+                lesion_label_dir=args.lesion_labels,
+                split_file=args.val_split,
+                geometric_transform=None,  # No augmentation for validation
+                photometric_transform=None,
+                ctx_size=(384, 384),
+                patch_size=(224, 224),
+            )
+        else:
+            print("⚠️  Using V1 Dataset (transforms disabled for baseline)")
+            # Import v1 transforms (currently disabled)
+            from src.datasets.kiocmil_transforms import get_kiocmil_transforms
+
+            # TEMPORARY: Disable transforms for baseline test
+            train_transform = None
+            val_transform = None
+
+            self.train_dataset = KiocmilDataset(
+                img_dir=args.img_dir,
+                knee_label_dir=args.knee_labels,
+                lesion_label_dir=args.lesion_labels,
+                split_file=args.train_split,
+                transform=train_transform,
+                ctx_size=(384, 384),
+                patch_size=(224, 224),
+            )
+            self.val_dataset = KiocmilDataset(
+                img_dir=args.img_dir,
+                knee_label_dir=args.knee_labels,
+                lesion_label_dir=args.lesion_labels,
+                split_file=args.val_split,
+                transform=val_transform,
+                ctx_size=(384, 384),
+                patch_size=(224, 224),
+            )
 
         # Sampler / Shuffle Logic
         sampler = None
@@ -357,6 +427,11 @@ if __name__ == "__main__":
         "--use_oversampling",
         action="store_true",
         help="Use WeightedRandomSampler to oversample minority classes",
+    )
+    parser.add_argument(
+        "--use_v2_dataset",
+        action="store_true",
+        help="Use V2 dataset with fixed augmentation pipeline (geometric → crop → photometric → normalize → tensor)",
     )
 
     args = parser.parse_args()
