@@ -160,6 +160,33 @@ class KiocmilDatasetV3(Dataset):
         bh = (y2 - y1) / h
         return [cx, cy, bw, bh]
 
+    def _clamp_box(self, box: List[float]) -> List[float]:
+        """Clamp box coordinates to [0, 1] range."""
+        cx, cy, w, h = box
+
+        # Convert to corners
+        x1 = cx - w / 2
+        y1 = cy - h / 2
+        x2 = cx + w / 2
+        y2 = cy + h / 2
+
+        # Clamp corners
+        x1 = max(0.0, min(1.0, x1))
+        y1 = max(0.0, min(1.0, y1))
+        x2 = max(0.0, min(1.0, x2))
+        y2 = max(0.0, min(1.0, y2))
+
+        # Re-convert to YOLO
+        new_w = x2 - x1
+        new_h = y2 - y1
+        new_cx = x1 + new_w / 2
+        new_cy = y1 + new_h / 2
+
+        if new_w <= 0 or new_h <= 0:
+            return [0.0, 0.0, 0.0, 0.0]
+
+        return [new_cx, new_cy, new_w, new_h]
+
     def __len__(self):
         return len(self.image_files)
 
@@ -210,13 +237,17 @@ class KiocmilDatasetV3(Dataset):
 
             # Add knee boxes (class 999 to distinguish)
             for box in knee_boxes:
-                all_boxes.append(box)
-                all_classes.append(999)
+                clamped_box = self._clamp_box(box)
+                if clamped_box[2] > 0 and clamped_box[3] > 0:
+                    all_boxes.append(clamped_box)
+                    all_classes.append(999)
 
             # Add lesion boxes
             for box, cls in zip(lesion_boxes, lesion_classes):
-                all_boxes.append(box)
-                all_classes.append(cls)
+                clamped_box = self._clamp_box(box)
+                if clamped_box[2] > 0 and clamped_box[3] > 0:
+                    all_boxes.append(clamped_box)
+                    all_classes.append(cls)
 
             # Transform
             if all_boxes:
@@ -259,7 +290,8 @@ class KiocmilDatasetV3(Dataset):
                 H,
                 W,
             )
-            knees.append(knee_dict)
+            if knee_dict is not None:
+                knees.append(knee_dict)
 
         # Get image-level label
         label = self.labels_map.get(filename, 0)
@@ -293,6 +325,10 @@ class KiocmilDatasetV3(Dataset):
 
         # Crop context patch
         ctx_patch = image[ctx_y1:ctx_y2, ctx_x1:ctx_x2]
+
+        if ctx_patch.size == 0:
+            return None
+
         ctx_patch = cv2.resize(ctx_patch, self.ctx_size, interpolation=cv2.INTER_CUBIC)
 
         # Compute context bbox in normalized coordinates

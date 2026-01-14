@@ -66,7 +66,7 @@ def evaluate(args):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    save_dir = Path("analysis/plots")
+    save_dir = Path(args.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
 
     # Data
@@ -229,5 +229,8 @@ if __name__ == "__main__":
     )
     parser.add_argument("--batch_size", type=int, default=16)
 
+    parser.add_argument(
+        "--save_dir", default="analysis/plots", help="Directory to save plots"
+    )
     args = parser.parse_args()
     evaluate(args)

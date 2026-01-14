@@ -207,7 +207,8 @@ class KiocmilCADATrainer:
         )
 
         # Early stopping
-        self.early_stopping = EarlyStopping(patience=15, verbose=True)
+        self.early_stopping = EarlyStopping(patience=15, mode="min", verbose=True)
+        self.best_val_acc = 0.0
 
     def train_epoch(self):
         """Train for one epoch."""
@@ -377,6 +378,12 @@ class KiocmilCADATrainer:
                     checkpoint_path,
                 )
                 print(f"Checkpoint saved: {checkpoint_path}")
+
+            # Save best accuracy model
+            if val_acc > self.best_val_acc:
+                self.best_val_acc = val_acc
+                torch.save(self.model.state_dict(), self.save_dir / "best_acc_model.pt")
+                print(f"New best accuracy: {val_acc:.4f}. Saved best_acc_model.pt")
 
             # Early stopping
             self.early_stopping(val_loss, self.model, self.save_dir / "best_model.pt")
