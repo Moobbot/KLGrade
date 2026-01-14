@@ -20,11 +20,11 @@ echo "Activating conda environment..."
 # ============================================================================
 echo ""
 echo "📊 STAGE 1: Analyzing raw dataset..."
-echo "   Input: dataset/dataset_v0/"
+echo "   Input: datasets/dataset/dataset_v0/"
 
 if [ -f "tools/check_dataset/comprehensive_analysis.py" ]; then
     python tools/check_dataset/comprehensive_analysis.py \
-        --dataset_dir dataset/dataset_v0 \
+        --dataset_dir datasets/dataset/dataset_v0 \
         --output analysis/dataset_v0
     echo "   ✅ Analysis complete: analysis/dataset_v0/"
 else
@@ -36,11 +36,11 @@ fi
 # ============================================================================
 echo ""
 echo "✂️  STAGE 2: Cropping knee regions from full X-rays..."
-echo "   Input: dataset/dataset_v0/"
+echo "   Input: datasets/dataset/dataset_v0/"
 echo "   Output: processed/knee/"
 
 python scripts/data_preparation/crop_knee_regions.py \
-    --dataset_dir dataset/dataset_v0 \
+    --dataset_dir datasets/dataset/dataset_v0 \
     --output_dir processed/knee \
     --margin 0.15 \
     --min_size 300
