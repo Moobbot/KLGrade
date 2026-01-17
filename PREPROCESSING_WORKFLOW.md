@@ -49,40 +49,68 @@ When you want to train on full X-rays without knee cropping, but still need 10-c
 
 ---
 
-## Stage 1: Data Preparation - Knee Cropping
+## Stage 1: Data Preparation (Knee Cropping + 10-Class Generation)
+
+### 1.1 Crop Knee Regions & Generate 10-Class Labels
 
 ### Purpose
-Crop knee regions from full X-ray images using existing knee bounding box labels.
+Extract knee regions from full X-rays and generate all label variants (5, 10, 4, 8-class).
 
 ### Command
 ```bash
-python scripts/prepare_knee_crops.py \
-    --input datasets/dataset/dataset_v0 \
-    --output datasets/dataset/knees_cropped \
-    --margin 0.15
+PYTHONPATH=/home/ngoductam/KLGrade \
+/home/ngoductam/miniconda3/envs/klgrade/bin/python \
+scripts/prepare_knee_crops.py \
+    --dataset datasets/dataset/dataset_v0 \
+    --output datasets/dataset_knees_cropped
 ```
 
 ### Inputs
 - `datasets/dataset/dataset_v0/images/` - Full X-ray images
-- `datasets/dataset/dataset_v0/labels/` - KL labels (5-class: KL0-4)
+- `datasets/dataset/dataset_v0/labels/` - 5-class labels (KL0-4)
 - `datasets/dataset/dataset_v0/labels-knee/` - Knee bounding boxes
 
-### Outputs
-- `datasets/dataset/knees_cropped/images/` - Cropped knee images (1783 images)
-- `datasets/dataset/knees_cropped/labels/` - **5-class** labels (KL0-4)
-- `datasets/dataset/knees_cropped/labels_new/` - **10-class** labels (KL0-a/b to KL4-a/b)
-- `datasets/dataset/knees_cropped/labels_4class/` - **4-class** labels (KL1-4, filtered KL0)
-- `datasets/dataset/knees_cropped/labels_8class/` - **8-class** labels (KL1-a/b to KL4-a/b, filtered KL0)
-- `datasets/dataset/knees_cropped/labels-knee/` - Knee boxes (full crop)
+### Outputs (saved to `datasets/dataset_knees_cropped/`)
+- `images/` - Cropped knee images (1,783 crops)
+- `labels/` - 5-class labels (KL0-4)
+- `labels_new/` - 10-class labels (KL0-a/b to KL4-a/b) ⭐ NEW!
+- `labels_4class/` - 4-class labels (KL1-4, filtered KL0)
+- `labels_8class/` - 8-class labels (KL1-a/b to KL4-a/b, filtered KL0)
+- `labels-knee/` - Full image knee boxes (for reference)
+- `crop_report.txt` - Statistics and summary
 
 ### What It Does
-1. Loads knee bounding boxes from `labels-knee/`
-2. Crops knee regions with 15% margin
-3. Transforms KL labels to crop space
-4. **Automatically generates 10-class labels** from 5-class using shape classification:
-   - **-a (bone spike)**: w/h < 1.2 or area < 0.01 → class_id = base × 2
-   - **-b (joint space)**: w/h > 2.0 or area > 0.03 → class_id = base × 2 + 1
-5. Creates filtered 4-class and 8-class variants
+1. Loads knee detection boxes from `labels-knee/`
+2. Crops knee regions from full X-rays
+3. Automatically generates 10-class labels by sub-dividing 5-class labels
+4. Creates filtered variants (4-class, 8-class without KL0)
+5. Saves all variants + report
+
+---
+
+### 1.2 Filter Empty Labels ⭐ NEW
+
+### Purpose
+Remove cropped images without KL grade labels (empty label files).
+
+### Command
+```bash
+PYTHONPATH=/home/ngoductam/KLGrade \
+/home/ngoductam/miniconda3/envs/klgrade/bin/python \
+scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped
+```
+
+### What It Does
+- Identifies images with empty label files (92 crops)
+- Moves them to `images-no-labels/` and `labels-no-labels/`
+- Saves list to `no_label_files.json`
+
+### Result
+- Before: 1,783 crops (92 empty labels)
+- After: 1,691 clean crops ✅
+
+---
 
 ### Statistics
 - Total images: 1,473 → 1,783 cropped knees
@@ -287,13 +315,34 @@ python tools/check_dataset/class_split_report.py \
     --save-dir datasets/dataset/dataset_v0/labels_10_class \
     --limit 10
 
-# 1. Crop knees from full X-rays
+# 1. Crop knee regions and generate 10-class labels
+PYTHONPATH=/home/ngoductam/KLGrade \
 python scripts/prepare_knee_crops.py \
-    --input datasets/dataset/dataset_v0 \
-    --output datasets/dataset/knees_cropped \
-    --margin 0.15
+    --dataset datasets/dataset/dataset_v0 \
+    --output datasets/dataset_knees_cropped
 
-# 2. Analyze cropped dataset
+# 1.2. Filter empty labels
+PYTHONPATH=/home/ngoductam/KLGrade \
+python scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped
+
+# Balance dataset
+PYTHONPATH=/home/ngoductam/KLGrade \
+python scripts/balance_dataset.py \
+    --input-images datasets/dataset_knees_cropped/images \
+    --input-labels datasets/dataset_knees_cropped/labels \
+    --output-dir datasets/dataset_knees_cropped_balanced \
+    --num-classes 5 \
+    --aux-labels datasets/dataset_knees_cropped/labels_new \
+                 datasets/dataset_knees_cropped/labels-knee
+
+# Filter empty labels from balanced dataset
+PYTHONPATH=/home/ngoductam/KLGrade \
+python scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped_balanced
+
+# Preprocess balanced dataset
+bash scripts/preprocess_knees_balanced.sh dataset
 PYTHONPATH=/home/ngoductam/KLGrade \
 python scripts/analyzes/analyze_knee_dataset.py \
     --dataset datasets/dataset/knees_cropped
@@ -365,14 +414,27 @@ KLGrade/
 │   │       ├── labels-knee/         # Knee bounding boxes
 │   │       └── labels_new/          # 10-class (original, may be incomplete)
 │   │   
-│   │   └── knees_cropped/           # Cropped knees (Stage 1)
-│   │       ├── images/              # 1783 knee crops
-│   │       ├── labels/              # 5-class
-│   │       ├── labels_new/          # 10-class (auto-generated)
-│   │       ├── labels_4class/       # 4-class (filtered)
-│   │       ├── labels_8class/       # 8-class (filtered)
-│   │       ├── labels-knee/         # Knee boxes
-│   │       └── dataset_statistics.txt
+│   ├── dataset_knees_cropped/        # Cropped knees (Stage 1)
+│   │   ├── images/                     # 1,691 clean crops (after filtering)
+│   │   ├── images-no-labels/           # 92 crops without labels (filtered)
+│   │   ├── labels/                     # 5-class (KL0-4)
+│   │   ├── labels-no-labels/           # Empty label files (filtered)
+│   │   ├── labels_new/                 # 10-class (KL0-a/b to KL4-a/b)
+│   │   ├── labels_4class/              # 4-class (KL1-4, without KL0)
+│   │   ├── labels_8class/              # 8-class (KL1-a/b to KL4-a/b)
+│   │   ├── labels-knee/                # Knee boxes
+│   │   ├── crop_report.txt
+│   │   └── no_label_files.json         # List of filtered files
+│   │
+│   ├── dataset_knees_cropped_balanced/ # Balanced version
+│   │   ├── images/                     # 4,645 clean (after filtering)
+│   │   ├── images-no-labels/           # 92 filtered
+│   │   ├── labels/                     # Balanced 5-class
+│   │   ├── labels-no-labels/           # Empty labels (filtered)
+│   │   ├── labels_new/                 # Balanced 10-class
+│   │   ├── labels-knee/                # Synced knee boxes
+│   │   ├── balance_report.txt
+│   │   └── no_label_files.json
 │   │
 │   ├── data_processed/              # Preprocessed full X-rays (Stage 2)
 │   │   ├── resize_only/

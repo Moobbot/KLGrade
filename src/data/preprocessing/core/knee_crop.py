@@ -9,95 +9,17 @@ import numpy as np
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 
-
-def load_knee_boxes(knee_label_path: Path) -> List[Dict]:
-    """
-    Load knee bounding boxes from YOLO format label file.
-
-    Args:
-        knee_label_path: Path to labels-knee/*.txt file
-
-    Returns:
-        List of knee boxes with 'x', 'y', 'w', 'h' (normalized [0,1])
-    """
-    boxes = []
-    if not knee_label_path.exists():
-        return boxes
-
-    with open(knee_label_path, "r") as f:
-        for line in f:
-            parts = line.strip().split()
-            if len(parts) >= 5:
-                # class_id x_center y_center width height
-                class_id = int(float(parts[0]))
-                x, y, w, h = map(float, parts[1:5])
-                boxes.append({"class_id": class_id, "x": x, "y": y, "w": w, "h": h})
-
-    return boxes
+# Import centralized YOLO utilities
+from src.data.utils.yolo_utils import (
+    load_yolo_boxes,
+    save_yolo_boxes,
+    yolo_to_pixel_box,
+    expand_box_to_square,
+)
 
 
-def yolo_to_pixel_box(box: Dict, img_w: int, img_h: int) -> Tuple[int, int, int, int]:
-    """
-    Convert YOLO normalized box to pixel coordinates.
-
-    Args:
-        box: Dict with 'x', 'y', 'w', 'h' (normalized)
-        img_w, img_h: Image dimensions
-
-    Returns:
-        (x1, y1, x2, y2) in pixels
-    """
-    x_center = box["x"] * img_w
-    y_center = box["y"] * img_h
-    w = box["w"] * img_w
-    h = box["h"] * img_h
-
-    x1 = int(x_center - w / 2)
-    y1 = int(y_center - h / 2)
-    x2 = int(x_center + w / 2)
-    y2 = int(y_center + h / 2)
-
-    return x1, y1, x2, y2
-
-
-def expand_box_to_square(
-    x1: int, y1: int, x2: int, y2: int, img_w: int, img_h: int, margin: float = 0.15
-) -> Tuple[int, int, int, int]:
-    """
-    Expand bounding box to square with margin.
-
-    Args:
-        x1, y1, x2, y2: Box coordinates
-        img_w, img_h: Image dimensions
-        margin: Margin fraction (e.g., 0.15 = 15%)
-
-    Returns:
-        Square box (x1, y1, x2, y2) clamped to image bounds
-    """
-    box_w = x2 - x1
-    box_h = y2 - y1
-
-    # Make square
-    size = max(box_w, box_h)
-    size_with_margin = int(size * (1 + margin))
-
-    # Calculate center
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-
-    # New square coordinates
-    new_x1 = int(cx - size_with_margin / 2)
-    new_y1 = int(cy - size_with_margin / 2)
-    new_x2 = int(cx + size_with_margin / 2)
-    new_y2 = int(cy + size_with_margin / 2)
-
-    # Clamp to image bounds
-    new_x1 = max(0, new_x1)
-    new_y1 = max(0, new_y1)
-    new_x2 = min(img_w, new_x2)
-    new_y2 = min(img_h, new_y2)
-
-    return new_x1, new_y1, new_x2, new_y2
+# Note: load_yolo_boxes, yolo_to_pixel_box, and expand_box_to_square
+# are now imported from src.data.utils.yolo_utils
 
 
 def transform_labels_to_crop_space(
@@ -203,7 +125,7 @@ def crop_knee_from_image(
     img_h, img_w = image.shape[:2]
 
     # Load knee boxes
-    knee_boxes = load_knee_boxes(knee_label_path)
+    knee_boxes = load_yolo_boxes(knee_label_path)
 
     if not knee_boxes or knee_index >= len(knee_boxes):
         # No knee box found, return original image
@@ -226,7 +148,7 @@ def crop_knee_from_image(
     # Transform KL labels if provided
     transformed_labels = []
     if kl_label_path and kl_label_path.exists():
-        kl_labels = load_knee_boxes(kl_label_path)  # Same format as knee boxes
+        kl_labels = load_yolo_boxes(kl_label_path)  # Same format as knee boxes
         transformed_labels = transform_labels_to_crop_space(
             kl_labels, crop_x1, crop_y1, crop_x2, crop_y2, img_w, img_h
         )

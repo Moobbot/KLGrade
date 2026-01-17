@@ -1,224 +1,303 @@
-# Data Balancing & Augmentation Analysis
+# Data Balancing & Augmentation - Implementation Complete ✅
 
-## Overview
-Analyzing `check_data.py` (from Jupyter notebook) to identify:
-1. What's already covered by existing preprocessing
-2. What needs to be added (data balancing, augmentation)
-3. How to integrate or separate these pipelines
+**Status**: IMPLEMENTED  
+**Date**: 2026-01-17
 
 ---
 
-## Functions in check_data.py
+## Implementation Summary
 
-### Already Covered by Current Preprocessing
+All components identified in the initial analysis have been successfully implemented:
 
-1. **`load_grayscale_image()`** ✅
-   - **Current**: `src/data/preprocessing/core/base.py::load_image(mode='grayscale')`
-   - Status: Already implemented
+### ✅ Implemented Modules
 
-2. **`resize_image()`** ✅
-   - **Current**: `src/data/preprocessing/core/base.py::resize_image()`
-   - Status: Already implemented
+**`src/data/balancing/`** - Complete data balancing pipeline
 
-3. **`gaussian_blur()`** ✅
-   - **Current**: `src/data/preprocessing/core/blur.py::gaussian_blur()`
-   - Status: Already implemented
+1. **`validators.py`** ✅
+   - `check_image_label_pairs()` - Validate image-label correspondence
+   - `validate_yolo_labels()` - Check YOLO format correctness
+   - `get_dataset_stats()` - Generate dataset statistics
 
-4. **`apply_clahe()`** ✅
-   - **Current**: `src/data/preprocessing/core/clahe.py::clahe_equalization()`
-   - Status: Already implemented
+2. **`sampler.py`** ✅
+   - `count_class_distribution()` - Count samples per class
+   - `calculate_balance_targets()` - Determine augmentation needs
+   - `find_images_by_class()` - Locate images containing specific classes
+   - `balance_dataset()` - Oversample minority classes with augmentation
 
-5. **`preprocess_image()`** ✅
-   - **Current**: Composed via `Pipeline` in `src/data/preprocessing/pipeline.py`
-   - Status: Already implemented via modular composition
+3. **`augmentor.py`** ✅
+   - `flip_horizontal()` - Horizontal flip with YOLO label adjustment
+   - `flip_vertical()` - Vertical flip with YOLO label adjustment
+   - `augment_with_label_adjustment()` - Generic augmentation handler
 
-6. **`save_processed_data()`** ✅
-   - **Current**: `src/data/preprocessing/core/base.py::save_image()`
-   - Status: Already implemented
-
-### NOT Covered - Data Balancing & Augmentation
-
-7. **`remove_class_0_from_labels()`** ❌ NEW
-   - Purpose: Filter out class 0 and remap classes
-   - Current status: Partially covered in `prepare_knee_crops.py` (filter_class_0)
-   - **Recommendation**: Create general utility function
-
-8. **`check_data()`** ❌ NEW
-   - Purpose: Validate image-label pairs, move unmatched files
-   - Current status: Not implemented
-   - **Recommendation**: Create data validation utility
-
-9. **`count_labels()`** ❌ NEW
-   - Purpose: Count samples per class for balancing
-   - Current status: Part of `analyze_knee_dataset.py` but not reusable
-   - **Recommendation**: Create utility function
-
-10. **`flip_image_and_labels()`** ❌ NEW
-    - Purpose: Horizontal flip with label adjustment
-    - Current status: Not implemented
-    - **Recommendation**: Add to augmentation module
-
-11. **`balance_data()`** ❌ NEW
-    - Purpose: Oversample minority classes via flipping
-    - Current status: Not implemented
-    - **Recommendation**: Create separate data balancing module
-
-12. **`scale_bounding_box()`** ❌ NEW
-    - Purpose: Adjust bounding boxes after resize
-    - Current status: Similar logic in `knee_crop.py` but not general
-    - **Recommendation**: Create utility for YOLO label transformation
-
-13. **`process_labels()`** ❌ NEW
-    - Purpose: Adjust all labels after image transformation
-    - Current status: Not implemented
-    - **Recommendation**: Part of data balancing module
-
-14. **`data_split()`** ❌ NEW
-    - Purpose: Train/val/test split
-    - Current status: Similar in `scripts/split_dataset.py`
-    - **Recommendation**: Verify existing implementation
+4. **`yolo_utils.py`** ✅
+   - `scale_bounding_box()` - Adjust bbox after resize
+   - `process_labels_after_resize()` - Batch label processing
+   - `filter_classes()` - Remove specific class IDs
+   - `remap_class_ids()` - Remap class IDs after filtering
 
 ---
 
-## Gap Analysis
+## Implemented Scripts
 
-### Current Preprocessing (Implemented)
-✅ **Pixel-level transformations**:
-- Load, resize, save
-- Blur (Gaussian, median, bilateral)
-- CLAHE
-- Brightness, contrast adjustments
-- Flip augmentation (basic)
+### 1. **`scripts/validate_dataset.py`** ✅
+Validates dataset integrity and YOLO label format.
 
-### Missing Components (From check_data.py)
+**Usage**:
+```bash
+python scripts/validate_dataset.py \
+    --dataset datasets/dataset_knees_cropped
+```
 
-❌ **Data Validation**:
-- Check image-label correspondence
-- Move unmatched files
-- Validate label format
+**Features**:
+- Check image-label pair matching
+- Validate YOLO label format
+- Generate class distribution statistics
+- Identify data quality issues
 
-❌ **Data Balancing**:
-- Count samples per class
-- Oversample minority classes
-- Balance via augmentation
+---
 
-❌ **YOLO-Specific Utilities**:
-- Bounding box scaling after resize
-- Label remapping (class filtering)
+### 2. **`scripts/balance_dataset.py`** ✅
+Balances dataset by oversampling minority classes via augmentation.
+
+**Usage**:
+```bash
+python scripts/balance_dataset.py \
+    --input-images datasets/dataset_knees_cropped/images \
+    --input-labels datasets/dataset_knees_cropped/labels \
+    --output-dir datasets/dataset_knees_cropped_balanced \
+    --num-classes 5 \
+    --aux-labels datasets/dataset_knees_cropped/labels_new \
+                 datasets/dataset_knees_cropped/labels-knee
+```
+
+**Features**:
+- Automatic minority class detection
+- Horizontal flip augmentation
+- Auxiliary label syncing (labels_new, labels-knee, etc.)
+- Balance report generation
+
+**Results** (on knees_cropped):
+- Original: 1,691 images, 3,147 instances
+- Balanced: 4,645 images, 6,814 instances
+- All classes balanced to ~20% each (1,363 instances per class)
+
+---
+
+### 3. **`scripts/data_preparation/filter_no_labels.py`** ✅
+Filters crops without KL grade labels (also integrated into `prepare_knee_crops.py`).
+
+**Standalone Usage**:
+```bash
+python scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped
+```
+
+**Features**:
+- Identifies empty label files
+- Moves to `images-no-labels/` and `labels-no-labels/`
+- Generates `no_label_files.json` log
+
+**Integration**: ⭐ **Auto-runs after cropping**
+- Integrated directly into `prepare_knee_crops.py` as `filter_empty_labels()` function
+- Runs automatically by default (use `--skip-filter` to disable)
+- No need to call separately in normal workflow
+
+**Results**:
+- Filtered 92 empty labels from all datasets
+- Clean datasets ready for training
+
+---
+
+### 4. **`scripts/preprocess_knees_balanced.sh`** ✅
+Preprocesses balanced dataset with all presets.
+
+**Usage**:
+```bash
+bash scripts/preprocess_knees_balanced.sh
+```
+
+**Output**:
+- `datasets/data_processed_balanced/resize_only/`
+- `datasets/data_processed_balanced/blur_clahe2/`
+- `datasets/data_processed_balanced/sharp_clahe4/`
+- `datasets/data_processed_balanced/blur_clahe2_notebook/`
+
+---
+
+## Workflow Integration
+
+### Updated Complete Workflow
+
+```bash
+#!/bin/bash
+# Complete preprocessing workflow with balancing
+
+# 1. Crop knee regions + auto-filter
+python scripts/prepare_knee_crops.py \
+    --input datasets/dataset_v0 \
+    --output datasets/dataset_knees_cropped
+# Note: Filtering now runs automatically after cropping
+
+# 2. Validate dataset (optional but recommended)
+python scripts/validate_dataset.py \
+    --dataset datasets/dataset_knees_cropped
+
+# 3. Balance dataset (optional)
+python scripts/balance_dataset.py \
+    --input-images datasets/dataset_knees_cropped/images \
+    --input-labels datasets/dataset_knees_cropped/labels \
+    --output-dir datasets/dataset_knees_cropped_balanced \
+    --num-classes 5 \
+    --aux-labels datasets/dataset_knees_cropped/labels_new \
+                 datasets/dataset_knees_cropped/labels-knee
+
+# 4. Filter balanced dataset
+python scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped_balanced
+
+# 5. Preprocess (both unbalanced and balanced)
+bash scripts/preprocess_knees_cropped.sh  # Unbalanced
+bash scripts/preprocess_knees_balanced.sh  # Balanced
+
+# 6. Ready for training!
+```
+
+---
+
+## Key Features Implemented
+
+### ✅ Data Validation
+- Image-label pair checking
 - YOLO format validation
+- **Auto-filtering empty labels** (integrated into prepare_knee_crops.py)
+- Dataset statistics generation
 
-❌ **Augmentation for Balancing**:
-- Flip with label adjustment
-- Generate copies until balanced
-- Track augmentation statistics
+### ✅ Data Balancing
+- Class distribution analysis
+- Minority class oversampling
+- Horizontal flip augmentation
+- Multi-label variant syncing
 
----
+### ✅ YOLO Utilities
+- Bounding box scaling
+- Label filtering and remapping
+- Format validation
+- Batch processing
 
-## Recommended Architecture
-
-### Option 1: Separate Data Balancing Module
-
-```
-src/data/
-├── preprocessing/          # Existing (pixel transformations)
-├── balancing/              # NEW - Data balancing
-│   ├── __init__.py
-│   ├── validators.py       # check_data, validate pairs
-│   ├── sampler.py          # count_labels, balance_data
-│   ├── augmentor.py        # flip_image_and_labels
-│   └── yolo_utils.py       # scale_bounding_box, process_labels
-└── splitting/              # Train/val/test split
-    ├── __init__.py
-    └── stratified.py       # data_split with stratification
-```
-
-### Option 2: Add to Existing Preprocessing
-
-```
-src/data/preprocessing/
-├── core/
-│   ├── ...existing...
-│   ├── validation.py       # NEW - data validation
-│   └── balancing.py        # NEW - data balancing
-```
-
-**Recommendation**: **Option 1** - Separate module
-- Data balancing is logically different from preprocessing
-- Preprocessing = pixel transformations
-- Balancing = dataset-level operations
-- Easier to maintain and test separately
+### ✅ Workflow Automation
+- **Auto-filtering by default** in `prepare_knee_crops.py` ⭐
+- Batch preprocessing scripts
+- Comprehensive analysis tools
 
 ---
 
-## Integration Points
+## Dataset Summary
 
-### Current Workflow
-```
-1. prepare_knee_crops.py → Crop + filter classes
-2. preprocess_production.py → Apply pixel transformations
-3. ??? → Data balancing (MISSING)
-4. ??? → Train/val/test split
-5. Training
+### Unbalanced Datasets
+- **knees_cropped**: 1,691 images (3,147 instances)
+  - Class distribution: KL0 (3.2%), KL1 (25.4%), KL2 (43.3%), KL3 (18.5%), KL4 (9.6%)
+- **data_processed**: 4 presets × 1,691 images = 6,764 preprocessed images
+
+### Balanced Datasets  
+- **knees_cropped_balanced**: 4,645 images (6,814 instances)
+  - Class distribution: KL0-4 (20% each, ~1,363 instances per class)
+- **data_processed_balanced**: 4 presets × 4,645 images = 18,580 preprocessed images
+
+### Total Training-Ready Dataset
+- **25,344 preprocessed images** (unbalanced + balanced)
+- **8 different configurations** (4 presets × 2 balance strategies)
+
+---
+
+## Implementation Notes
+
+### Design Decisions
+
+1. **Modular Architecture**
+   - Separated `src/data/balancing/` from `src/data/preprocessing/`
+   - Balancing = dataset-level operations
+   - Preprocessing = pixel-level transformations
+
+2. **Separate Output Folders**
+   - Balanced data in distinct directories
+   - Enables A/B testing between balanced/unbalanced
+   - Original data preserved
+
+3. **Auto-Filtering Integration**
+   - Filtering runs by default after cropping
+   - Use `--skip-filter` flag to disable (not recommended)
+   - Cleaner datasets for training
+
+4. **Auxiliary Label Syncing**
+   - Supports multiple label variants (labels_new, labels-knee, etc.)
+   - All variants augmented consistently
+   - Maintains data integrity across splits
+
+---
+
+## Comprehensive Analysis
+
+### Tools Implemented
+
+**`tools/check_dataset/comprehensive_analysis.py`** ✅
+- Image statistics (count, dimensions, formats)
+- Label analysis for all label directories
+- **Class distribution visualization** (PNG charts)
+- **Bounding box analysis visualization** ⭐ NEW!
+  - Width/Height/Area distributions
+  - Aspect ratio analysis (for anchor box optimization)
+  - Single/Multiple objects per image
+  - Width vs Height scatter plot
+  - Object center heatmap
+- JSON and Markdown reports
+
+**Running Analysis**:
+```bash
+bash scripts/run_comprehensive_analysis_all.sh
 ```
 
-### Proposed Workflow
-```
-1. prepare_knee_crops.py → Crop + filter classes
-2. validate_dataset.py → Check image-label pairs (NEW)
-3. balance_dataset.py → Oversample minority classes (NEW)
-4. preprocess_production.py → Apply pixel transformations
-5. split_dataset.py → Train/val/test split (exists but verify)
-6. Training
-```
+**Output**: `analysis/` folder with reports for all 11 datasets
+
+---
+
+## Comparison with check_data.py
+
+All functionalities from `check_data.py` have been implemented:
+
+| Function | Status | Location |
+|----------|--------|----------|
+| `remove_class_0_from_labels()` | ✅ | `src/data/balancing/yolo_utils.py::filter_classes()` |
+| `check_data()` | ✅ | `src/data/balancing/validators.py::check_image_label_pairs()` |
+| `count_labels()` | ✅ | `src/data/balancing/sampler.py::count_class_distribution()` |
+| `flip_image_and_labels()` | ✅ | `src/data/balancing/augmentor.py::flip_horizontal()` |
+| `balance_data()` | ✅ | `src/data/balancing/sampler.py::balance_dataset()` |
+| `scale_bounding_box()` | ✅ | `src/data/balancing/yolo_utils.py::scale_bounding_box()` |
+| `process_labels()` | ✅ | `src/data/balancing/yolo_utils.py::process_labels_after_resize()` |
+| `data_split()` | ✅ | Existing `scripts/split_dataset.py` |
+| Image preprocessing | ✅ | Existing `src/data/preprocessing/` |
 
 ---
 
 ## Next Steps
 
-1. **Create `src/data/balancing/` module** with:
-   - validators.py (check_data)
-   - sampler.py (count_labels, balance_data)
-   - augmentor.py (flip_image_and_labels)
-   - yolo_utils.py (bbox scaling, label processing)
-
-2. **Create scripts**:
-   - `scripts/validate_dataset.py` - Check data integrity
-   - `scripts/balance_dataset.py` - Balance classes via augmentation
-   - Verify `scripts/split_dataset.py` - Stratified splitting
-
-3. **Update workflow** to include balancing step
-
-4. **Documentation**: Update PREPROCESSING_WORKFLOW.md
+1. ✅ **Data balancing pipeline** - COMPLETE
+2. ✅ **Filtering integration** - COMPLETE
+3. ✅ **Comprehensive analysis** - COMPLETE
+4. ⏳ **Train/val/test splits** - Use existing `split_dataset.py`
+5. ⏳ **Model training** - Ready to begin
+6. ⏳ **Performance comparison** - Balanced vs Unbalanced
 
 ---
 
-## Priority Functions to Implement
+## Documentation
 
-### High Priority (Core Balancing)
-1. `count_labels()` - Count samples per class
-2. `balance_data()` - Oversample minority classes
-3. `flip_image_and_labels()` - Augmentation for balancing
-
-### Medium Priority (Validation)
-4. `check_data()` - Validate image-label pairs
-5. `scale_bounding_box()` - YOLO label adjustment
-
-### Low Priority (Already Exists)
-6. `data_split()` - Verify existing implementation
-7. Image preprocessing functions - Already covered
+- ✅ `PREPROCESSING_WORKFLOW.md` - Updated with balancing steps
+- ✅ `DATA_BALANCING_ANALYSIS.md` - This document
+- ⏳ `DATA_PROCESSING_LOG.md` - Needs update with recent sessions
+- ✅ Implementation plan - Complete
+- ✅ Task checklist - All phases complete
 
 ---
 
-## Comparison with Existing Code
-
-### `scripts/run_full_pipeline.sh` includes:
-- Knee cropping ✅
-- Class filtering ✅
-- Train/val/test split ✅
-- **Missing**: Data balancing, validation
-
-### `src/data/preprocessing.py` (legacy) includes:
-- `balance_dataset_with_flip()` - Similar to `balance_data()`!
-- This suggests balancing WAS implemented but not migrated to new modular architecture
-
-**Action**: Review legacy `preprocessing.py` to extract balancing logic
+**Status**: All balancing and filtering functionalities implemented and tested ✅  
+**Ready for**: Model training and performance evaluation

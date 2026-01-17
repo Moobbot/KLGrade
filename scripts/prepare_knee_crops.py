@@ -24,8 +24,8 @@ sys.path.append(str(project_root))
 
 from src.data.preprocessing.core.knee_crop import (
     crop_knee_from_image,
-    load_knee_boxes,
 )
+from src.data.utils.yolo_utils import load_yolo_boxes
 from src.data.preprocessing.core.base import load_image, save_image
 
 
@@ -238,7 +238,7 @@ def prepare_knee_crops(
         image = load_image(img_path, mode="grayscale")
 
         # Get all knee boxes for this image
-        knee_boxes = load_knee_boxes(knee_label_path)
+        knee_boxes = load_yolo_boxes(knee_label_path)
 
         if not knee_boxes:
             stats["images_without_knees"] += 1
@@ -340,89 +340,8 @@ def prepare_knee_crops(
     return stats
 
 
-def filter_empty_labels(input_dir: Path):
-    """
-    Filter crops without labels - integrated version.
-
-    Moves cropped images without KL grade labels to separate folder.
-
-    Args:
-        input_dir: Directory containing images/ and labels/
-
-    Returns:
-        Dictionary with filtering statistics
-    """
-    img_dir = input_dir / "images"
-    label_dir = input_dir / "labels"
-
-    no_label_img_dir = input_dir / "images-no-labels"
-    no_label_label_dir = input_dir / "labels-no-labels"
-
-    no_label_img_dir.mkdir(exist_ok=True)
-    no_label_label_dir.mkdir(exist_ok=True)
-
-    if not img_dir.exists() or not label_dir.exists():
-        print(f"❌ Missing directories: {img_dir} or {label_dir}")
-        return None
-
-    # Get all images
-    img_extensions = {".jpg", ".jpeg", ".png", ".bmp"}
-    images = [f for f in img_dir.iterdir() if f.suffix.lower() in img_extensions]
-
-    print(f"\nFound {len(images)} cropped images")
-
-    moved_count = 0
-    no_label_files = []
-
-    for img_file in images:
-        stem = img_file.stem
-        label_file = label_dir / f"{stem}.txt"
-
-        # Check if label is empty or missing
-        has_label = False
-        if label_file.exists():
-            with open(label_file, "r") as f:
-                content = f.read().strip()
-                has_label = len(content) > 0
-
-        if not has_label:
-            # Move image to no-labels folder
-            dest_img_path = no_label_img_dir / img_file.name
-            shutil.move(str(img_file), str(dest_img_path))
-
-            # Move empty label file if exists
-            if label_file.exists():
-                dest_label_path = no_label_label_dir / label_file.name
-                shutil.move(str(label_file), str(dest_label_path))
-
-            no_label_files.append(stem)
-            moved_count += 1
-
-    # Summary
-    remaining_count = len(images) - moved_count
-
-    print("\n" + "=" * 60)
-    print("FILTERING SUMMARY")
-    print("=" * 60)
-    print(f"\nTotal crops: {len(images)}")
-    print(f"🗂️  Moved to no-labels: {moved_count}")
-    print(f"📊 Remaining with labels: {remaining_count}")
-
-    # Save log
-    if no_label_files:
-        log_path = input_dir / "no_label_files.json"
-        with open(log_path, "w") as f:
-            json.dump(no_label_files, f, indent=2)
-        print(f"\n📝 Saved no-label files list: {log_path}")
-
-    print("=" * 60)
-
-    return {
-        "total_images": len(images),
-        "moved_count": moved_count,
-        "remaining_count": remaining_count,
-        "no_label_files": no_label_files,
-    }
+# Import centralized filter implementation
+from src.data.filters import filter_empty_labels
 
 
 def filter_class_0(labels):

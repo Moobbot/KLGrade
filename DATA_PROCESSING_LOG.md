@@ -225,11 +225,335 @@ python examples/preprocessing_comparison_knees.py
 - 5 preprocessing methods compared: Raw, Basic, v0, v3 Legacy, Notebook
 - Knee-specific preprocessing analysis
 
+---
+
+## Stage 4: Data Balancing & Filtering
+
+**Date**: 2026-01-17
+
+### 4.1: Filter Empty Labels from Cropped Dataset
+**Command**:
+```bash
+PYTHONPATH=/home/ngoductam/KLGrade \
+python scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped
+```
+
+**Input**:
+- `datasets/dataset_knees_cropped/` (1,783 crops)
+
+**Output**:
+- `datasets/dataset_knees_cropped/images/` (1,691 clean images)
+- `datasets/dataset_knees_cropped/images-no-labels/` (92 filtered)
+- `datasets/dataset_knees_cropped/labels-no-labels/` (92 empty labels)
+- `datasets/dataset_knees_cropped/no_label_files.json` (filter log)
+
+**Result**: ✅ Success
+- Filtered 92 images without KL grade labels
+- Clean dataset: 1,691 images with 3,147 instances
+
+---
+
+### 4.2: Balance Dataset via Oversampling
+**Command**:
+```bash
+PYTHONPATH=/home/ngoductam/KLGrade \
+python scripts/balance_dataset.py \
+    --input-images datasets/dataset_knees_cropped/images \
+    --input-labels datasets/dataset_knees_cropped/labels \
+    --output-dir datasets/dataset_knees_cropped_balanced \
+    --num-classes 5 \
+    --aux-labels datasets/dataset_knees_cropped/labels_new \
+                 datasets/dataset_knees_cropped/labels-knee
+```
+
+**Input**:
+- Unbalanced dataset: 1,691 images, 3,147 instances
+- Class distribution: KL0 (3.2%), KL1 (25.4%), KL2 (43.3%), KL3 (18.5%), KL4 (9.6%)
+
+**Output**:
+- `datasets/dataset_knees_cropped_balanced/` (4,737 images, 6,814 instances)
+- All label variants synced: labels/, labels_new/, labels-knee/
+- `balance_report.txt`
+
+**Balancing Strategy**:
+- Oversampling via horizontal flip augmentation
+- Target: 20% per class (1,363 instances each)
+- Minority classes augmented to match majority
+
+**Result**: ✅ Success
+- Balanced dataset: 4,737 images (4,645 after filtering)
+- Perfect balance: KL0-4 @ 20% each
+
+---
+
+### 4.3: Filter Empty Labels from Balanced Dataset
+**Command**:
+```bash
+PYTHONPATH=/home/ngoductam/KLGrade \
+python scripts/data_preparation/filter_no_labels.py \
+    --input datasets/dataset_knees_cropped_balanced
+```
+
+**Output**:
+- Clean balanced dataset: 4,645 images
+- Filtered: 92 empty labels (same as original)
+
 **Result**: ✅ Success
 
 ---
 
-## Code Changes Made
+### 4.4: Preprocess Balanced Dataset
+**Command**:
+```bash
+bash scripts/preprocess_knees_balanced.sh
+```
+
+**Input**:
+- `datasets/dataset_knees_cropped_balanced/` (4,645 images)
+
+**Output**: 4 balanced preprocessed datasets
+1. `datasets/data_processed_balanced/resize_only/`
+2. `datasets/data_processed_balanced/blur_clahe2/`
+3. `datasets/data_processed_balanced/sharp_clahe4/`
+4. `datasets/data_processed_balanced/blur_clahe2_notebook/`
+
+**Processing Details**:
+- Total images processed: 18,580 (4,645 × 4 presets)
+- Each preset includes all label variants
+- Processing time: ~3 minutes
+
+**Result**: ✅ Success
+
+---
+
+### 4.5: Filter Processed Datasets
+**Command**:
+```bash
+bash scripts/filter_all_processed_datasets.sh
+```
+
+**Datasets Filtered**:
+- `data_processed_balanced/*` (4 presets)
+- Filtered 92 empty labels from each
+
+**Result**: ✅ Success
+- All preprocessed datasets now clean
+
+---
+
+## Stage 5: Comprehensive Analysis
+
+**Date**: 2026-01-17
+
+### 5.1: Add Bbox Analysis Visualization
+**Tool Enhanced**: `tools/check_dataset/comprehensive_analysis.py`
+
+**New Visualizations**:
+- Width/Height/Area distributions
+- Aspect ratio histogram (for anchor box optimization)
+- Single/Multiple objects per image
+- Width vs Height scatter (colored by area)
+- Object center heatmap
+
+**Result**: ✅ Success
+
+---
+
+### 5.2: Analyze All Datasets
+**Command**:
+```bash
+bash scripts/run_comprehensive_analysis_all.sh
+```
+
+**Datasets Analyzed** (11 total):
+1. `datasets/dataset/dataset_v0` (full X-rays)
+2. `datasets/dataset_knees_cropped` (unbalanced)
+3. `datasets/dataset_knees_cropped_balanced` (balanced)
+4-7. `datasets/data_processed/*` (4 presets, unbalanced)
+8-11. `datasets/data_processed_balanced/*` (4 presets, balanced)
+
+**Output for Each Dataset**:
+- `analysis/{dataset}/bbox_analysis.png` ⭐ NEW!
+- `analysis/{dataset}/class_distribution.png`
+- `analysis/{dataset}/analysis_report.json`
+- `analysis/{dataset}/ANALYSIS_REPORT.md` (summary)
+- `analysis/{dataset}/DETAILED_ANALYSIS_REPORT.md`
+
+**Result**: ✅ Success
+
+---
+
+## Stage 6: Integration & Automation
+
+**Date**: 2026-01-17
+
+### 6.1: Integrate Filter into prepare_knee_crops.py
+**Enhancement**:
+- Added `filter_empty_labels()` function
+- Filtering runs by default after cropping
+- Use `--skip-filter` flag to disable
+
+**Result**: ✅ Success
+- Cleaner workflow
+- No separate filter step needed
+- Direct function call (no subprocess)
+
+---
+
+## Code Changes Made (Stages 4-6)
+
+### New Modules Created
+1. **`src/data/balancing/`** - Data balancing pipeline
+   - `validators.py` - Data validation utilities
+   - `sampler.py` - Class balancing and oversampling
+   - `augmentor.py` - Augmentation with label adjustment
+   - `yolo_utils.py` - YOLO-specific transformations
+   - `__init__.py` - Package exports
+
+### New Scripts Created
+1. **`scripts/balance_dataset.py`** - Balance dataset via oversampling
+2. **`scripts/validate_dataset.py`** - Validate dataset integrity
+3. **`scripts/data_preparation/filter_no_labels.py`** - Filter empty labels
+4. **`scripts/preprocess_knees_balanced.sh`** - Preprocess balanced dataset
+5. **`scripts/filter_all_processed_datasets.sh`** - Batch filter processed datasets
+6. **`scripts/run_comprehensive_analysis_all.sh`** - Analyze all datasets
+
+### Enhanced Tools
+1. **`tools/check_dataset/comprehensive_analysis.py`**
+   - Added bbox analysis visualization (8-panel analysis)
+   - Image statistics analysis
+   - Multiple label directory support
+
+### Modified Files
+1. **`scripts/prepare_knee_crops.py`**
+   - Integrated `filter_empty_labels()` function
+   - Auto-filtering by default
+   - Added `--skip-filter` option
+   - Saves crop_report.txt
+
+2. **Documentation**:
+   - `PREPROCESSING_WORKFLOW.md` - Added Stage 1.2 (filtering)
+   - `DATA_BALANCING_ANALYSIS.md` - Complete rewrite (implementation summary)
+
+---
+
+## Final Dataset Structure (Updated)
+
+```
+datasets/
+├── dataset/
+│   ├── dataset_v0/                 # Original full X-rays
+│   │   ├── images/                 # 1,473 full X-rays
+│   │   ├── labels/                 # 5-class KL labels
+│   │   ├── labels_10_class/        # 10-class (Stage 0)
+│   │   ├── labels-knee/            # Knee bounding boxes
+│   │   └── labels_new/             # 10-class (original)
+│   │
+│   ├── dataset_knees_cropped/      # Cropped knees (Stage 1)
+│   │   ├── images/                 # 1,691 clean crops
+│   │   ├── images-no-labels/       # 92 filtered (Stage 4.1) ⭐ NEW
+│   │   ├── labels/                 # 5-class
+│   │   ├── labels-no-labels/       # 92 empty labels ⭐ NEW
+│   │   ├── labels_new/             # 10-class
+│   │   ├── labels_4class/          # 4-class (filtered)
+│   │   ├── labels_8class/          # 8-class (filtered)
+│   │   ├── labels-knee/            # Knee boxes
+│   │   ├── crop_report.txt
+│   │   ├── dataset_statistics.txt
+│   │   └── no_label_files.json     ⭐ NEW
+│   │
+│   └── dataset_knees_cropped_balanced/  # Balanced (Stage 4.2) ⭐ NEW
+│       ├── images/                     # 4,645 clean
+│       ├── images-no-labels/           # 92 filtered
+│       ├── labels/                     # Balanced 5-class
+│       ├── labels-no-labels/           # Empty labels
+│       ├── labels_new/                 # Balanced 10-class
+│       ├── labels-knee/                # Synced knee boxes
+│       ├── balance_report.txt
+│       ├── dataset_statistics.txt
+│       └── no_label_files.json
+│
+├── data_processed/                 # Preprocessed unbalanced (Stage 2)
+│   ├── resize_only/
+│   ├── blur_clahe2/
+│   ├── sharp_clahe4/
+│   └── blur_clahe2_notebook/
+│       └── (each: 1,473 images + labels)
+│
+├── data_processed_balanced/        # Preprocessed balanced (Stage 4.4) ⭐ NEW
+│   ├── resize_only/
+│   ├── blur_clahe2/
+│   ├── sharp_clahe4/
+│   └── blur_clahe2_notebook/
+│       └── (each: 4,645 images + all label variants)
+│
+├── data_examples/                  # Visualization examples
+│   └── (Stage 3)
+│
+└── analysis/                      # Comprehensive analysis (Stage 5) ⭐ NEW
+    ├── dataset_v0/
+    ├── knees_cropped/
+    ├── knees_cropped_balanced/
+    ├── processed/
+    │   ├── resize_only/
+    │   ├── blur_clahe2/
+    │   ├── sharp_clahe4/
+    │   └── blur_clahe2_notebook/
+    └── processed_balanced/
+        └── (4 presets)
+                └── (each: bbox_analysis.png, class_distribution.png, reports)
+```
+
+---
+
+## Summary Statistics (Updated)
+
+### Dataset Sizes
+- Original full X-rays: 1,473 images
+- **Cropped knees (clean)**: 1,691 images (filtered from 1,783)
+- **Balanced knees (clean)**: 4,645 images (filtered from 4,737)
+- Preprocessed unbalanced: 6,764 images (1,691 × 4 presets)
+- **Preprocessed balanced**: 18,580 images (4,645 × 4 presets) ⭐ NEW
+- **Total training-ready images**: 25,344
+
+### Label Variants
+- 5-class: KL0-4 (standard)
+- 10-class: KL0-a/b to KL4-a/b (shape-based)
+- 4-class: KL1-4 (filtered KL0)
+- 8-class: KL1-a/b to KL4-a/b (filtered KL0)
+
+### Class Balance
+**Unbalanced** (1,691 images):
+- KL0: 3.2%, KL1: 25.4%, KL2: 43.3%, KL3: 18.5%, KL4: 9.6%
+
+**Balanced** (4,645 images):
+- KL0-4: 20% each (~1,363 instances per class)
+
+---
+
+## Next Steps
+
+1. ✅ **Data balancing pipeline** - COMPLETE
+2. ✅ **Filtering integration** - COMPLETE
+3. ✅ **Comprehensive analysis** - COMPLETE
+4. ⏳ **Create train/val/test splits** - Use `scripts/split_dataset.py`
+5. ⏳ **Model training** - Ready to begin
+   - Compare balanced vs unbalanced
+   - Compare preprocessing presets
+6. ⏳ **Performance analysis** - Evaluate results
+
+---
+
+## Notes
+
+- All datasets cleaned (92 empty labels removed)
+- Balanced dataset enables fair class comparison
+- 8 training configurations available (4 presets × 2 balance strategies)
+- Comprehensive analysis with bbox visualization for anchor box optimization
+- Auto-filtering integrated into workflow (no manual step needed)
+- Ready for large-scale model training and A/B testing
+
 
 ### New Files Created
 1. **Modular Preprocessing Architecture**:
