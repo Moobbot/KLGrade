@@ -231,16 +231,16 @@ def quick_test():
         img_dir="processed/knee/images",
         label_dir="processed/knee/labels",
         use_10_class=False,
-        # Wait, the original call below used 'use_labels_new', but the definition has 'use_5_class', 'use_10_class' etc.
+        # Wait, the original call below used 'use_labels_10_class', but the definition has 'use_5_class', 'use_10_class' etc.
         # I should probably fix the arg name in the call or check the definition carefully.
         # Definition: use_5_class, use_10_class...
-        # Original code used: use_labels_new=False in quick_test.
+        # Original code used: use_labels_10_class=False in quick_test.
         # This implies the original code might have had an error or mismatch too?
         # Leaving it as is might crash if I don't fix it.
-        # But 'use_labels_new' is NOT in the arguments of train_yolo11 in my visible file content.
+        # But 'use_labels_10_class' is NOT in the arguments of train_yolo11 in my visible file content.
         # Ah, looking at Step 541:
         # def train_yolo11(..., use_10_class: bool = False, ...)
-        # Call in quick_test: use_labels_new=False
+        # Call in quick_test: use_labels_10_class=False
         # This IS an error in the original file I think. I should fix it to use_10_class=False or similar.
         model_name="yolo11n.pt",
         epochs=5,

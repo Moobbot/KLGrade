@@ -7,12 +7,12 @@ This document describes the complete pipeline for the **Knee Instance Object–C
 Before training, you must check labels and generate dataset splits.
 
 ### 1.1 Generate 10-Class Labels
-Parse original YOLO labels to create specific 10-class lesion labels in `dataset/dataset_v0/labels_new`.
+Parse original YOLO labels to create specific 10-class lesion labels in `dataset/dataset_v0/labels_10_class`.
 
 ```bash
 python tools/check_dataset/class_split_report.py \
     --labels-dir dataset/dataset_v0/labels \
-    --save-dir dataset/dataset_v0/labels_new \
+    --save-dir dataset/dataset_v0/labels_10_class \
     --limit 10
 ```
 
@@ -51,7 +51,7 @@ nohup bash ./scripts/train_kiocmil.sh --use_sampler --use_weighted_loss > traini
 **Configuration (Inside `scripts/train_kiocmil.sh`):**
 -   **Images**: `dataset/dataset_v0/images`
 -   **Knee Labels**: `dataset/dataset_v0/labels-knee`
--   **Lesion Labels**: `dataset/dataset_v0/labels_new`
+-   **Lesion Labels**: `dataset/dataset_v0/labels_10_class`
 -   **Splits**: `splits/knee_full_10_class/train.txt` / `val.txt`
 
 ## 3. Evaluation
@@ -71,7 +71,7 @@ Evaluate the trained model on the **Test Split**.
 -   **Dataset Logic**: `src/datasets/kiocmil_dataset.py`
     -   Loads Full Image.
     -   Extracts Knee Instances (using `labels-knee`).
-    -   Assigns Lesions (from `labels_new`) to knees.
+    -   Assigns Lesions (from `labels_10_class`) to knees.
     -   Generates Context Token (Knee + Context) and Object Tokens (Lesions).
 -   **Model Architecture**: `src/models/kiocmil_model.py`
     -   Multi-head output: 10-Class (Softmax), KL Grade (0-4), Type (Osteophyte/Joint Space).

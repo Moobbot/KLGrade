@@ -320,9 +320,11 @@ def crop_knee_regions(
 
     output_img_dir = output_dir / "images"
     output_label_dir = output_dir / "labels"
+    output_knee_dir = output_dir / "labels-knee"
 
     output_img_dir.mkdir(parents=True, exist_ok=True)
     output_label_dir.mkdir(parents=True, exist_ok=True)
+    output_knee_dir.mkdir(parents=True, exist_ok=True)
 
     # Get all images
     img_extensions = {".jpg", ".jpeg", ".png", ".bmp"}
@@ -529,6 +531,19 @@ def crop_knee_regions(
                 output_name = f"{stem}_knee{knee_idx}{img_path.suffix}"
                 output_stem = f"{stem}_knee{knee_idx}"
 
+            # ⭐ FILTER: Only save if there are labels
+            if not transformed_boxes:
+                stats["skipped_no_labels"] = stats.get("skipped_no_labels", 0) + 1
+                skipped_files.append(
+                    {
+                        "file": output_stem,
+                        "reason": "no_labels_after_transform",
+                        "original_kl_boxes": len(assigned_labels),
+                        "transformed_boxes": 0,
+                    }
+                )
+                continue
+
             # Save cropped image
             output_img_path = output_img_dir / output_name
             cv2.imwrite(str(output_img_path), cropped)
@@ -536,6 +551,11 @@ def crop_knee_regions(
             # Save transformed labels
             output_label_path = output_label_dir / f"{output_stem}.txt"
             save_yolo_labels(transformed_boxes, output_label_path)
+
+            # Save knee box (full crop, since entire image is knee region)
+            output_knee_path = output_knee_dir / f"{output_stem}.txt"
+            knee_full_box = {"class_id": 0, "x": 0.5, "y": 0.5, "w": 1.0, "h": 1.0}
+            save_yolo_labels([knee_full_box], output_knee_path)
 
             stats["cropped"] += 1
 
@@ -547,6 +567,7 @@ def crop_knee_regions(
     print(f"✅ Successfully cropped: {stats['cropped']}")
     print(f"⏭️  Skipped (no knee box): {stats['skipped_no_knee_box']}")
     print(f"⏭️  Skipped (too small): {stats['skipped_too_small']}")
+    print(f"⏭️  Skipped (no labels): {stats.get('skipped_no_labels', 0)}")
     print(f"\nKL Labels:")
     print(f"  Original boxes: {stats['total_kl_boxes_original']}")
     print(f"  Transformed boxes: {stats['total_kl_boxes_transformed']}")

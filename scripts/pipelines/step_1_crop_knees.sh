@@ -1,11 +1,11 @@
 #!/bin/bash
 #
-# Step 2: Crop Knee Regions
+# Step 1: Crop Knee Regions from Full X-rays
 #
-# Input:  datasets/dataset_v0/images/
-#         datasets/dataset_v0/labels/
-#         datasets/dataset_v0/labels-knee/
+# Input:  datasets/dataset_v0/
 # Output: datasets/dataset_knees_cropped/
+#
+# Note: Label variants (10-class, 4-class, 8-class) will be generated in Step 2
 #
 
 set -e
@@ -15,62 +15,63 @@ eval "$(conda shell.bash hook)"
 conda activate klgrade || echo "⚠️  Warning: Failed to activate klgrade env"
 
 echo "════════════════════════════════════════════════════════"
-echo "Step 2: Crop Knee Regions"
+echo "Step 1: Crop Knee Regions"
 echo "════════════════════════════════════════════════════════"
 echo ""
-echo "Input:  datasets/dataset_v0/"
+echo "Input:  datasets/dataset_v0/ (full X-rays, 5-class labels)"
 echo "Output: datasets/dataset_knees_cropped/"
+echo ""
+echo "Note: This step only crops images. Label variants will be"
+echo "      generated in Step 2 from the cropped dataset."
 echo ""
 
 echo "─────────────────────────────────────────────────────────"
-echo "2.1 Cropping knee regions from full X-rays..."
+echo "1.1 Cropping knee regions from full X-rays..."
 echo "─────────────────────────────────────────────────────────"
-python scripts/preprocessing/prepare_knee_crops.py \
-    --input datasets/dataset_v0 \
-    --output datasets/dataset_knees_cropped
+
+# Set PYTHONPATH for module imports
+python scripts/data_preparation/crop_knee_regions.py \
+    --dataset_dir datasets/dataset_v0 \
+    --output_dir datasets/dataset_knees_cropped \
+    --margin 0.15 \
+    --min_size 300
 
 echo ""
 echo "✅ Knee cropping complete"
 echo ""
 
+# Check statistics
 echo "─────────────────────────────────────────────────────────"
-echo "2.2 Checking dataset statistics..."
+echo "1.2 Dataset statistics..."
 echo "─────────────────────────────────────────────────────────"
 
-# Count images
 if [ -d "datasets/dataset_knees_cropped/images" ]; then
-    IMG_COUNT=$(find datasets/dataset_knees_cropped/images -type f -name "*.jpg" | wc -l)
+    IMG_COUNT=$(find datasets/dataset_knees_cropped/images -type f \( -name "*.jpg" -o -name "*.png" \) 2>/dev/null | wc -l)
     echo "  Total cropped images: $IMG_COUNT"
+    
+    LABEL_COUNT=$(find datasets/dataset_knees_cropped/labels -type f -name "*.txt" 2>/dev/null | wc -l)
+    echo "  Total labels: $LABEL_COUNT"
 fi
 
-# Check label directories
-echo "  Label directories:"
-for label_dir in datasets/dataset_knees_cropped/labels*; do
-    if [ -d "$label_dir" ]; then
-        label_count=$(find "$label_dir" -type f -name "*.txt" | wc -l)
-        echo "    - $(basename $label_dir): $label_count labels"
-    fi
-done
-
 echo ""
+
 echo "════════════════════════════════════════════════════════"
-echo "✅ Step 2 Complete!"
+echo "✅ Step 1 Complete!"
 echo "════════════════════════════════════════════════════════"
 echo ""
 echo "Summary:"
-echo "  ✅ Cropped knee regions extracted"
-echo "  ✅ All label variants copied"
-echo "  ✅ Images without labels filtered to images-no-labels/"
+echo "  ✅ Cropped knees from full X-rays"
+echo "  ✅ Copied 5-class KL labels (transformed to crop space)"
+echo "  ✅ Filtered out crops with no labels"
 echo ""
 echo "Output structure:"
 echo "  datasets/dataset_knees_cropped/"
-echo "    ├── images/              # Cropped knee images"
-echo "    ├── labels/              # 5-class labels"
-echo "    ├── labels_4_class/       # 4-class labels"
-echo "    ├── labels_8_class/       # 8-class labels"
-echo "    ├── labels-knee/         # Knee boxes"
-echo "    ├── labels_new/          # Lesion labels"
-echo "    └── dataset_statistics.txt"
+echo "    ├── images/              # Cropped knee images (only with labels)"
+echo "    ├── labels/              # 5-class KL labels (KL0-4)"
+echo "    ├── labels-knee/         # Knee boxes (full crop)"
+echo "    └── crop_report.json     # Cropping statistics"
 echo ""
-echo "Next: Run step_3_preprocess.sh (optional)"
-echo "   or step_4_balance.sh to balance dataset"
+echo "Note: Label variants (10-class, 4-class, 8-class) will be"
+echo "      generated in Step 2 for BOTH full X-rays and cropped knees."
+echo ""
+echo "Next: Run step_2_generate_labels.sh"

@@ -15,7 +15,7 @@ KLGrade/
 │   │   └── dataset_v0/
 │   │       ├── images/
 │   │       ├── labels/             # 5 classes
-│   │       └── labels_new/         # 10 classes
+│   │       └── labels_10_class/    # 10 classes
 │   │
 │   ├── processed/                  # Processed datasets
 │   │   ├── knee/                   # ✨ Cropped knee regions

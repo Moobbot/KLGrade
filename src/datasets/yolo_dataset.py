@@ -6,7 +6,7 @@ knee osteoarthritis (OA) detection using the Kellgren-Lawrence (KL) grading syst
 
 Features:
 - Train/Val/Test splits from text files
-- Support for both original labels (5 classes) and labels_new (10 classes)
+- Support for both original labels (5 classes) and labels_10_class (10 classes)
 - Memory caching for images and labels (optional)
 - Robust error handling and validation
 - Albumentations-based augmentation with bbox support
@@ -44,7 +44,7 @@ class YoloDataset(Dataset):
         label_dir (str): Directory containing YOLO format label files (.txt)
         transform (Optional[A.Compose]): Albumentations transform pipeline
         split_file (Optional[str]): Path to split file (train.txt/val.txt) containing image stems
-        use_labels_new (bool): Use labels_new directory (10 classes) instead of labels (5 classes)
+        use_labels_10_class (bool): Use labels_10_class directory (10 classes) instead of labels (5 classes)
         filter_no_label (bool): Skip images without corresponding label files
         cache_images (bool): Cache loaded images in memory for faster access
         cache_labels (bool): Cache parsed labels in memory
@@ -77,7 +77,7 @@ class YoloDataset(Dataset):
         label_dir,
         transform=None,
         split_file: Optional[str] = None,
-        use_labels_new: bool = False,
+        use_labels_10_class: bool = False,
         filter_no_label: bool = True,
         cache_images: bool = False,
         cache_labels: bool = True,
@@ -87,7 +87,7 @@ class YoloDataset(Dataset):
     ):
         self.img_dir = Path(img_dir)
         self.label_dir = Path(label_dir)
-        self.use_labels_new = use_labels_new
+        self.use_labels_10_class = use_labels_10_class
         self.filter_no_label = filter_no_label
         self.cache_images = cache_images
         self.cache_labels = cache_labels
@@ -95,13 +95,13 @@ class YoloDataset(Dataset):
         self.bbox_format = bbox_format
         self.return_dict = return_dict
 
-        # Nếu dùng labels_new, thay đổi label_dir
-        if use_labels_new:
+        # Nếu dùng labels_10_class, thay đổi label_dir
+        if use_labels_10_class:
             label_dir_parent = self.label_dir.parent
-            self.label_dir = label_dir_parent / "labels_new"
+            self.label_dir = label_dir_parent / "labels_10_class"
             if not self.label_dir.exists():
                 warnings.warn(
-                    f"labels_new directory not found: {self.label_dir}, falling back to labels"
+                    f"labels_10_class directory not found: {self.label_dir}, falling back to labels"
                 )
                 self.label_dir = Path(label_dir)
 
@@ -643,7 +643,7 @@ if __name__ == "__main__":
         label_dir="processed/knee/labels",
         transform=train_transform,
         split_file="splits/train.txt",
-        use_labels_new=False,
+        use_labels_10_class=False,
         filter_no_label=True,
         cache_images=False,
         cache_labels=True,
@@ -659,7 +659,7 @@ if __name__ == "__main__":
         label_dir="processed/knee/labels",
         transform=val_transform,
         split_file="splits/val.txt",
-        use_labels_new=False,
+        use_labels_10_class=False,
         filter_no_label=True,
         cache_images=False,
         cache_labels=True,

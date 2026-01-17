@@ -69,7 +69,7 @@ def generate_report(output_dir: Path):
             "name": "5-Class Labels (KL0-4)",
             "classes": {0: "KL0", 1: "KL1", 2: "KL2", 3: "KL3", 4: "KL4"},
         },
-        "labels_new": {
+        "labels_10_class": {
             "name": "10-Class Labels (KL0-a/b to KL4-a/b)",
             "classes": {
                 0: "KL0-a",

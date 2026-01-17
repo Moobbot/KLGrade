@@ -49,7 +49,7 @@ python scripts/prepare_knee_crops.py \
 **Output**:
 - `datasets/dataset_knees_cropped/images/` (1,783 cropped knee images)
 - `datasets/dataset_knees_cropped/labels/` (5-class)
-- `datasets/dataset_knees_cropped/labels_new/` (10-class, auto-generated)
+- `datasets/dataset_knees_cropped/labels_10_class/` (10-class, auto-generated)
 - `datasets/dataset_knees_cropped/labels_4_class/` (4-class, filtered KL0)
 - `datasets/dataset_knees_cropped/labels_8_class/` (8-class, filtered KL0-a/b)
 - `datasets/dataset_knees_cropped/labels-knee/` (knee boxes)
@@ -141,7 +141,7 @@ bash scripts/preprocess_knees_cropped.sh
 **Processing Details**:
 - Total images processed: 7,132 (1,783 × 4 presets)
 - Processing time: ~1.5 minutes
-- Each preset includes: images/ + labels/ + labels_new/ + labels_4_class/ + labels_8_class/ + labels-knee/
+- Each preset includes: images/ + labels/ + labels_10_class/ + labels_4_class/ + labels_8_class/ + labels-knee/
 
 **Result**: ✅ Success
 
@@ -263,7 +263,7 @@ python scripts/balance_dataset.py \
     --input-labels datasets/dataset_knees_cropped/labels \
     --output-dir datasets/dataset_knees_cropped_balanced \
     --num-classes 5 \
-    --aux-labels datasets/dataset_knees_cropped/labels_new \
+    --aux-labels datasets/dataset_knees_cropped/labels_10_class \
                  datasets/dataset_knees_cropped/labels-knee
 ```
 
@@ -273,7 +273,7 @@ python scripts/balance_dataset.py \
 
 **Output**:
 - `datasets/dataset_knees_cropped_balanced/` (4,737 images, 6,814 instances)
-- All label variants synced: labels/, labels_new/, labels-knee/
+- All label variants synced: labels/, labels_10_class/, labels-knee/
 - `balance_report.txt`
 
 **Balancing Strategy**:
@@ -448,14 +448,14 @@ datasets/
 │   │   ├── labels/                 # 5-class KL labels
 │   │   ├── labels_10_class/        # 10-class (Stage 0)
 │   │   ├── labels-knee/            # Knee bounding boxes
-│   │   └── labels_new/             # 10-class (original)
+│   │   └── labels_10_class/             # 10-class (original)
 │   │
 │   ├── dataset_knees_cropped/      # Cropped knees (Stage 1)
 │   │   ├── images/                 # 1,691 clean crops
 │   │   ├── images-no-labels/       # 92 filtered (Stage 4.1) ⭐ NEW
 │   │   ├── labels/                 # 5-class
 │   │   ├── labels-no-labels/       # 92 empty labels ⭐ NEW
-│   │   ├── labels_new/             # 10-class
+│   │   ├── labels_10_class/             # 10-class
 │   │   ├── labels_4_class/          # 4-class (filtered)
 │   │   ├── labels_8_class/          # 8-class (filtered)
 │   │   ├── labels-knee/            # Knee boxes
@@ -468,7 +468,7 @@ datasets/
 │       ├── images-no-labels/           # 92 filtered
 │       ├── labels/                     # Balanced 5-class
 │       ├── labels-no-labels/           # Empty labels
-│       ├── labels_new/                 # Balanced 10-class
+│       ├── labels_10_class/                 # Balanced 10-class
 │       ├── labels-knee/                # Synced knee boxes
 │       ├── balance_report.txt
 │       ├── dataset_statistics.txt
@@ -596,12 +596,12 @@ datasets/
 │   │   ├── labels/                 # 5-class KL labels
 │   │   ├── labels_10_class/        # 10-class (Stage 0)
 │   │   ├── labels-knee/            # Knee bounding boxes
-│   │   └── labels_new/             # 10-class (original)
+│   │   └── labels_10_class/             # 10-class (original)
 │   │
 │   └── knees_cropped/              # Cropped knees (Stage 1)
 │       ├── images/                 # 1,783 knee crops
 │       ├── labels/                 # 5-class
-│       ├── labels_new/             # 10-class
+│       ├── labels_10_class/             # 10-class
 │       ├── labels_4_class/          # 4-class (filtered)
 │       ├── labels_8_class/          # 8-class (filtered)
 │       ├── labels-knee/            # Knee boxes

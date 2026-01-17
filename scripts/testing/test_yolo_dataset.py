@@ -42,7 +42,7 @@ def test_yolo_dataset():
         label_dir="dataset/dataset_v0/labels",
         transform=train_transform,
         split_file="splits/base/train.txt",
-        use_labels_new=False,
+        use_labels_10_class=False,
         filter_no_label=True,
         cache_images=False,
         cache_labels=True,
@@ -80,7 +80,7 @@ def test_yolo_dataset():
         label_dir="dataset/dataset_v0/labels",
         transform=val_transform,
         split_file="splits/base/val.txt",
-        use_labels_new=False,
+        use_labels_10_class=False,
         filter_no_label=True,
         bbox_format="pascal_voc",
         return_dict=True,
@@ -88,21 +88,21 @@ def test_yolo_dataset():
 
     print(f"✅ Val dataset size: {len(val_dataset)}")
 
-    # Test with labels_new (CLASSES_10_CLASS - 10 classes)
-    print("\n3. Testing with labels_new (10 classes)...")
+    # Test with labels_10_class (CLASSES_10_CLASS - 10 classes)
+    print("\n3. Testing with labels_10_class (10 classes)...")
 
     train_dataset_new = YoloDataset(
         img_dir="dataset/dataset_v0/images",
-        label_dir="dataset/dataset_v0/labels",  # Will be changed to labels_new
+        label_dir="dataset/dataset_v0/labels",  # Will be changed to labels_10_class
         transform=train_transform,
         split_file="splits/new/train.txt",
-        use_labels_new=True,
+        use_labels_10_class=True,
         filter_no_label=True,
         bbox_format="pascal_voc",
         return_dict=True,
     )
 
-    print(f"✅ Train dataset (labels_new) size: {len(train_dataset_new)}")
+    print(f"✅ Train dataset (labels_10_class) size: {len(train_dataset_new)}")
 
     # Visualize samples
     print("\n4. Visualizing samples...")
@@ -117,7 +117,7 @@ def test_yolo_dataset():
         )
         print(f"   Saved: {save_path}")
 
-    # Visualize from labels_new
+    # Visualize from labels_10_class
     if len(train_dataset_new) > 0:
         for i in range(min(2, len(train_dataset_new))):
             save_path = output_dir / f"train_new_sample_{i}.png"

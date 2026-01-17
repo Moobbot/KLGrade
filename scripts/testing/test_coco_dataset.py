@@ -57,21 +57,21 @@ def test_coco_conversion():
         split_file="splits/val.txt",
     )
 
-    # Check if labels_new exists
-    labels_new_dir = Path("processed/knee/labels_new")
-    if labels_new_dir.exists():
-        print("\n1.3. Converting train split (labels_new - 10 classes)...")
+    # Check if labels_10_class exists
+    labels_10_class_dir = Path("processed/knee/labels_10_class")
+    if labels_10_class_dir.exists():
+        print("\n1.3. Converting train split (labels_10_class - 10 classes)...")
         train_new_json = create_coco_json(
-            yolo_label_dir="processed/knee/labels_new",
+            yolo_label_dir="processed/knee/labels_10_class",
             img_dir="processed/knee/images",
             output_path="processed/coco/annotations_train_new.json",
             class_names=CLASSES_10_CLASS,
             split_file="splits/train.txt",
         )
 
-        print("\n1.4. Converting val split (labels_new - 10 classes)...")
+        print("\n1.4. Converting val split (labels_10_class - 10 classes)...")
         val_new_json = create_coco_json(
-            yolo_label_dir="processed/knee/labels_new",
+            yolo_label_dir="processed/knee/labels_10_class",
             img_dir="processed/knee/images",
             output_path="processed/coco/annotations_val_new.json",
             class_names=CLASSES_10_CLASS,

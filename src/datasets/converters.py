@@ -225,9 +225,9 @@ if __name__ == "__main__":
         split_file="splits/train.txt",
     )
 
-    # Create COCO JSON for labels_new (10 classes)
+    # Create COCO JSON for labels_10_class (10 classes)
     create_coco_json(
-        yolo_label_dir="processed/knee/labels_new",
+        yolo_label_dir="processed/knee/labels_10_class",
         img_dir="processed/knee/images",
         output_path="processed/coco/annotations_train_new.json",
         class_names=CLASSES_10_CLASS,

@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--save-dir",
         type=Path,
-        default="processed/knee/labels_new",
+        default="processed/knee/labels_10_class",
         help="Thư mục lưu file label mới với tag a/b",
     )
     return parser.parse_args()
@@ -328,4 +328,4 @@ def main():
 if __name__ == "__main__":
     main()
 
-# python check_dataset\class_split_report.py --labels-dir dataset\dataset_v0\labels --save-dir dataset\dataset_v0\labels_new
+# python check_dataset\class_split_report.py --labels-dir dataset\dataset_v0\labels --save-dir dataset\dataset_v0\labels_10_class

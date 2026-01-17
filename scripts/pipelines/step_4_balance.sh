@@ -32,7 +32,7 @@ python scripts/data_preparation/balance_dataset.py \
     --input-labels datasets/dataset_knees_cropped/labels \
     --output-dir datasets/balanced/knees_cropped \
     --num-classes 5 \
-    --aux-labels datasets/dataset_knees_cropped/labels_new \
+    --aux-labels datasets/dataset_knees_cropped/labels_10_class \
                  datasets/dataset_knees_cropped/labels-knee
 
 echo ""
@@ -76,7 +76,7 @@ echo "    ├── labels/              # 5-class labels"
 echo "    ├── labels_4_class/       # 4-class labels"
 echo "    ├── labels_8_class/       # 8-class labels"
 echo "    ├── labels-knee/         # Knee boxes"
-echo "    ├── labels_new/          # Lesion labels"
+echo "    ├── labels_10_class/          # Lesion labels"
 echo "    ├── balance_report.txt   # Balancing statistics"
 echo "    └── dataset_statistics.txt"
 echo ""

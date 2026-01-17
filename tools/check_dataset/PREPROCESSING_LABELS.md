@@ -72,7 +72,7 @@ Sau khi phân loại thành tag "a"/"b", script tự động chuyển đổi san
 
 ### 5. Tạo Label Mới
 
-Output: Thư mục chứa file label mới (`processed/knee/labels_new/`)
+Output: Thư mục chứa file label mới (`processed/knee/labels_10_class/`)
 
 Format mỗi dòng: `class_id x_center y_center width height` (YOLO chuẩn với class_id số nguyên)
 
@@ -120,7 +120,7 @@ python check_dataset/class_split_report.py --classes 2 3
 # Chỉ định thư mục input/output
 python check_dataset/class_split_report.py `
   --labels-dir processed/knee/labels `
-  --save-dir processed/knee/labels_new
+  --save-dir processed/knee/labels_10_class
 ```
 
 ### 2. Kiểm Tra Kết Quả
@@ -138,7 +138,7 @@ Sử dụng `visualize_yolo_boxes.py` để xem kết quả trên ảnh:
 ```powershell
 python check_dataset/visualize_yolo_boxes.py `
   --img_dir processed/knee/images `
-  --label_dir processed/knee/labels_new `
+  --label_dir processed/knee/labels_10_class `
   --out_dir check_vis/labels_10_class
 ```
 
@@ -187,7 +187,7 @@ File: `1.2.392.200036.9107.307.24972.20220914.81908.1033568_0.txt`
 ### Tham Số Mặc Định
 
 - `--labels-dir`: `processed/knee/labels`
-- `--save-dir`: `processed/knee/labels_new`
+- `--save-dir`: `processed/knee/labels_10_class`
 - `--max-split`: `2` (chỉ hỗ trợ a/b)
 - `--limit`: `10` (số ví dụ hiển thị)
 

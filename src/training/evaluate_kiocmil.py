@@ -135,7 +135,7 @@ if __name__ == "__main__":
         "--knee_labels", type=str, default="dataset/dataset_v0/labels-knee"
     )
     parser.add_argument(
-        "--lesion_labels", type=str, default="dataset/dataset_v0/labels_new"
+        "--lesion_labels", type=str, default="dataset/dataset_v0/labels_10_class"
     )
     parser.add_argument(
         "--split_file",

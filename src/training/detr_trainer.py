@@ -32,7 +32,7 @@ class DETRTrainer:
         output_dir: str,
         model_name: str = "facebook/detr-resnet-50",
         num_classes: int = None,
-        use_labels_new: bool = False,  # Legacy arg support
+        use_labels_10_class: bool = False,  # Legacy arg support
         split_dir: str = "splits",
         batch_size: int = 4,
         epochs: int = 50,
@@ -71,11 +71,11 @@ class DETRTrainer:
             self.num_classes = len(self.class_names)
             self.label_suffix = f"_{num_classes}class"
             self.actual_label_dir = Path(label_dir)  # Use as is if explicit
-        elif use_labels_new:
+        elif use_labels_10_class:
             self.class_names = CLASSES_10_CLASS
             self.num_classes = len(CLASSES_10_CLASS)
             self.label_suffix = "_new"
-            self.actual_label_dir = Path(label_dir).parent / "labels_new"
+            self.actual_label_dir = Path(label_dir).parent / "labels_10_class"
         else:
             self.class_names = CLASSES
             self.num_classes = len(CLASSES)

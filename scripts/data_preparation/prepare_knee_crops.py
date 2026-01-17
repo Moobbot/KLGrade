@@ -19,7 +19,9 @@ from tqdm import tqdm
 import shutil
 
 # Add project root to path
-project_root = Path(__file__).resolve().parents[1]
+project_root = (
+    Path(__file__).resolve().parents[2]
+)  # scripts/data_preparation/ -> scripts/ -> KLGrade/
 sys.path.append(str(project_root))
 
 from src.data.preprocessing.core.knee_crop import (
@@ -167,7 +169,7 @@ def prepare_knee_crops(
             - images/
             - labels/ (KL labels, 5-class: 0-4)
             - labels-knee/ (knee bounding boxes)
-            - labels_new/ (optional, 10-class: 0-9)
+            - labels_10_class/ (optional, 10-class: 0-9)
         output_dir: Output directory for cropped knees
         margin: Margin around knee box (0.15 = 15%)
         create_filtered: Create 4-class and 8-class filtered versions
@@ -184,11 +186,11 @@ def prepare_knee_crops(
     input_images = input_dir / "images"
     input_labels = input_dir / "labels"  # KL labels (5-class: 0-4)
     input_knee_labels = input_dir / "labels-knee"  # Knee boxes
-    input_labels_new = input_dir / "labels_new"  # 10-class labels (0-9)
+    input_labels_10_class = input_dir / "labels_10_class"  # 10-class labels (0-9)
 
     output_images = output_dir / "images"
     output_labels_5_class = output_dir / "labels"  # 5-class
-    output_labels_10_class = output_dir / "labels_new"  # 10-class
+    output_labels_10_class = output_dir / "labels_10_class"  # 10-class
     output_labels_4_class = output_dir / "labels_4_class"  # 4-class (no KL0)
     output_labels_8_class = output_dir / "labels_8_class"  # 8-class (no KL0-a/b)
     output_knee_labels = output_dir / "labels-knee"
@@ -312,7 +314,7 @@ def prepare_knee_crops(
     print(f"  - labels/ (5-class: KL0-4)")
     print(f"  - labels-knee/ (knee boxes)")
     if has_10_class:
-        print(f"  - labels_new/ (10-class: KL0-a/b to KL4-a/b)")
+        print(f"  - labels_10_class/ (10-class: KL0-a/b to KL4-a/b)")
     if create_filtered:
         print(f"  - labels_4_class/ (4-class: KL1-4 → 0-3)")
         if has_10_class:

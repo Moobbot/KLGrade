@@ -291,13 +291,14 @@ def stratified_split(
 
     return train_stems, val_stems, test_stems
 
+
 def save_splits(
     train_stems: List[str],
     val_stems: List[str],
     test_stems: List[str],
     output_dir: Path,
     stem_to_filename: Dict[str, str],
-    img_dir: Path
+    img_dir: Path,
 ):
     """Save split files with robust relative paths."""
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -310,7 +311,9 @@ def save_splits(
     except ValueError:
         # If absolute path provided, try to make it relative or just use it as is
         # Usually user runs script from project root
-        print(f"⚠️  Warning: {img_dir} is not relative to {Path.cwd()}. Using provided path.")
+        print(
+            f"⚠️  Warning: {img_dir} is not relative to {Path.cwd()}. Using provided path."
+        )
         rel_img_dir = img_dir
 
     rel_img_dir_str = str(rel_img_dir).replace("\\", "/")
@@ -319,7 +322,7 @@ def save_splits(
         with open(output_dir / filename, "w", encoding="utf-8") as f:
             for stem in sorted(stems):
                 # Construct relative path: images/filename.jpg
-                full_name = stem_to_filename.get(stem, f"{stem}.jpg") # Fallback to jpg
+                full_name = stem_to_filename.get(stem, f"{stem}.jpg")  # Fallback to jpg
                 path_str = f"{rel_img_dir_str}/{full_name}"
                 f.write(f"{path_str}\n")
 
@@ -502,7 +505,9 @@ def main():
     print("Loading dataset...")
     print("=" * 70)
 
-    img_to_classes, class_to_imgs, stem_to_filename = load_image_class_mapping(img_dir, label_dir)
+    img_to_classes, class_to_imgs, stem_to_filename = load_image_class_mapping(
+        img_dir, label_dir
+    )
 
     # Show class statistics
     print(f"\n📊 Dataset statistics:")
@@ -572,4 +577,4 @@ if __name__ == "__main__":
 
 
 # python split_dataset.py --img_dir dataset\dataset_v0\images --label_dir dataset\dataset_v0\labels --out_dir splits --train 0.7 --val 0.15 --test 0.15 --seed 42
-# python split_dataset.py --img_dir dataset\dataset_v0\images --label_dir dataset\dataset_v0\labels_new --out_dir splits --train 0.7 --val 0.15 --test 0.15 --seed 42
+# python split_dataset.py --img_dir dataset\dataset_v0\images --label_dir dataset\dataset_v0\labels_10_class --out_dir splits --train 0.7 --val 0.15 --test 0.15 --seed 42

@@ -96,14 +96,14 @@ python scripts/balance_dataset.py \
     --input-labels datasets/dataset_knees_cropped/labels \
     --output-dir datasets/dataset_knees_cropped_balanced \
     --num-classes 5 \
-    --aux-labels datasets/dataset_knees_cropped/labels_new \
+    --aux-labels datasets/dataset_knees_cropped/labels_10_class \
                  datasets/dataset_knees_cropped/labels-knee
 ```
 
 **Features**:
 - Automatic minority class detection
 - Horizontal flip augmentation
-- Auxiliary label syncing (labels_new, labels-knee, etc.)
+- Auxiliary label syncing (labels_10_class, labels-knee, etc.)
 - Balance report generation
 
 **Results** (on knees_cropped):
@@ -178,7 +178,7 @@ python scripts/balance_dataset.py \
     --input-labels datasets/dataset_knees_cropped/labels \
     --output-dir datasets/dataset_knees_cropped_balanced \
     --num-classes 5 \
-    --aux-labels datasets/dataset_knees_cropped/labels_new \
+    --aux-labels datasets/dataset_knees_cropped/labels_10_class \
                  datasets/dataset_knees_cropped/labels-knee
 
 # 4. Filter balanced dataset
@@ -259,7 +259,7 @@ bash scripts/preprocess_knees_balanced.sh  # Balanced
    - Cleaner datasets for training
 
 4. **Auxiliary Label Syncing**
-   - Supports multiple label variants (labels_new, labels-knee, etc.)
+   - Supports multiple label variants (labels_10_class, labels-knee, etc.)
    - All variants augmented consistently
    - Maintains data integrity across splits
 

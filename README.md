@@ -335,7 +335,7 @@ Training script tự động convert YOLO → COCO bằng `datasets.create_coco_
 - `--epochs`: Số lượng epochs (khuyến nghị 50-100)
 - `--batch`: Batch size (2-8 tùy GPU)
 - `--lr`: Learning rate (1e-4, 5e-5)
-- `--use_labels_new`: Dùng 10 classes thay vì 5
+- `--use_labels_10_class`: Dùng 10 classes thay vì 5
 
 **Xem thêm commands**: [TRAINING_DETR_COMMANDS.ps1](TRAINING_DETR_COMMANDS.ps1)
 

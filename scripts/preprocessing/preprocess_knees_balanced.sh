@@ -56,7 +56,7 @@ for preset_name, (desc, pipeline) in presets.items():
         save_image(processed_img, output_path, format='png')
     
     # Copy all label directories
-    for label_dir_name in ['labels', 'labels_new', 'labels_4_class', 'labels_8_class', 'labels-knee']:
+    for label_dir_name in ['labels', 'labels_10_class', 'labels_4_class', 'labels_8_class', 'labels-knee']:
         input_labels = input_base / label_dir_name
         if input_labels.exists():
             output_labels = output_base / preset_name / label_dir_name

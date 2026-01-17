@@ -243,7 +243,7 @@ def visualize_bbox_analysis(all_label_stats, output_dir: Path, label_dir: Path):
 
     # Get main label stats (usually 'labels')
     main_stats = None
-    for name in ["labels", "labels_new", "labels_4_class"]:
+    for name in ["labels", "labels_10_class", "labels_4_class"]:
         if name in all_label_stats and all_label_stats[name].get("bbox_stats"):
             main_stats = all_label_stats[name]
             break
@@ -695,7 +695,7 @@ def main():
         visualize_class_distribution(all_label_stats, output_dir)
 
         # Add bbox analysis visualization
-        for label_dir_name in ["labels", "labels_new", "labels_4_class"]:
+        for label_dir_name in ["labels", "labels_10_class", "labels_4_class"]:
             label_dir = dataset_dir / label_dir_name
             if label_dir.exists():
                 visualize_bbox_analysis(all_label_stats, output_dir, label_dir)

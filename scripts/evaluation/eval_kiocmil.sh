@@ -23,7 +23,7 @@ echo "Model: $MODEL_PATH"
 $PYTHON_EXEC src/training/evaluate_kiocmil.py \
     --img_dir dataset/dataset_v0/images \
     --knee_labels dataset/dataset_v0/labels-knee \
-    --lesion_labels dataset/dataset_v0/labels_new \
+    --lesion_labels dataset/dataset_v0/labels_10_class \
     --split_file "$SPLIT_FILE" \
     --model_path "$MODEL_PATH" \
     --backbone resnet18 \

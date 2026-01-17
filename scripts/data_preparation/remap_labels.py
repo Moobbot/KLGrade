@@ -2,9 +2,9 @@
 Remap filtered dataset labels from original class IDs to new continuous IDs (0-6).
 
 This script remaps class IDs in the filtered dataset labels from the original
-labels_new IDs {0,2,4,5,6,7,8} to continuous IDs {0,1,2,3,4,5,6} for easier training.
+labels_10_class IDs {0,2,4,5,6,7,8} to continuous IDs {0,1,2,3,4,5,6} for easier training.
 
-Original mapping (labels_new):
+Original mapping (labels_10_class):
   0: KL0-a, 1: KL0-b (removed), 2: KL1-a, 3: KL1-b (removed),
   4: KL2-a, 5: KL2-b, 6: KL3-a, 7: KL3-b, 8: KL4-a, 9: KL4-b (removed)
 

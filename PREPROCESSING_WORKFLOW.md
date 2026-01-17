@@ -86,7 +86,7 @@ scripts/prepare_knee_crops.py \
 ### Outputs (saved to `datasets/dataset_knees_cropped/`)
 - `images/` - Cropped knee images (1,783 crops)
 - `labels/` - 5-class labels (KL0-4)
-- `labels_new/` - 10-class labels (KL0-a/b to KL4-a/b) ⭐ NEW!
+- `labels_10_class/` - 10-class labels (KL0-a/b to KL4-a/b) ⭐ NEW!
 - `labels_4_class/` - 4-class labels (KL1-4, filtered KL0)
 - `labels_8_class/` - 8-class labels (KL1-a/b to KL4-a/b, filtered KL0)
 - `labels-knee/` - Full image knee boxes (for reference)
@@ -185,7 +185,7 @@ Each preset creates a complete dataset:
 datasets/data_processed/{preset_name}/
 ├── images/          # Preprocessed images
 ├── labels/          # 5-class labels (copied)
-├── labels_new/      # 10-class labels (copied)
+├── labels_10_class/      # 10-class labels (copied)
 ├── labels_4_class/   # 4-class labels (copied)
 ├── labels_8_class/   # 8-class labels (copied)
 └── labels-knee/     # Knee boxes (copied)
@@ -346,7 +346,7 @@ python scripts/balance_dataset.py \
     --input-labels datasets/dataset_knees_cropped/labels \
     --output-dir datasets/dataset_knees_cropped_balanced \
     --num-classes 5 \
-    --aux-labels datasets/dataset_knees_cropped/labels_new \
+    --aux-labels datasets/dataset_knees_cropped/labels_10_class \
                  datasets/dataset_knees_cropped/labels-knee
 
 # Filter empty labels from balanced dataset
@@ -425,14 +425,14 @@ KLGrade/
 │   │       ├── labels/              # 5-class KL labels
 │   │       ├── labels_10_class/     # 10-class (Stage 0 - optional)
 │   │       ├── labels-knee/         # Knee bounding boxes
-│   │       └── labels_new/          # 10-class (original, may be incomplete)
+│   │       └── labels_10_class/          # 10-class (original, may be incomplete)
 │   │   
 │   ├── dataset_knees_cropped/        # Cropped knees (Stage 1)
 │   │   ├── images/                     # 1,691 clean crops (after filtering)
 │   │   ├── images-no-labels/           # 92 crops without labels (filtered)
 │   │   ├── labels/                     # 5-class (KL0-4)
 │   │   ├── labels-no-labels/           # Empty label files (filtered)
-│   │   ├── labels_new/                 # 10-class (KL0-a/b to KL4-a/b)
+│   │   ├── labels_10_class/                 # 10-class (KL0-a/b to KL4-a/b)
 │   │   ├── labels_4_class/              # 4-class (KL1-4, without KL0)
 │   │   ├── labels_8_class/              # 8-class (KL1-a/b to KL4-a/b)
 │   │   ├── labels-knee/                # Knee boxes
@@ -444,7 +444,7 @@ KLGrade/
 │   │   ├── images-no-labels/           # 92 filtered
 │   │   ├── labels/                     # Balanced 5-class
 │   │   ├── labels-no-labels/           # Empty labels (filtered)
-│   │   ├── labels_new/                 # Balanced 10-class
+│   │   ├── labels_10_class/                 # Balanced 10-class
 │   │   ├── labels-knee/                # Synced knee boxes
 │   │   ├── balance_report.txt
 │   │   └── no_label_files.json
@@ -456,7 +456,7 @@ KLGrade/
 │   │   └── blur_clahe2_notebook/
 │   │       ├── images/
 │   │       ├── labels/
-│   │       ├── labels_new/
+│   │       ├── labels_10_class/
 │   │       ├── labels_4_class/
 │   │       ├── labels_8_class/
 │   │       ├── labels-knee/
@@ -469,7 +469,7 @@ KLGrade/
 │   │   └── blur_clahe2_notebook/
 │   │       ├── images/ (1783 knee crops)
 │   │       ├── labels/
-│   │       ├── labels_new/
+│   │       ├── labels_10_class/
 │   │       ├── labels_4_class/
 │   │       ├── labels_8_class/
 │   │       ├── labels-knee/

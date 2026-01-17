@@ -53,7 +53,7 @@ echo "Python: $PYTHON_EXEC"
 $PYTHON_EXEC src/training/train_kiocmil_v3.py \
     --img_dir datasets/dataset_v0/images \
     --knee_labels datasets/dataset_v0/labels-knee \
-    --lesion_labels datasets/dataset_v0/labels_new \
+    --lesion_labels datasets/dataset_v0/labels_10_class \
     --train_split splits/knee_full_10_class/train.txt \
     --val_split splits/knee_full_10_class/val.txt \
     --backbone yolo11l \
