@@ -51,14 +51,14 @@ echo "Starting KIOCMIL V3 Training (YOLO11L Backbone)..."
 echo "Python: $PYTHON_EXEC"
 
 $PYTHON_EXEC src/training/train_kiocmil_v3.py \
-    --img_dir dataset/dataset_v0/images \
-    --knee_labels dataset/dataset_v0/labels-knee \
-    --lesion_labels dataset/dataset_v0/labels_new \
+    --img_dir datasets/dataset/dataset_v0/images \
+    --knee_labels datasets/dataset/dataset_v0/labels-knee \
+    --lesion_labels datasets/dataset/dataset_v0/labels_new \
     --train_split splits/knee_full_10_class/train.txt \
     --val_split splits/knee_full_10_class/val.txt \
     --backbone yolo11l \
     --save_dir runs/kiocmil_v3_yolo11l \
-    --batch_size 2 \
+    --batch_size 16 \
     --epochs 30 \
     --lr 1e-4 \
     --wandb_project "KIOCMIL_KLGrade" \

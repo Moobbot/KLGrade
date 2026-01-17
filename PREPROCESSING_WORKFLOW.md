@@ -1,6 +1,19 @@
-# Preprocessing Workflow - KLGrade Project
+# Knee OA Dataset Preprocessing Workflow
 
-This document outlines the complete preprocessing workflow for the KLGrade project, from raw X-ray images to training-ready datasets.
+Comprehensive guide for preprocessing knee X-ray images for KL grade classification.
+
+---
+
+## 📚 Related Documentation
+
+- **[TRAINING_WORKFLOW.md](TRAINING_WORKFLOW.md)** - Complete training workflow (preprocessing → API)
+- **[DATA_BALANCING_ANALYSIS.md](DATA_BALANCING_ANALYSIS.md)** - Data balancing after preprocessing
+- **[DATA_PROCESSING_LOG.md](DATA_PROCESSING_LOG.md)** - Processing history and results
+
+---
+
+## Table of Contents
+.
 
 ## Overview
 
