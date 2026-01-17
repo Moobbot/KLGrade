@@ -10,7 +10,7 @@ echo ""
 
 # Array of datasets to analyze
 datasets=(
-    "datasets/dataset/dataset_v0"
+    "datasets/dataset_v0"
     "datasets/dataset_knees_cropped"
     "datasets/dataset_knees_cropped_balanced"
     "datasets/data_processed/resize_only"

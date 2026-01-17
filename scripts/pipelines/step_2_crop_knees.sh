@@ -2,9 +2,9 @@
 #
 # Step 2: Crop Knee Regions
 #
-# Input:  datasets/dataset/dataset_v0/images/
-#         datasets/dataset/dataset_v0/labels/
-#         datasets/dataset/dataset_v0/labels-knee/
+# Input:  datasets/dataset_v0/images/
+#         datasets/dataset_v0/labels/
+#         datasets/dataset_v0/labels-knee/
 # Output: datasets/dataset_knees_cropped/
 #
 
@@ -18,7 +18,7 @@ echo "════════════════════════�
 echo "Step 2: Crop Knee Regions"
 echo "════════════════════════════════════════════════════════"
 echo ""
-echo "Input:  datasets/dataset/dataset_v0/"
+echo "Input:  datasets/dataset_v0/"
 echo "Output: datasets/dataset_knees_cropped/"
 echo ""
 
@@ -26,7 +26,7 @@ echo "────────────────────────�
 echo "2.1 Cropping knee regions from full X-rays..."
 echo "─────────────────────────────────────────────────────────"
 python scripts/preprocessing/prepare_knee_crops.py \
-    --input datasets/dataset/dataset_v0 \
+    --input datasets/dataset_v0 \
     --output datasets/dataset_knees_cropped
 
 echo ""
@@ -66,8 +66,8 @@ echo "Output structure:"
 echo "  datasets/dataset_knees_cropped/"
 echo "    ├── images/              # Cropped knee images"
 echo "    ├── labels/              # 5-class labels"
-echo "    ├── labels_4class/       # 4-class labels"
-echo "    ├── labels_8class/       # 8-class labels"
+echo "    ├── labels_4_class/       # 4-class labels"
+echo "    ├── labels_8_class/       # 8-class labels"
 echo "    ├── labels-knee/         # Knee boxes"
 echo "    ├── labels_new/          # Lesion labels"
 echo "    └── dataset_statistics.txt"

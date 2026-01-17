@@ -154,8 +154,8 @@ case $MODE in
         echo ""
         create_splits \
             "Full X-rays - 10 Class" \
-            "datasets/dataset/dataset_v0/images" \
-            "datasets/dataset/dataset_v0/labels_10_class" \
+            "datasets/dataset_v0/images" \
+            "datasets/dataset_v0/labels_10_class" \
             "datasets/splits/knee_full_10_class"
         ;;
         
@@ -211,11 +211,11 @@ case $MODE in
         fi
         
         # 5. Full X-rays 10-class
-        if [ -d "datasets/dataset/dataset_v0" ]; then
+        if [ -d "datasets/dataset_v0" ]; then
             create_splits \
                 "Full X-rays - 10 Class" \
-                "datasets/dataset/dataset_v0/images" \
-                "datasets/dataset/dataset_v0/labels_10_class" \
+                "datasets/dataset_v0/images" \
+                "datasets/dataset_v0/labels_10_class" \
                 "datasets/splits/knee_full_10_class"
         else
             echo "⚠️  Skipping full X-rays dataset (not found)"

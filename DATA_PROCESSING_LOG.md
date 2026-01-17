@@ -13,16 +13,16 @@ Successfully refactored preprocessing into modular architecture and prepared mul
 **Command**:
 ```bash
 python tools/check_dataset/class_split_report.py \
-    --labels-dir datasets/dataset/dataset_v0/labels \
-    --save-dir datasets/dataset/dataset_v0/labels_10_class \
+    --labels-dir datasets/dataset_v0/labels \
+    --save-dir datasets/dataset_v0/labels_10_class \
     --limit 10
 ```
 
 **Input**:
-- `datasets/dataset/dataset_v0/labels/` (1,473 files, 5-class)
+- `datasets/dataset_v0/labels/` (1,473 files, 5-class)
 
 **Output**:
-- `datasets/dataset/dataset_v0/labels_10_class/` (1,473 files, 10-class)
+- `datasets/dataset_v0/labels_10_class/` (1,473 files, 10-class)
 
 **Result**: ✅ Success
 - Generated 10-class labels from 5-class using shape classification
@@ -36,15 +36,15 @@ python tools/check_dataset/class_split_report.py \
 **Command**:
 ```bash
 python scripts/prepare_knee_crops.py \
-    --input datasets/dataset/dataset_v0 \
+    --input datasets/dataset_v0 \
     --output datasets/dataset_knees_cropped \
     --margin 0.15
 ```
 
 **Input**:
-- `datasets/dataset/dataset_v0/images/` (1,473 full X-ray images)
-- `datasets/dataset/dataset_v0/labels/` (5-class KL labels)
-- `datasets/dataset/dataset_v0/labels-knee/` (knee bounding boxes)
+- `datasets/dataset_v0/images/` (1,473 full X-ray images)
+- `datasets/dataset_v0/labels/` (5-class KL labels)
+- `datasets/dataset_v0/labels-knee/` (knee bounding boxes)
 
 **Output**:
 - `datasets/dataset_knees_cropped/images/` (1,783 cropped knee images)
@@ -104,7 +104,7 @@ python scripts/preprocess_production.py
 ```
 
 **Input**:
-- `datasets/dataset/dataset_v0/images/` (1,473 images)
+- `datasets/dataset_v0/images/` (1,473 images)
 
 **Output**: 4 preprocessed datasets
 1. `datasets/data_processed/resize_only/` - Resize to 640x640 only
@@ -367,7 +367,7 @@ bash scripts/run_comprehensive_analysis_all.sh
 ```
 
 **Datasets Analyzed** (11 total):
-1. `datasets/dataset/dataset_v0` (full X-rays)
+1. `datasets/dataset_v0` (full X-rays)
 2. `datasets/dataset_knees_cropped` (unbalanced)
 3. `datasets/dataset_knees_cropped_balanced` (balanced)
 4-7. `datasets/data_processed/*` (4 presets, unbalanced)

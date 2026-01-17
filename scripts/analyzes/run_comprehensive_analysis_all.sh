@@ -11,7 +11,7 @@ echo ""
 # Array of datasets and their output directories
 declare -A datasets
 datasets=(
-    ["datasets/dataset/dataset_v0"]="analysis/dataset_v0"
+    ["datasets/dataset_v0"]="analysis/dataset_v0"
     ["datasets/dataset_knees_cropped"]="analysis/knees_cropped"
     ["datasets/dataset_knees_cropped_balanced"]="analysis/knees_cropped_balanced"
     ["datasets/data_processed/resize_only"]="analysis/processed/resize_only"

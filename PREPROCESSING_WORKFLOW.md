@@ -34,16 +34,16 @@ Generate 10-class labels for the original full X-ray dataset without cropping.
 ### Command
 ```bash
 python tools/check_dataset/class_split_report.py \
-    --labels-dir datasets/dataset/dataset_v0/labels \
-    --save-dir datasets/dataset/dataset_v0/labels_10_class \
+    --labels-dir datasets/dataset_v0/labels \
+    --save-dir datasets/dataset_v0/labels_10_class \
     --limit 10
 ```
 
 ### Inputs
-- `datasets/dataset/dataset_v0/labels/` - Original 5-class labels (KL0-4)
+- `datasets/dataset_v0/labels/` - Original 5-class labels (KL0-4)
 
 ### Outputs
-- `datasets/dataset/dataset_v0/labels_10_class/` - 10-class labels (0-9)
+- `datasets/dataset_v0/labels_10_class/` - 10-class labels (0-9)
 
 ### What It Does
 Splits each 5-class label into a/b variants based on shape:
@@ -74,14 +74,14 @@ Extract knee regions from full X-rays and generate all label variants (5, 10, 4,
 PYTHONPATH=/home/ngoductam/KLGrade \
 /home/ngoductam/miniconda3/envs/klgrade/bin/python \
 scripts/prepare_knee_crops.py \
-    --dataset datasets/dataset/dataset_v0 \
+    --dataset datasets/dataset_v0 \
     --output datasets/dataset_knees_cropped
 ```
 
 ### Inputs
-- `datasets/dataset/dataset_v0/images/` - Full X-ray images
-- `datasets/dataset/dataset_v0/labels/` - 5-class labels (KL0-4)
-- `datasets/dataset/dataset_v0/labels-knee/` - Knee bounding boxes
+- `datasets/dataset_v0/images/` - Full X-ray images
+- `datasets/dataset_v0/labels/` - 5-class labels (KL0-4)
+- `datasets/dataset_v0/labels-knee/` - Knee bounding boxes
 
 ### Outputs (saved to `datasets/dataset_knees_cropped/`)
 - `images/` - Cropped knee images (1,783 crops)
@@ -241,7 +241,7 @@ examples/preprocessing_custom.py
 ```
 
 ### Input
-- Sample images from `datasets/dataset/dataset_v0/images/`
+- Sample images from `datasets/dataset_v0/images/`
 
 ### Outputs (saved to `datasets/data_examples/`)
 - `basic_example.png` - Resize only
@@ -275,7 +275,7 @@ examples/preprocessing_comparison.py
 ```
 
 ### Input
-- Sample images from `datasets/dataset/dataset_v0/images/`
+- Sample images from `datasets/dataset_v0/images/`
 
 ### Outputs (saved to `datasets/data_examples/`)
 - `comparison_raw_vs_processed.png` (2.2MB, 3 samples × 5 methods)
@@ -324,14 +324,14 @@ examples/preprocessing_comparison_knees.py
 
 # 0. (Optional) Generate 10-class for original dataset
 python tools/check_dataset/class_split_report.py \
-    --labels-dir datasets/dataset/dataset_v0/labels \
-    --save-dir datasets/dataset/dataset_v0/labels_10_class \
+    --labels-dir datasets/dataset_v0/labels \
+    --save-dir datasets/dataset_v0/labels_10_class \
     --limit 10
 
 # 1. Crop knee regions and generate 10-class labels
 PYTHONPATH=/home/ngoductam/KLGrade \
 python scripts/prepare_knee_crops.py \
-    --dataset datasets/dataset/dataset_v0 \
+    --dataset datasets/dataset_v0 \
     --output datasets/dataset_knees_cropped
 
 # 1.2. Filter empty labels
@@ -402,8 +402,8 @@ echo "✅ Preprocessing workflow complete!"
 
 # 1. Generate 10-class labels
 python tools/check_dataset/class_split_report.py \
-    --labels-dir datasets/dataset/dataset_v0/labels \
-    --save-dir datasets/dataset/dataset_v0/labels_10_class \
+    --labels-dir datasets/dataset_v0/labels \
+    --save-dir datasets/dataset_v0/labels_10_class \
     --limit 10
 
 # 2. Preprocess full X-rays with selected preset

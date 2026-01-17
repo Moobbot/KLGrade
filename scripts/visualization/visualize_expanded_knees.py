@@ -58,8 +58,8 @@ def main():
     parser.add_argument(
         "--dataset-dir",
         type=str,
-        default="datasets/dataset/dataset_v0",
-        help="Dataset directory (default: datasets/dataset/dataset_v0)",
+        default="datasets/dataset_v0",
+        help="Dataset directory (default: datasets/dataset_v0)",
     )
 
     parser.add_argument(

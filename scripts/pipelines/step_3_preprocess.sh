@@ -3,7 +3,7 @@
 # Step 3: Create Preprocessing Variants (Optional - for ablation studies)
 #
 # Input:  datasets/dataset_knees_cropped/
-#         datasets/dataset/dataset_v0/
+#         datasets/dataset_v0/
 # Output: datasets/processed/knees_cropped/
 #         datasets/processed/full_xray/
 #

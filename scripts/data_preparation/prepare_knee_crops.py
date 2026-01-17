@@ -8,7 +8,7 @@ Flow:
     Raw Full X-rays → [Knee Cropping] → Cropped Knees → [Preprocessing] → Training Data
 
 Usage:
-    python scripts/prepare_knee_crops.py --input datasets/dataset/dataset_v0 --output datasets/dataset_knee_cropped --margin 0.15 2>&1 | head -n 30
+    python scripts/prepare_knee_crops.py --input datasets/dataset_v0 --output datasets/dataset_knee_cropped --margin 0.15 2>&1 | head -n 30
 """
 
 import sys

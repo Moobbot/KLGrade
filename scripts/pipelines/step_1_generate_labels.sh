@@ -2,8 +2,8 @@
 #
 # Step 1: Generate Label Variants (10-class, 4-class dataset, 8-class)
 #
-# Input:  datasets/dataset/dataset_v0/
-# Output: datasets/dataset/dataset_v0/labels_10_class/
+# Input:  datasets/dataset_v0/
+# Output: datasets/dataset_v0/labels_10_class/
 #         datasets/dataset_v0_4_class/          (complete dataset, KL0 filtered)
 #         datasets/dataset_v0_4_class/labels_8_class/
 #
@@ -23,7 +23,7 @@ echo "════════════════════════�
 echo "Step 1: Generate Label Variants"
 echo "════════════════════════════════════════════════════════"
 echo ""
-echo "Input:  datasets/dataset/dataset_v0/"
+echo "Input:  datasets/dataset_v0/"
 echo "Output: labels_10_class/, dataset_v0_4_class/, labels_8_class/"
 echo ""
 
@@ -32,13 +32,13 @@ echo "────────────────────────�
 echo "1.1 Generating 10-class labels (from 5-class)..."
 echo "─────────────────────────────────────────────────────────"
 python tools/check_dataset/class_split_report.py \
-    --labels-dir datasets/dataset/dataset_v0/labels \
-    --save-dir datasets/dataset/dataset_v0/labels_10_class \
+    --labels-dir datasets/dataset_v0/labels \
+    --save-dir datasets/dataset_v0/labels_10_class \
     --limit 10
 
 echo ""
 echo "✅ 10-class labels created"
-echo "   Location: datasets/dataset/dataset_v0/labels_10_class/"
+echo "   Location: datasets/dataset_v0/labels_10_class/"
 echo "   Classes: KL0-a/b, KL1-a/b, KL2-a/b, KL3-a/b, KL4-a/b"
 echo ""
 
@@ -50,7 +50,7 @@ echo "    This creates a separate dataset with KL0 removed"
 echo ""
 
 python scripts/data_preparation/filter_kl0.py \
-    --input datasets/dataset/dataset_v0 \
+    --input datasets/dataset_v0 \
     --output datasets/dataset_v0_4_class \
     --num_classes 5
 
@@ -87,7 +87,7 @@ echo "════════════════════════�
 echo ""
 echo "Summary:"
 echo "  ✅ 10-class: KL0-a/b through KL4-a/b"
-echo "     → datasets/dataset/dataset_v0/labels_10_class/"
+echo "     → datasets/dataset_v0/labels_10_class/"
 echo ""
 echo "  ✅ 4-class dataset: KL1-4 only (KL0 filtered)"
 echo "     → datasets/dataset_v0_4_class/"

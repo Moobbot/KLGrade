@@ -7,7 +7,7 @@ Draws knee and grade bounding boxes from prediction JSON.
 Usage:
     python scripts/visualization/visualize_manual.py \\
         --prediction-json path/to/prediction.json \\
-        --image-dir datasets/dataset/dataset_v0/images \\
+        --image-dir datasets/dataset_v0/images \\
         --output prediction_vis.jpg
 """
 

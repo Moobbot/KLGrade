@@ -43,7 +43,7 @@ Extract knee regions from full X-ray images using YOLO detection model.
 
 ```bash
 python scripts/preprocessing/prepare_knee_crops.py \
-    --input datasets/dataset/dataset_v0 \
+    --input datasets/dataset_v0 \
     --output datasets/dataset_knees_cropped \
     --model models/knee_detector.pt \
     --conf 0.25
@@ -248,7 +248,7 @@ bash scripts/analyzes/run_comprehensive_analysis_all.sh
 
 ```bash
 python scripts/visualization/visualize_gradcam.py \
-    --source datasets/dataset/dataset_v0/images/sample.jpg \
+    --source datasets/dataset_v0/images/sample.jpg \
     --knee-model models/knee_detector.pt \
     --grade-model runs/detect/knee_5_class_baseline/weights/best.pt
 ```
@@ -258,7 +258,7 @@ python scripts/visualization/visualize_gradcam.py \
 ```bash
 python scripts/visualization/visualize_manual.py \
     --prediction-json prediction.json \
-    --image-dir datasets/dataset/dataset_v0/images \
+    --image-dir datasets/dataset_v0/images \
     --output prediction_vis.jpg
 ```
 
@@ -375,7 +375,7 @@ conda activate klgrade
 
 # 2. Preprocess data
 python scripts/preprocessing/prepare_knee_crops.py \
-    --input datasets/dataset/dataset_v0 \
+    --input datasets/dataset_v0 \
     --output datasets/dataset_knees_cropped \
     --model models/knee_detector.pt
 
