@@ -11,7 +11,9 @@ import argparse
 from pathlib import Path
 
 # Add project root to path
-project_root = Path(__file__).resolve().parents[1]
+project_root = (
+    Path(__file__).resolve().parents[2]
+)  # Go up 2 levels: data_preparation -> scripts -> KLGrade
 sys.path.append(str(project_root))
 
 from src.data.balancing import balance_dataset, get_dataset_stats
