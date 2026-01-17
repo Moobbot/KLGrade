@@ -12,6 +12,8 @@ Usage:
 """
 
 import sys
+import os
+import json
 from pathlib import Path
 from tqdm import tqdm
 import shutil
@@ -318,6 +320,110 @@ def prepare_knee_crops(
     print(f"\n✅ Output: {output_dir}")
     print("=" * 60)
 
+    # Save report
+    report_path = output_dir / "crop_report.txt"
+    with open(report_path, "w") as f:
+        f.write("=" * 60 + "\n")
+        f.write("KNEE CROPPING REPORT\n")
+        f.write("=" * 60 + "\n\n")
+        f.write(f"Input: {input_dir}\n")
+        f.write(f"Output: {output_dir}\n")
+        f.write(f"Margin: {margin * 100:.0f}%\n\n")
+        f.write("Statistics:\n")
+        f.write(f"  Total images: {stats['total_images']}\n")
+        f.write(f"  Images with knees: {stats['images_with_knees']}\n")
+        f.write(f"  Images without knees: {stats['images_without_knees']}\n")
+        f.write(f"  Total knees cropped: {stats['total_knees_cropped']}\n")
+
+    print(f"📄 Saved report: {report_path}")
+
+    return stats
+
+
+def filter_empty_labels(input_dir: Path):
+    """
+    Filter crops without labels - integrated version.
+
+    Moves cropped images without KL grade labels to separate folder.
+
+    Args:
+        input_dir: Directory containing images/ and labels/
+
+    Returns:
+        Dictionary with filtering statistics
+    """
+    img_dir = input_dir / "images"
+    label_dir = input_dir / "labels"
+
+    no_label_img_dir = input_dir / "images-no-labels"
+    no_label_label_dir = input_dir / "labels-no-labels"
+
+    no_label_img_dir.mkdir(exist_ok=True)
+    no_label_label_dir.mkdir(exist_ok=True)
+
+    if not img_dir.exists() or not label_dir.exists():
+        print(f"❌ Missing directories: {img_dir} or {label_dir}")
+        return None
+
+    # Get all images
+    img_extensions = {".jpg", ".jpeg", ".png", ".bmp"}
+    images = [f for f in img_dir.iterdir() if f.suffix.lower() in img_extensions]
+
+    print(f"\nFound {len(images)} cropped images")
+
+    moved_count = 0
+    no_label_files = []
+
+    for img_file in images:
+        stem = img_file.stem
+        label_file = label_dir / f"{stem}.txt"
+
+        # Check if label is empty or missing
+        has_label = False
+        if label_file.exists():
+            with open(label_file, "r") as f:
+                content = f.read().strip()
+                has_label = len(content) > 0
+
+        if not has_label:
+            # Move image to no-labels folder
+            dest_img_path = no_label_img_dir / img_file.name
+            shutil.move(str(img_file), str(dest_img_path))
+
+            # Move empty label file if exists
+            if label_file.exists():
+                dest_label_path = no_label_label_dir / label_file.name
+                shutil.move(str(label_file), str(dest_label_path))
+
+            no_label_files.append(stem)
+            moved_count += 1
+
+    # Summary
+    remaining_count = len(images) - moved_count
+
+    print("\n" + "=" * 60)
+    print("FILTERING SUMMARY")
+    print("=" * 60)
+    print(f"\nTotal crops: {len(images)}")
+    print(f"🗂️  Moved to no-labels: {moved_count}")
+    print(f"📊 Remaining with labels: {remaining_count}")
+
+    # Save log
+    if no_label_files:
+        log_path = input_dir / "no_label_files.json"
+        with open(log_path, "w") as f:
+            json.dump(no_label_files, f, indent=2)
+        print(f"\n📝 Saved no-label files list: {log_path}")
+
+    print("=" * 60)
+
+    return {
+        "total_images": len(images),
+        "moved_count": moved_count,
+        "remaining_count": remaining_count,
+        "no_label_files": no_label_files,
+    }
+
 
 def filter_class_0(labels):
     """
@@ -383,6 +489,11 @@ if __name__ == "__main__":
         default=0.15,
         help="Margin around knee box (default: 0.15)",
     )
+    parser.add_argument(
+        "--auto-filter",
+        action="store_true",
+        help="Automatically run filter_no_labels.py after cropping",
+    )
 
     args = parser.parse_args()
 
@@ -394,3 +505,24 @@ if __name__ == "__main__":
         sys.exit(1)
 
     prepare_knee_crops(input_dir, output_dir, args.margin)
+
+    # Auto-filter if requested
+    if args.auto_filter:
+        print("\n" + "=" * 60)
+        print("AUTO-FILTERING EMPTY LABELS")
+        print("=" * 60)
+
+        import subprocess
+
+        filter_script = project_root / "scripts/data_preparation/filter_no_labels.py"
+
+        if filter_script.exists():
+            result = subprocess.run(
+                [sys.executable, str(filter_script), "--input", str(output_dir)],
+                env={**os.environ, "PYTHONPATH": str(project_root)},
+            )
+
+            if result.returncode != 0:
+                print("⚠️  Filter failed, but cropping completed successfully")
+        else:
+            print(f"⚠️  Filter script not found: {filter_script}")

@@ -154,6 +154,7 @@ def analyze_labels(label_dir: Path, label_name: str):
             "mean": np.mean(boxes_per_image) if boxes_per_image else 0,
             "median": np.median(boxes_per_image) if boxes_per_image else 0,
         },
+        "bbox_stats": bbox_stats,  # For bbox analysis visualization
     }
 
     # Print summary
@@ -233,6 +234,196 @@ def visualize_class_distribution(all_label_stats, output_dir: Path):
     viz_path = output_dir / "class_distribution.png"
     plt.savefig(viz_path, dpi=150, bbox_inches="tight")
     print(f"\n📊 Saved class distribution: {viz_path}")
+    plt.close()
+
+
+def visualize_bbox_analysis(all_label_stats, output_dir: Path, label_dir: Path):
+    """Create comprehensive bounding box analysis visualizations."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    # Get main label stats (usually 'labels')
+    main_stats = None
+    for name in ["labels", "labels_new", "labels_4class"]:
+        if name in all_label_stats and all_label_stats[name].get("bbox_stats"):
+            main_stats = all_label_stats[name]
+            break
+
+    if not main_stats or "bbox_stats" not in main_stats:
+        print("\n⚠️  No bbox stats available for visualization")
+        return
+
+    bbox_stats = main_stats["bbox_stats"]
+
+    # Collect all bbox data
+    all_widths = []
+    all_heights = []
+    all_areas = []
+    all_aspects = []
+    all_x_centers = []
+    all_y_centers = []
+    boxes_per_image_list = []
+
+    # Read label files to get centers and boxes per image
+    if label_dir.exists():
+        for label_file in label_dir.glob("*.txt"):
+            try:
+                with open(label_file, "r") as f:
+                    lines = [line.strip() for line in f if line.strip()]
+                boxes_per_image_list.append(len(lines))
+                for line in lines:
+                    parts = line.split()
+                    if len(parts) >= 5:
+                        x_center = float(parts[1])
+                        y_center = float(parts[2])
+                        width = float(parts[3])
+                        height = float(parts[4])
+
+                        all_widths.append(width)
+                        all_heights.append(height)
+                        all_areas.append(width * height)
+                        all_aspects.append(width / height if height > 0 else 0)
+                        all_x_centers.append(x_center)
+                        all_y_centers.append(y_center)
+            except:
+                continue
+
+    # Create 8-panel visualization like bbox_analysis.png
+    fig = plt.figure(figsize=(16, 12))
+    gs = fig.add_gridspec(3, 3, hspace=0.3, wspace=0.3)
+
+    # 1. Width Distribution
+    ax1 = fig.add_subplot(gs[0, 0])
+    ax1.hist(all_widths, bins=50, color="steelblue", edgecolor="black", alpha=0.7)
+    ax1.set_title("Width Distribution", fontweight="bold")
+    ax1.set_xlabel("Normalized Width")
+    ax1.set_ylabel("Count")
+    ax1.axvline(
+        np.mean(all_widths),
+        color="red",
+        linestyle="--",
+        label=f"Mean: {np.mean(all_widths):.3f}",
+    )
+    ax1.legend()
+    ax1.grid(alpha=0.3)
+
+    # 2. Height Distribution
+    ax2 = fig.add_subplot(gs[0, 1])
+    ax2.hist(all_heights, bins=50, color="coral", edgecolor="black", alpha=0.7)
+    ax2.set_title("Height Distribution", fontweight="bold")
+    ax2.set_xlabel("Normalized Height")
+    ax2.set_ylabel("Count")
+    ax2.axvline(
+        np.mean(all_heights),
+        color="red",
+        linestyle="--",
+        label=f"Mean: {np.mean(all_heights):.3f}",
+    )
+    ax2.legend()
+    ax2.grid(alpha=0.3)
+
+    # 3. Area Distribution
+    ax3 = fig.add_subplot(gs[0, 2])
+    ax3.hist(all_areas, bins=50, color="mediumseagreen", edgecolor="black", alpha=0.7)
+    ax3.set_title("Area Distribution", fontweight="bold")
+    ax3.set_xlabel("Normalized Area (Width × Height)")
+    ax3.set_ylabel("Count")
+    ax3.axvline(
+        np.mean(all_areas),
+        color="red",
+        linestyle="--",
+        label=f"Mean: {np.mean(all_areas):.3f}",
+    )
+    ax3.legend()
+    ax3.grid(alpha=0.3)
+
+    # 4. Aspect Ratio Distribution
+    ax4 = fig.add_subplot(gs[1, 0])
+    ax4.hist(all_aspects, bins=50, color="mediumpurple", edgecolor="black", alpha=0.7)
+    ax4.set_title(
+        "Aspect Ratio Distribution (for Anchor Box Optimization)", fontweight="bold"
+    )
+    ax4.set_xlabel("Aspect Ratio (Width/Height)")
+    ax4.set_ylabel("Count")
+    ax4.axvline(
+        np.mean(all_aspects),
+        color="red",
+        linestyle="--",
+        label=f"Mean: {np.mean(all_aspects):.3f}",
+    )
+    ax4.axvline(
+        np.median(all_aspects),
+        color="green",
+        linestyle="--",
+        label=f"Median: {np.median(all_aspects):.3f}",
+    )
+    ax4.legend()
+    ax4.grid(alpha=0.3)
+
+    # 5. PTH (Objects per Image) - changed name to match image
+    ax5 = fig.add_subplot(gs[1, 1])
+    single_count = sum(1 for x in boxes_per_image_list if x == 1)
+    multi_count = sum(1 for x in boxes_per_image_list if x > 1)
+    categories = ["Single", "Multiple"]
+    counts = [single_count, multi_count]
+    colors = ["gold", "orange"]
+    bars = ax5.bar(categories, counts, color=colors, edgecolor="black")
+    ax5.set_title("Object Bbox Categories\n(% of Image Type)", fontweight="bold")
+    ax5.set_ylabel("Number of Images")
+    # Add count labels
+    for bar, count in zip(bars, counts):
+        height = bar.get_height()
+        ax5.text(
+            bar.get_x() + bar.get_width() / 2.0,
+            height,
+            f"{count}",
+            ha="center",
+            va="bottom",
+            fontweight="bold",
+        )
+    ax5.grid(axis="y", alpha=0.3)
+
+    # 6. Width vs Height Scatter (colored by Area)
+    ax6 = fig.add_subplot(gs[1, 2])
+    scatter = ax6.scatter(
+        all_widths,
+        all_heights,
+        c=all_areas,
+        cmap="viridis",
+        alpha=0.6,
+        s=20,
+        edgecolors="black",
+        linewidth=0.5,
+    )
+    ax6.set_title("Width vs Height (colored by Area)", fontweight="bold")
+    ax6.set_xlabel("Normalized Width")
+    ax6.set_ylabel("Normalized Height")
+    # Add diagonal line (square boxes)
+    max_val = max(max(all_widths), max(all_heights))
+    ax6.plot([0, max_val], [0, max_val], "r--", alpha=0.5, label="Square (1:1)")
+    ax6.legend()
+    ax6.grid(alpha=0.3)
+    cbar = plt.colorbar(scatter, ax=ax6)
+    cbar.set_label("Area", rotation=270, labelpad=15)
+
+    # 7. Object Center Heatmap
+    ax7 = fig.add_subplot(gs[2, :])
+    heatmap, xedges, yedges = np.histogram2d(all_x_centers, all_y_centers, bins=20)
+    extent = [xedges[0], xedges[-1], yedges[0], yedges[-1]]
+    im = ax7.imshow(heatmap.T, extent=extent, origin="lower", cmap="hot", aspect="auto")
+    ax7.set_title("Object Center Heatmap", fontweight="bold", fontsize=14)
+    ax7.set_xlabel("X Center (normalized)")
+    ax7.set_ylabel("Y Center (normalized)")
+    ax7.set_xlim(0, 1)
+    ax7.set_ylim(0, 1)
+    ax7.grid(True, alpha=0.3, color="white", linestyle="--")
+    cbar = plt.colorbar(im, ax=ax7)
+    cbar.set_label("Density", rotation=270, labelpad=15)
+
+    fig.suptitle("Bounding Box Analysis", fontsize=16, fontweight="bold", y=0.995)
+
+    viz_path = output_dir / "bbox_analysis.png"
+    plt.savefig(viz_path, dpi=150, bbox_inches="tight")
+    print(f"📊 Saved bbox analysis: {viz_path}")
     plt.close()
 
 
@@ -502,6 +693,13 @@ def main():
     # Visualizations
     if all_label_stats:
         visualize_class_distribution(all_label_stats, output_dir)
+
+        # Add bbox analysis visualization
+        for label_dir_name in ["labels", "labels_new", "labels_4class"]:
+            label_dir = dataset_dir / label_dir_name
+            if label_dir.exists():
+                visualize_bbox_analysis(all_label_stats, output_dir, label_dir)
+                break
 
     # Save reports
     save_analysis_report(img_stats, all_label_stats, output_dir)

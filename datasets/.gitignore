@@ -2,6 +2,5 @@
 !visualize_*.py
 !data_examples/*
 dataset/*
-dataset_knees_cropped/*
-data_processed/*
-data_processed_knees/*
+dataset_knees*/*
+data_processed*/*
