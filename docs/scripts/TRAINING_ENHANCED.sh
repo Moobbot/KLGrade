@@ -76,7 +76,7 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name E_ENHANCED_001_5class_full
+  --name E_ENHANCED_001_5_class_full
 
 echo "✅ E_ENHANCED_001 complete!"
 echo ""
@@ -94,7 +94,7 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name E_ENHANCED_004_10class_full
+  --name E_ENHANCED_004_10_class_full
 
 echo "✅ E_ENHANCED_004 complete!"
 echo ""
@@ -112,7 +112,7 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name E_ENHANCED_005_4class_full
+  --name E_ENHANCED_005_4_class_full
 
 echo "✅ E_ENHANCED_005 complete!"
 echo ""
@@ -130,7 +130,7 @@ python scripts/training/train_yolo_enhanced.py \
   --imgsz 640 \
   --device 0 \
   --project runs/detect \
-  --name E_ENHANCED_006_8class_full
+  --name E_ENHANCED_006_8_class_full
 
 echo "✅ E_ENHANCED_006 complete!"
 echo ""
@@ -145,10 +145,10 @@ echo "✅ ENHANCED TRAINING EXPERIMENTS COMPLETE!"
 echo "========================================================================"
 echo ""
 echo "Results saved to: runs/detect/"
-echo "  - E_ENHANCED_001_5class_full/"
-echo "  - E_ENHANCED_004_10class_full/"
-echo "  - E_ENHANCED_005_4class_full/"
-echo "  - E_ENHANCED_006_8class_full/"
+echo "  - E_ENHANCED_001_5_class_full/"
+echo "  - E_ENHANCED_004_10_class_full/"
+echo "  - E_ENHANCED_005_4_class_full/"
+echo "  - E_ENHANCED_006_8_class_full/"
 echo ""
 echo "Enhanced Features Applied:"
 echo "  📊 CLAHE - Better contrast for medical images"

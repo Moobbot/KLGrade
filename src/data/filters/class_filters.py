@@ -55,16 +55,22 @@ def remap_class_ids(labels: List[Dict], class_map: Dict[int, int]) -> List[Dict]
     return remapped
 
 
-def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) -> Dict:
+def filter_classes(
+    input_dir: Path,
+    output_dir: Path,
+    classes_to_remove: List[int] = None,
+    num_classes: int = 5,
+) -> Dict:
     """
-    Filter dataset by removing KL0 classes.
+    Filter dataset by removing specified classes.
 
-    Creates filtered dataset by removing images with only KL0 labels
+    Creates filtered dataset by removing images with only specified class labels
     and remapping remaining class IDs.
 
     Args:
         input_dir: Input dataset directory
         output_dir: Output dataset directory
+        classes_to_remove: List of class IDs to remove (default: [0] for KL0)
         num_classes: Original number of classes (5 or 10)
             - 5: Remove class 0 (KL0), remap 1-4 → 0-3 (output: 4 classes)
             - 10: Remove classes 0,1 (KL0-a, KL0-b), remap 2-9 → 0-7 (output: 8 classes)
@@ -72,12 +78,24 @@ def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) 
     Returns:
         Dictionary with filtering statistics:
             - total_images: Total images processed
-            - kept_images: Images with non-KL0 labels
-            - filtered_images: Images with only KL0 labels
+            - kept_images: Images with non-filtered labels
+            - filtered_images: Images with only filtered class labels
             - original_boxes: Total boxes before filtering
             - kept_boxes: Boxes after filtering
-            - filtered_boxes: Number of KL0 boxes removed
+            - filtered_boxes: Number of filtered boxes removed
     """
+    # Default to removing class 0 (KL0) if not specified
+    if classes_to_remove is None:
+        if num_classes == 5:
+            classes_to_remove = [0]  # Remove KL0
+        elif num_classes == 10:
+            classes_to_remove = [0, 1]  # Remove KL0-a, KL0-b
+        else:
+            classes_to_remove = [0]
+
+    # Convert to set for faster lookup
+    classes_to_remove_set = set(classes_to_remove)
+
     img_dir = input_dir / "images"
     label_dir = input_dir / "labels"
 
@@ -87,19 +105,11 @@ def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) 
     output_img_dir.mkdir(parents=True, exist_ok=True)
     output_label_dir.mkdir(parents=True, exist_ok=True)
 
-    # Determine KL0 class IDs to remove and create class mapping
-    if num_classes == 5:
-        kl0_classes = {0}  # Remove class 0 (KL0)
-        # Remap: 1→0, 2→1, 3→2, 4→3
-        class_map = {1: 0, 2: 1, 3: 2, 4: 3}
-        output_classes = 4
-    elif num_classes == 10:
-        kl0_classes = {0, 1}  # Remove classes 0,1 (KL0-a, KL0-b)
-        # Remap: 2→0, 3→1, ..., 9→7
-        class_map = {i: i - 2 for i in range(2, 10)}
-        output_classes = 8
-    else:
-        raise ValueError(f"Unsupported num_classes: {num_classes}")
+    # Create class mapping (all classes not in remove list get remapped sequentially)
+    all_classes = set(range(num_classes))
+    remaining_classes = sorted(all_classes - classes_to_remove_set)
+    class_map = {old_id: new_id for new_id, old_id in enumerate(remaining_classes)}
+    output_classes = len(remaining_classes)
 
     # Get all images
     img_extensions = {".jpg", ".jpeg", ".png", ".bmp"}
@@ -112,6 +122,8 @@ def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) 
         "original_boxes": 0,
         "kept_boxes": 0,
         "filtered_boxes": 0,
+        "classes_removed": list(classes_to_remove),
+        "output_classes": output_classes,
     }
 
     filtered_files = []
@@ -124,10 +136,10 @@ def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) 
         boxes = load_yolo_boxes(label_file)
         stats["original_boxes"] += len(boxes)
 
-        # Filter out KL0 boxes and remap
+        # Filter out specified boxes and remap
         kept_boxes = []
         for box in boxes:
-            if box["class_id"] in kl0_classes:
+            if box["class_id"] in classes_to_remove_set:
                 stats["filtered_boxes"] += 1
                 continue
 
@@ -145,7 +157,7 @@ def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) 
                 )
                 stats["kept_boxes"] += 1
 
-        # Keep image only if it has non-KL0 boxes
+        # Keep image only if it has non-filtered boxes
         if kept_boxes:
             # Copy image
             shutil.copy2(img_file, output_img_dir / img_file.name)
@@ -155,18 +167,18 @@ def filter_kl0_classes(input_dir: Path, output_dir: Path, num_classes: int = 5) 
 
             stats["kept_images"] += 1
         else:
-            # Image only had KL0 boxes
+            # Image only had filtered boxes
             filtered_files.append(stem)
             stats["filtered_images"] += 1
 
     # Save stats
-    stats_path = output_dir / "filter_kl0_stats.json"
+    stats_path = output_dir / "filter_classes_stats.json"
     with open(stats_path, "w") as f:
         json.dump(stats, f, indent=2)
 
     # Save filtered files list
     if filtered_files:
-        filtered_path = output_dir / "filtered_kl0_files.json"
+        filtered_path = output_dir / "filtered_files.json"
         with open(filtered_path, "w") as f:
             json.dump(filtered_files, f, indent=2)
 

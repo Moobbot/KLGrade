@@ -87,8 +87,8 @@ scripts/prepare_knee_crops.py \
 - `images/` - Cropped knee images (1,783 crops)
 - `labels/` - 5-class labels (KL0-4)
 - `labels_new/` - 10-class labels (KL0-a/b to KL4-a/b) ⭐ NEW!
-- `labels_4class/` - 4-class labels (KL1-4, filtered KL0)
-- `labels_8class/` - 8-class labels (KL1-a/b to KL4-a/b, filtered KL0)
+- `labels_4_class/` - 4-class labels (KL1-4, filtered KL0)
+- `labels_8_class/` - 8-class labels (KL1-a/b to KL4-a/b, filtered KL0)
 - `labels-knee/` - Full image knee boxes (for reference)
 - `crop_report.txt` - Statistics and summary
 
@@ -186,8 +186,8 @@ datasets/data_processed/{preset_name}/
 ├── images/          # Preprocessed images
 ├── labels/          # 5-class labels (copied)
 ├── labels_new/      # 10-class labels (copied)
-├── labels_4class/   # 4-class labels (copied)
-├── labels_8class/   # 8-class labels (copied)
+├── labels_4_class/   # 4-class labels (copied)
+├── labels_8_class/   # 8-class labels (copied)
 └── labels-knee/     # Knee boxes (copied)
 ```
 
@@ -433,8 +433,8 @@ KLGrade/
 │   │   ├── labels/                     # 5-class (KL0-4)
 │   │   ├── labels-no-labels/           # Empty label files (filtered)
 │   │   ├── labels_new/                 # 10-class (KL0-a/b to KL4-a/b)
-│   │   ├── labels_4class/              # 4-class (KL1-4, without KL0)
-│   │   ├── labels_8class/              # 8-class (KL1-a/b to KL4-a/b)
+│   │   ├── labels_4_class/              # 4-class (KL1-4, without KL0)
+│   │   ├── labels_8_class/              # 8-class (KL1-a/b to KL4-a/b)
 │   │   ├── labels-knee/                # Knee boxes
 │   │   ├── crop_report.txt
 │   │   └── no_label_files.json         # List of filtered files
@@ -457,8 +457,8 @@ KLGrade/
 │   │       ├── images/
 │   │       ├── labels/
 │   │       ├── labels_new/
-│   │       ├── labels_4class/
-│   │       ├── labels_8class/
+│   │       ├── labels_4_class/
+│   │       ├── labels_8_class/
 │   │       ├── labels-knee/
 │   │       └── dataset_statistics.txt
 │   │
@@ -470,8 +470,8 @@ KLGrade/
 │   │       ├── images/ (1783 knee crops)
 │   │       ├── labels/
 │   │       ├── labels_new/
-│   │       ├── labels_4class/
-│   │       ├── labels_8class/
+│   │       ├── labels_4_class/
+│   │       ├── labels_8_class/
 │   │       ├── labels-knee/
 │   │       └── dataset_statistics.txt
 │   │

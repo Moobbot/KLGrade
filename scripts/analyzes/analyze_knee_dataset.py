@@ -84,11 +84,11 @@ def generate_report(output_dir: Path):
                 9: "KL4-b",
             },
         },
-        "labels_4class": {
+        "labels_4_class": {
             "name": "4-Class Labels (KL1-4, filtered KL0)",
             "classes": {0: "KL1", 1: "KL2", 2: "KL3", 3: "KL4"},
         },
-        "labels_8class": {
+        "labels_8_class": {
             "name": "8-Class Labels (KL1-a/b to KL4-a/b, filtered KL0)",
             "classes": {
                 0: "KL1-a",

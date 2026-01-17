@@ -93,7 +93,7 @@ def assign_relative_suffix(boxes: list):
             b2["suffix"] = "b"
 
 
-def convert_5class_to_10class(labels_5class: list) -> list:
+def convert_5_class_to_10_class(labels_5_class: list) -> list:
     """
     Convert 5-class labels to 10-class labels using shape-based classification.
 
@@ -105,14 +105,14 @@ def convert_5class_to_10class(labels_5class: list) -> list:
     - class 4 → 8 (KL4-a) or 9 (KL4-b)
 
     Args:
-        labels_5class: List of 5-class labels (class_id 0-4)
+        labels_5_class: List of 5-class labels (class_id 0-4)
 
     Returns:
         List of 10-class labels (class_id 0-9)
     """
     # Group by original class
     class_groups = {}
-    for label in labels_5class:
+    for label in labels_5_class:
         cls = label["class_id"]
         if cls not in class_groups:
             class_groups[cls] = []
@@ -138,7 +138,7 @@ def convert_5class_to_10class(labels_5class: list) -> list:
                 box["suffix"] = "a" if ratio < 1.5 else "b"
 
     # Convert to 10-class labels
-    labels_10class = []
+    labels_10_class = []
     for cls, group in class_groups.items():
         for box in group:
             new_label = {
@@ -148,9 +148,9 @@ def convert_5class_to_10class(labels_5class: list) -> list:
                 "w": box["w"],
                 "h": box["h"],
             }
-            labels_10class.append(new_label)
+            labels_10_class.append(new_label)
 
-    return labels_10class
+    return labels_10_class
 
 
 def prepare_knee_crops(
@@ -187,25 +187,25 @@ def prepare_knee_crops(
     input_labels_new = input_dir / "labels_new"  # 10-class labels (0-9)
 
     output_images = output_dir / "images"
-    output_labels_5class = output_dir / "labels"  # 5-class
-    output_labels_10class = output_dir / "labels_new"  # 10-class
-    output_labels_4class = output_dir / "labels_4class"  # 4-class (no KL0)
-    output_labels_8class = output_dir / "labels_8class"  # 8-class (no KL0-a/b)
+    output_labels_5_class = output_dir / "labels"  # 5-class
+    output_labels_10_class = output_dir / "labels_new"  # 10-class
+    output_labels_4_class = output_dir / "labels_4_class"  # 4-class (no KL0)
+    output_labels_8_class = output_dir / "labels_8_class"  # 8-class (no KL0-a/b)
     output_knee_labels = output_dir / "labels-knee"
 
     # Create output directories
     output_images.mkdir(parents=True, exist_ok=True)
-    output_labels_5class.mkdir(parents=True, exist_ok=True)
+    output_labels_5_class.mkdir(parents=True, exist_ok=True)
     output_knee_labels.mkdir(parents=True, exist_ok=True)
 
     # We always create 10-class labels by converting from 5-class
-    has_10class = True  # Always generate 10-class labels
-    output_labels_10class.mkdir(parents=True, exist_ok=True)
+    has_10_class = True  # Always generate 10-class labels
+    output_labels_10_class.mkdir(parents=True, exist_ok=True)
 
     if create_filtered:
-        output_labels_4class.mkdir(parents=True, exist_ok=True)
-        if has_10class:
-            output_labels_8class.mkdir(parents=True, exist_ok=True)
+        output_labels_4_class.mkdir(parents=True, exist_ok=True)
+        if has_10_class:
+            output_labels_8_class.mkdir(parents=True, exist_ok=True)
 
     # Get all images
     image_files = list(input_images.glob("*.jpg")) + list(input_images.glob("*.png"))
@@ -270,14 +270,14 @@ def prepare_knee_crops(
             save_image(cropped_img, output_img_path)
 
             # Save transformed KL labels (5-class)
-            output_kl_path = output_labels_5class / f"{output_stem}.txt"
+            output_kl_path = output_labels_5_class / f"{output_stem}.txt"
             save_yolo_labels(transformed_kl_labels, output_kl_path)
 
             # Create 4-class version (filter out KL0, remap 1-4 to 0-3)
             if create_filtered:
-                labels_4class = filter_class_0(transformed_kl_labels)
-                output_4class_path = output_labels_4class / f"{output_stem}.txt"
-                save_yolo_labels(labels_4class, output_4class_path)
+                labels_4_class = filter_class_0(transformed_kl_labels)
+                output_4_class_path = output_labels_4_class / f"{output_stem}.txt"
+                save_yolo_labels(labels_4_class, output_4_class_path)
 
             # Save knee label (class 0, full crop)
             output_knee_path = output_knee_labels / f"{output_stem}.txt"
@@ -285,17 +285,17 @@ def prepare_knee_crops(
             save_yolo_labels([knee_full_box], output_knee_path)
 
             # Process 10-class labels if available
-            if has_10class:
+            if has_10_class:
                 # Generate 10-class labels from 5-class using shape classification
-                labels_10class = convert_5class_to_10class(transformed_kl_labels)
-                output_10class_path = output_labels_10class / f"{output_stem}.txt"
-                save_yolo_labels(labels_10class, output_10class_path)
+                labels_10_class = convert_5_class_to_10_class(transformed_kl_labels)
+                output_10_class_path = output_labels_10_class / f"{output_stem}.txt"
+                save_yolo_labels(labels_10_class, output_10_class_path)
 
                 # Create 8-class version (filter out classes 0,1 which are KL0-a/b, remap 2-9 to 0-7)
                 if create_filtered:
-                    labels_8class = filter_class_0_10class(labels_10class)
-                    output_8class_path = output_labels_8class / f"{output_stem}.txt"
-                    save_yolo_labels(labels_8class, output_8class_path)
+                    labels_8_class = filter_class_0_10_class(labels_10_class)
+                    output_8_class_path = output_labels_8_class / f"{output_stem}.txt"
+                    save_yolo_labels(labels_8_class, output_8_class_path)
 
             stats["total_knees_cropped"] += 1
 
@@ -311,12 +311,12 @@ def prepare_knee_crops(
     print(f"  - images/")
     print(f"  - labels/ (5-class: KL0-4)")
     print(f"  - labels-knee/ (knee boxes)")
-    if has_10class:
+    if has_10_class:
         print(f"  - labels_new/ (10-class: KL0-a/b to KL4-a/b)")
     if create_filtered:
-        print(f"  - labels_4class/ (4-class: KL1-4 → 0-3)")
-        if has_10class:
-            print(f"  - labels_8class/ (8-class: KL1-a/b to KL4-a/b → 0-7)")
+        print(f"  - labels_4_class/ (4-class: KL1-4 → 0-3)")
+        if has_10_class:
+            print(f"  - labels_8_class/ (8-class: KL1-a/b to KL4-a/b → 0-7)")
     print(f"\n✅ Output: {output_dir}")
     print("=" * 60)
 
@@ -361,7 +361,7 @@ def filter_class_0(labels):
     return filtered
 
 
-def filter_class_0_10class(labels):
+def filter_class_0_10_class(labels):
     """
     Filter out classes 0,1 (KL0-a, KL0-b) and remap classes 2-9 to 0-7.
 

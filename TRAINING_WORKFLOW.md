@@ -52,8 +52,8 @@ python scripts/preprocessing/prepare_knee_crops.py \
 **Output**:
 - `datasets/dataset_knees_cropped/images/` - Cropped knee images
 - `datasets/dataset_knees_cropped/labels/` - 5-class labels (KL0-4)
-- `datasets/dataset_knees_cropped/labels_4class/` - 4-class labels (KL1-4)
-- `datasets/dataset_knees_cropped/labels_8class/` - 8-class labels
+- `datasets/dataset_knees_cropped/labels_4_class/` - 4-class labels (KL1-4)
+- `datasets/dataset_knees_cropped/labels_8_class/` - 8-class labels
 - `crop_report.txt` - Statistics
 
 **Verify**:

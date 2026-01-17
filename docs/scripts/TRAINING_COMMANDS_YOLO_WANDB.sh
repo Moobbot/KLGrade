@@ -63,7 +63,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E001_5class_baseline \
+  name=E001_5_class_baseline \
   exist_ok=False \
   patience=50 \
   save_period=10 \
@@ -81,7 +81,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E004_10class_baseline \
+  name=E004_10_class_baseline \
   exist_ok=False \
   patience=50 \
   save_period=10 \
@@ -117,7 +117,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E006_8class_baseline \
+  name=E006_8_class_baseline \
   exist_ok=False \
   patience=50 \
   save_period=10 \
@@ -144,7 +144,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E002_5class_conservative \
+  name=E002_5_class_conservative \
   exist_ok=False \
   patience=50 \
   save_period=10 \
@@ -162,7 +162,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E007_10class_conservative \
+  name=E007_10_class_conservative \
   exist_ok=False \
   patience=50 \
   save_period=10 \
@@ -198,7 +198,7 @@ yolo detect train \
   imgsz=640 \
   device=0 \
   project=runs/detect \
-  name=E009_8class_conservative \
+  name=E009_8_class_conservative \
   exist_ok=False \
   patience=50 \
   save_period=10 \
@@ -217,14 +217,14 @@ echo "✅ ALL YOLO TRAINING EXPERIMENTS COMPLETE!"
 echo "========================================================================"
 echo ""
 echo "Results saved to: runs/detect/"
-echo "  - E001_5class_baseline/"
-echo "  - E004_10class_baseline/"
+echo "  - E001_5_class_baseline/"
+echo "  - E004_10_class_baseline/"
 echo "  - E005_4_class_baseline/"
-echo "  - E006_8class_baseline/"
-echo "  - E002_5class_conservative/"
-echo "  - E007_10class_conservative/"
+echo "  - E006_8_class_baseline/"
+echo "  - E002_5_class_conservative/"
+echo "  - E007_10_class_conservative/"
 echo "  - E008_4_class_conservative/"
-echo "  - E009_8class_conservative/"
+echo "  - E009_8_class_conservative/"
 echo ""
 echo "WandB Dashboard:"
 echo "  https://wandb.ai/ngotam2k1-thuyloi-university/KLGrade-Knee-OA"
@@ -248,4 +248,4 @@ echo "========================================================================"
 
 # Run single baseline experiment:
 # source this file and run individual commands, or:
-# yolo detect train data=configs/yolo_5_class_baseline.yaml epochs=100 batch=16 device=0 project=runs/detect name=E001_5class_baseline
+# yolo detect train data=configs/yolo_5_class_baseline.yaml epochs=100 batch=16 device=0 project=runs/detect name=E001_5_class_baseline

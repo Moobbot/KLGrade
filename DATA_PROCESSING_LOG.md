@@ -50,8 +50,8 @@ python scripts/prepare_knee_crops.py \
 - `datasets/dataset_knees_cropped/images/` (1,783 cropped knee images)
 - `datasets/dataset_knees_cropped/labels/` (5-class)
 - `datasets/dataset_knees_cropped/labels_new/` (10-class, auto-generated)
-- `datasets/dataset_knees_cropped/labels_4class/` (4-class, filtered KL0)
-- `datasets/dataset_knees_cropped/labels_8class/` (8-class, filtered KL0-a/b)
+- `datasets/dataset_knees_cropped/labels_4_class/` (4-class, filtered KL0)
+- `datasets/dataset_knees_cropped/labels_8_class/` (8-class, filtered KL0-a/b)
 - `datasets/dataset_knees_cropped/labels-knee/` (knee boxes)
 
 **Processing Details**:
@@ -141,7 +141,7 @@ bash scripts/preprocess_knees_cropped.sh
 **Processing Details**:
 - Total images processed: 7,132 (1,783 × 4 presets)
 - Processing time: ~1.5 minutes
-- Each preset includes: images/ + labels/ + labels_new/ + labels_4class/ + labels_8class/ + labels-knee/
+- Each preset includes: images/ + labels/ + labels_new/ + labels_4_class/ + labels_8_class/ + labels-knee/
 
 **Result**: ✅ Success
 
@@ -456,8 +456,8 @@ datasets/
 │   │   ├── labels/                 # 5-class
 │   │   ├── labels-no-labels/       # 92 empty labels ⭐ NEW
 │   │   ├── labels_new/             # 10-class
-│   │   ├── labels_4class/          # 4-class (filtered)
-│   │   ├── labels_8class/          # 8-class (filtered)
+│   │   ├── labels_4_class/          # 4-class (filtered)
+│   │   ├── labels_8_class/          # 8-class (filtered)
 │   │   ├── labels-knee/            # Knee boxes
 │   │   ├── crop_report.txt
 │   │   ├── dataset_statistics.txt
@@ -602,8 +602,8 @@ datasets/
 │       ├── images/                 # 1,783 knee crops
 │       ├── labels/                 # 5-class
 │       ├── labels_new/             # 10-class
-│       ├── labels_4class/          # 4-class (filtered)
-│       ├── labels_8class/          # 8-class (filtered)
+│       ├── labels_4_class/          # 4-class (filtered)
+│       ├── labels_8_class/          # 8-class (filtered)
 │       ├── labels-knee/            # Knee boxes
 │       └── dataset_statistics.txt
 │

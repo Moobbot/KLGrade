@@ -5,7 +5,7 @@ Mỗi lần training, YOLO tự động lưu đầy đủ thông tin vào thư m
 ## 📁 Cấu trúc thư mục output:
 
 ```
-runs/detect/E001_5class_baseline/
+runs/detect/E001_5_class_baseline/
 ├── args.yaml                      # Toàn bộ config & hyperparameters
 ├── results.csv                    # Metrics từng epoch (mAP, loss, precision, recall...)
 ├── results.png                    # Đồ thị training curves
@@ -58,17 +58,17 @@ import pandas as pd
 import yaml
 
 # Đọc config
-with open('runs/detect/E001_5class_baseline/args.yaml') as f:
+with open('runs/detect/E001_5_class_baseline/args.yaml') as f:
     config = yaml.safe_load(f)
 print(config)
 
 # Đọc metrics
-df = pd.read_csv('runs/detect/E001_5class_baseline/results.csv')
+df = pd.read_csv('runs/detect/E001_5_class_baseline/results.csv')
 print(df[['epoch', 'metrics/mAP50(B)', 'metrics/mAP50-95(B)']])
 
 # Load model
 from ultralytics import YOLO
-model = YOLO('runs/detect/E001_5class_baseline/weights/best.pt')
+model = YOLO('runs/detect/E001_5_class_baseline/weights/best.pt')
 ```
 
 ## ✅ Guaranteed Logging

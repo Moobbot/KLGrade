@@ -62,7 +62,7 @@ python scripts/training/train_detr.py \
   --batch 4 \
   --lr 1e-4 \
   --device cuda \
-  --output runs/detr/E010_5class_baseline
+  --output runs/detr/E010_5_class_baseline
 
 # E011: 10-class Baseline  
 echo "Training E011: DETR 10-class Baseline..."
@@ -76,7 +76,7 @@ python scripts/training/train_detr.py \
   --batch 4 \
   --lr 1e-4 \
   --device cuda \
-  --output runs/detr/E011_10class_baseline
+  --output runs/detr/E011_10_class_baseline
 
 # E012: 4-class Baseline
 echo "Training E012: DETR 4-class Baseline..."
@@ -90,7 +90,7 @@ python scripts/training/train_detr.py \
   --batch 4 \
   --lr 1e-4 \
   --device cuda \
-  --output runs/detr/E012_4class_baseline
+  --output runs/detr/E012_4_class_baseline
 
 # E013: 8-class Baseline
 echo "Training E013: DETR 8-class Baseline..."
@@ -104,7 +104,7 @@ python scripts/training/train_detr.py \
   --batch 4 \
   --lr 1e-4 \
   --device cuda \
-  --output runs/detr/E013_8class_baseline
+  --output runs/detr/E013_8_class_baseline
 
 echo "DETR baseline training phase complete!"
 echo "✅ All experiments logged to WandB: https://wandb.ai/your-username/KLGrade-Knee-OA"

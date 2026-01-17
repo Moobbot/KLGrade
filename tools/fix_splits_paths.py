@@ -48,7 +48,7 @@ def fix_splits_to_relative():
             # Convert to relative paths
             new_lines = []
             img_dir_abs = base_dir / img_dir_rel
-            
+
             for line in lines:
                 line = line.strip()
                 if not line:
@@ -80,28 +80,30 @@ def fix_splits_to_relative():
                     if (img_dir_abs / f"{stem_clean}{ext}").exists():
                         found_ext = ext
                         break
-                
+
                 if found_ext:
                     fname = f"{stem_clean}{found_ext}"
                     rel_path = f"{img_dir_rel}/{fname}"
                     new_lines.append(rel_path)
                 else:
                     # Final fallback: just assume it was correct mostly and warn
-                    # If it was "foo.jpg.jpg", and we couldn't find "foo.jpg", 
-                    # maybe we should check if "foo.jpg" exists directly? 
-                    # We did that in step 2. 
-                    
+                    # If it was "foo.jpg.jpg", and we couldn't find "foo.jpg",
+                    # maybe we should check if "foo.jpg" exists directly?
+                    # We did that in step 2.
+
                     print(f"   ⚠️  Warning: Image not found for {line} in {img_dir_abs}")
                     # Keep original to avoid data loss, or keep try to make valid path
                     # Let's try to construct a valid path from stem_clean + .jpg as a guess
                     rel_path = f"{img_dir_rel}/{stem_clean}.jpg"
                     if not (base_dir / rel_path).exists():
-                         # If we still can't find it, just keep the original line but made relative if possible
-                         # or just skip? treating it as missing is safer for training.
-                         # But let's append what we think it should be.
-                         new_lines.append(rel_path) # Add it anyway so we can see the path in split file
+                        # If we still can't find it, just keep the original line but made relative if possible
+                        # or just skip? treating it as missing is safer for training.
+                        # But let's append what we think it should be.
+                        new_lines.append(
+                            rel_path
+                        )  # Add it anyway so we can see the path in split file
                     else:
-                         new_lines.append(rel_path)
+                        new_lines.append(rel_path)
 
             # Write back
             txt_file.write_text("\n".join(new_lines) + "\n", encoding="utf-8")

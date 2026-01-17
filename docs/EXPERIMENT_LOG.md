@@ -16,14 +16,14 @@ This document tracks all training experiments for knee OA detection project.
 | `001_v0_full` | YOLOv11l | Dataset V0 | CLAHE+Bal | 0.182 | 0.065 | Jan 10 | - |
 | `002_v0_clahe` | YOLOv11l | Dataset V0 | CLAHE Only | 0.182 | 0.065 | Jan 10 | - |
 | **YOLO Runs (Standard)** | | | | | | | |
-| `E005_4class` | YOLOv11n | 4-Class | Baseline | **0.289** | 0.104 | Jan 09 | ✅ Best Overall |
-| `E002_5class` | YOLOv11n | 5-Class | Conservative | **0.269** | 0.105 | Jan 09 | ✅ Best 5-cls |
-| `E006_8class` | YOLOv11n | 8-Class | Baseline | 0.258 | 0.104 | Jan 09 | - |
-| `E004_10class` | YOLOv11n | 10-Class | Baseline | 0.206 | 0.086 | Jan 09 | - |
+| `E005_4_class` | YOLOv11n | 4-Class | Baseline | **0.289** | 0.104 | Jan 09 | ✅ Best Overall |
+| `E002_5_class` | YOLOv11n | 5-Class | Conservative | **0.269** | 0.105 | Jan 09 | ✅ Best 5-cls |
+| `E006_8_class` | YOLOv11n | 8-Class | Baseline | 0.258 | 0.104 | Jan 09 | - |
+| `E004_10_class` | YOLOv11n | 10-Class | Baseline | 0.206 | 0.086 | Jan 09 | - |
 | **DETR Runs** | | | | | | | |
-| `E012_4class` | DETR-R50 | 4-Class | Baseline | 0.0004 | 0.0001 | Jan 08 | ❌ Failed |
-| `E010_5class` | DETR-R50 | 5-Class | Baseline | 0.0003 | 0.0001 | Jan 08 | ❌ Failed |
-| `E011_10class` | DETR-R50 | 10-Class | Baseline | 0.0001 | 0.0000 | Jan 08 | ❌ Failed |
+| `E012_4_class` | DETR-R50 | 4-Class | Baseline | 0.0004 | 0.0001 | Jan 08 | ❌ Failed |
+| `E010_5_class` | DETR-R50 | 5-Class | Baseline | 0.0003 | 0.0001 | Jan 08 | ❌ Failed |
+| `E011_10_class` | DETR-R50 | 10-Class | Baseline | 0.0001 | 0.0000 | Jan 08 | ❌ Failed |
 
 ---
 
@@ -54,11 +54,11 @@ This document tracks all training experiments for knee OA detection project.
   - **mAP50**: **0.289** (Highest recorded)
   - **Note**: Removing KL0 (healthy) and grouping into 4 classes yields the best detection results.
 
-- **`E002_5class_conservative`** (5-Class)
+- **`E002_5_class_conservative`** (5-Class)
   - **mAP50**: 0.269
   - **Note**: Best 5-class result. Suggests `yolo11n` + Conservative Aug is a very strong baseline, potentially outperforming complex enhancements on `yolo11l` for this dataset size.
 
-- **`E006_8class_baseline`** (8-Class)
+- **`E006_8_class_baseline`** (8-Class)
   - **mAP50**: 0.258
   - **Note**: removing KL0 allows for reasonable breakdown even with 8 classes.
 

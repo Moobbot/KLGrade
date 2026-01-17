@@ -21,6 +21,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from src.config import CLASSES, CLASSES_10_CLASS, CLASSES_4_CLASS, CLASSES_8_CLASS
 from src.data.utils import create_yolo_dataset_yaml
 
+
 def train_yolo11(
     img_dir: str = "processed/knee_5_class/images",
     label_dir: str = "processed/knee_5_class/labels",
@@ -76,50 +77,61 @@ def train_yolo11(
 
     # Get absolute paths
     img_dir_abs = Path(img_dir).absolute()
-    
+
     # Logic from original script to find paths
-    split_subdir = label_subdir.replace('labels_', '')
-    if split_subdir == 'labels': split_subdir = 'dataset_v0' # Assumption based on usual structure, or just handle generically
-    if split_subdir == 'labels_10_class': split_subdir = 'knee_10_class' # Guessing based on logic inside original f-string
-    if split_subdir == 'labels_4_class': split_subdir = 'knee_4_class'
-    if split_subdir == 'labels_8_class': split_subdir = 'knee_8_class'
+    split_subdir = label_subdir.replace("labels_", "")
+    if split_subdir == "labels":
+        split_subdir = "dataset_v0"  # Assumption based on usual structure, or just handle generically
+    if split_subdir == "labels_10_class":
+        split_subdir = (
+            "knee_10_class"  # Guessing based on logic inside original f-string
+        )
+    if split_subdir == "labels_4_class":
+        split_subdir = "knee_4_class"
+    if split_subdir == "labels_8_class":
+        split_subdir = "knee_8_class"
 
     # The original script had logic: splits/{label_subdir.replace('labels_', '')}/train.txt
-    # But split_dataset.py output to splits/ by default? 
+    # But split_dataset.py output to splits/ by default?
     # Let's trust the logic from original script:
     # splits/[subdir]/train.txt
-    
+
     # Correct logic for finding splits based on file existence checks
-    split_part = label_subdir.replace('labels_', '')
-    if split_part == "labels": split_part = "" # Corner case
-    
+    split_part = label_subdir.replace("labels_", "")
+    if split_part == "labels":
+        split_part = ""  # Corner case
+
     # Try multiple locations as per original script logic (implied)
     candidates = [
         img_dir_abs.parent / f"splits/{split_part}/train.txt",
-        img_dir_abs.parent / "splits/dataset_v0/train.txt" if split_part == "" else None
+        (
+            img_dir_abs.parent / "splits/dataset_v0/train.txt"
+            if split_part == ""
+            else None
+        ),
     ]
-    
+
     train_path = "images"
     val_path = "images"
     test_path = None
-    
+
     # Simple check based on original f-string logic
     # train: ... if (img_dir_abs.parent / ...).exists() else "images"
-    
+
     potential_split_dir = img_dir_abs.parent / f"splits/{split_part}"
     if (potential_split_dir / "train.txt").exists():
         train_path = str(potential_split_dir / "train.txt")
         val_path = str(potential_split_dir / "val.txt")
         if (potential_split_dir / "test.txt").exists():
-             test_path = str(potential_split_dir / "test.txt")
-    
+            test_path = str(potential_split_dir / "test.txt")
+
     create_yolo_dataset_yaml(
         output_path=dataset_yaml_path,
         class_names=class_names,
         path=str(img_dir_abs.parent),
         train=train_path,
         val=val_path,
-        test=test_path
+        test=test_path,
     )
 
     print(f"\n✅ Dataset YAML created: {dataset_yaml_path}")
@@ -133,7 +145,7 @@ def train_yolo11(
     wandb_project = os.getenv("WANDB_PROJECT", "KLGrade-Knee-OA")
     print(f"\n📊 Initializing WandB Project: {wandb_project}")
     print(f"   Experiment name: {name}")
-    
+
     wandb.init(
         project=wandb_project,
         name=name,
@@ -144,9 +156,9 @@ def train_yolo11(
             "img_size": img_size,
             "num_classes": num_classes,
             "class_names": list(class_names.values()),
-        }
+        },
     )
-    
+
     # Load YOLO11 model
     print(f"\n📦 Loading YOLO11 model: {model_name}")
     model = YOLO(model_name)
@@ -205,7 +217,7 @@ def train_yolo11(
     # Finish WandB run
     wandb.finish()
     print("\n✅ WandB run finished - check dashboard for results")
-    
+
     print("\n" + "=" * 60)
     print("Training pipeline completed successfully!")
     print("=" * 60)
@@ -224,7 +236,7 @@ def quick_test():
         # Definition: use_5_class, use_10_class...
         # Original code used: use_labels_new=False in quick_test.
         # This implies the original code might have had an error or mismatch too?
-        # Leaving it as is might crash if I don't fix it. 
+        # Leaving it as is might crash if I don't fix it.
         # But 'use_labels_new' is NOT in the arguments of train_yolo11 in my visible file content.
         # Ah, looking at Step 541:
         # def train_yolo11(..., use_10_class: bool = False, ...)
