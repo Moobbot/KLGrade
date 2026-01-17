@@ -31,23 +31,23 @@ def create_comparison_visualization(num_samples=3):
     print("Creating preprocessing comparison visualization...")
 
     # Load sample images
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    jpg_files = list(image_path.glob("*.jpg"))
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    image_files = list(image_path.glob("*.jpg")) + list(image_path.glob("*.png"))
 
-    if not jpg_files:
+    if not image_files:
         print(f"No .jpg files found in {image_path}")
         return
 
     # Take first N samples
-    samples = jpg_files[:num_samples]
+    samples = image_files[:num_samples]
 
-    # Define preprocessing methods
+    # Define preprocessing methods with technical names
     presets = {
-        "Raw (Original)": None,  # No preprocessing
-        "Basic\n(Resize only)": get_basic_pipeline(),
-        "v0\n(Blur+CLAHE 2.0)": get_v0_pipeline(),
-        "v3 Legacy\n(No Blur+CLAHE 4.0)": get_v3_legacy_pipeline(),
-        "Notebook\n(Same as v0)": get_notebook_pipeline(),
+        "raw": (None, "Original"),
+        "resize_only": (get_basic_pipeline(), "Resize Only"),
+        "blur_clahe2": (get_v0_pipeline(), "Blur + CLAHE 2.0"),
+        "noBlur_clahe4": (get_v3_legacy_pipeline(), "No Blur + CLAHE 4.0"),
+        "blur_clahe2_notebook": (get_notebook_pipeline(), "Notebook Method"),
     }
 
     # Create figure
@@ -68,8 +68,8 @@ def create_comparison_visualization(num_samples=3):
         raw_image = load_image(sample_img_path, mode="grayscale")
 
         # Process with each method
-        for j, (method_name, pipeline) in enumerate(presets.items()):
-            ax = axes[i, j]
+        for col, (preset_name, (pipeline, desc)) in enumerate(presets.items()):
+            ax = axes[i, col]
 
             if pipeline is None:
                 # Show raw image
@@ -84,10 +84,12 @@ def create_comparison_visualization(num_samples=3):
 
             # Add title only on first row
             if i == 0:
-                ax.set_title(method_name, fontsize=12, fontweight="bold", pad=10)
+                ax.set_title(
+                    f"{preset_name}\n{desc}", fontsize=12, fontweight="bold", pad=10
+                )
 
             # Add sample number on left
-            if j == 0:
+            if col == 0:
                 ax.text(
                     -0.1,
                     0.5,
@@ -104,7 +106,11 @@ def create_comparison_visualization(num_samples=3):
 
     # Save comparison
     output_path = (
-        project_root / "datasets" / "data_examples" / "comparison_raw_vs_processed.png"
+        project_root
+        / "datasets"
+        / "data_examples"
+        / "comparison"
+        / "comparison_raw_vs_processed.png"
     )
     output_path.parent.mkdir(parents=True, exist_ok=True)
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
@@ -120,29 +126,29 @@ def create_detailed_comparison_single_image():
     print("\nCreating detailed single-image comparison...")
 
     # Load one sample
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    jpg_files = list(image_path.glob("*.jpg"))
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    image_files = list(image_path.glob("*.jpg")) + list(image_path.glob("*.png"))
 
-    if not jpg_files:
+    if not image_files:
         print(f"No .jpg files found in {image_path}")
         return
 
-    sample_img_path = jpg_files[0]
+    sample_img_path = image_files[0]
     raw_image = load_image(sample_img_path, mode="grayscale")
 
-    # Define preprocessing methods
+    # Define preprocessing methods with technical names
     presets = {
-        "Raw": None,
-        "Basic": get_basic_pipeline(),
-        "v0": get_v0_pipeline(),
-        "v3 Legacy": get_v3_legacy_pipeline(),
+        "raw": (None, "Original"),
+        "resize_only": (get_basic_pipeline(), "Resize Only"),
+        "blur_clahe2": (get_v0_pipeline(), "Blur + CLAHE 2.0"),
+        "noBlur_clahe4": (get_v3_legacy_pipeline(), "No Blur + CLAHE 4.0"),
     }
 
     # Create figure with 2 rows: images + histograms
     fig = plt.figure(figsize=(20, 10))
     gs = fig.add_gridspec(2, len(presets), hspace=0.3, wspace=0.2)
 
-    for i, (method_name, pipeline) in enumerate(presets.items()):
+    for col, (preset_name, (pipeline, desc)) in enumerate(presets.items()):
         # Process image
         if pipeline is None:
             processed_img = raw_image
@@ -150,10 +156,10 @@ def create_detailed_comparison_single_image():
             processed_img, _ = pipeline(raw_image)
 
         # Image
-        ax_img = fig.add_subplot(gs[0, i])
+        ax_img = fig.add_subplot(gs[0, col])
         ax_img.imshow(processed_img, cmap="gray")
         ax_img.axis("off")
-        ax_img.set_title(method_name, fontsize=14, fontweight="bold")
+        ax_img.set_title(f"{preset_name}\n{desc}", fontsize=14, fontweight="bold")
 
         # Add statistics
         mean_val = np.mean(processed_img)
@@ -174,7 +180,7 @@ def create_detailed_comparison_single_image():
         )
 
         # Histogram
-        ax_hist = fig.add_subplot(gs[1, i])
+        ax_hist = fig.add_subplot(gs[1, col])
         ax_hist.hist(
             processed_img.ravel(), bins=50, color="blue", alpha=0.7, edgecolor="black"
         )
@@ -192,7 +198,11 @@ def create_detailed_comparison_single_image():
 
     # Save
     output_path = (
-        project_root / "datasets" / "data_examples" / "comparison_detailed.png"
+        project_root
+        / "datasets"
+        / "data_examples"
+        / "comparison"
+        / "comparison_detailed.png"
     )
     plt.savefig(output_path, dpi=150, bbox_inches="tight")
     print(f"✅ Saved detailed comparison to: {output_path}")

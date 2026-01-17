@@ -36,12 +36,12 @@ def example_1_basic_preprocessing():
     print("\n=== Example 1: Basic Preprocessing ===")
 
     # Load image
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    jpg_files = list(image_path.glob("*.jpg"))
-    if not jpg_files:
-        print(f"No .jpg files found in {image_path}")
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    image_files = list(image_path.glob("*.jpg")) + list(image_path.glob("*.png"))
+    if not image_files:
+        print(f"No image files found in {image_path}")
         return
-    sample_img = jpg_files[0]
+    sample_img = image_files[0]
     image = load_image(sample_img, mode="grayscale")
 
     # Apply basic preprocessing
@@ -49,7 +49,9 @@ def example_1_basic_preprocessing():
     processed_img, _ = pipeline(image)
 
     # Save result
-    output_path = project_root / "datasets" / "data_examples" / "basic_example.png"
+    output_path = (
+        project_root / "datasets" / "data_examples" / "comparison" / "basic_example.png"
+    )
     save_image(processed_img, output_path)
     print(f"Saved to: {output_path}")
 
@@ -59,8 +61,12 @@ def example_2_v0_preprocessing():
     print("\n=== Example 2: v0 Preprocessing ===")
 
     # Load image
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    sample_img = list(image_path.glob("*.jpg"))[0]
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    image_files = list(image_path.glob("*.jpg")) + list(image_path.glob("*.png"))
+    if not image_files:
+        print(f"No image files found in {image_path}")
+        return
+    sample_img = image_files[0]
     image = load_image(sample_img, mode="grayscale")
 
     # Apply v0 preprocessing
@@ -68,7 +74,9 @@ def example_2_v0_preprocessing():
     processed_img, _ = pipeline(image)
 
     # Save result
-    output_path = project_root / "datasets" / "data_examples" / "v0_example.png"
+    output_path = (
+        project_root / "datasets" / "data_examples" / "comparison" / "v0_example.png"
+    )
     save_image(processed_img, output_path)
     print(f"Saved to: {output_path}")
 
@@ -78,8 +86,8 @@ def example_3_custom_pipeline():
     print("\n=== Example 3: Custom Pipeline ===")
 
     # Load image
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    sample_img = list(image_path.glob("*.jpg"))[0]
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    sample_img = (list(image_path.glob("*.jpg")) + list(image_path.glob("*.png")))[0]
     image = load_image(sample_img, mode="grayscale")
 
     # Create custom pipeline: No blur, high CLAHE
@@ -89,7 +97,13 @@ def example_3_custom_pipeline():
     processed_img, _ = pipeline(image)
 
     # Save result
-    output_path = project_root / "datasets" / "data_examples" / "custom_example.png"
+    output_path = (
+        project_root
+        / "datasets"
+        / "data_examples"
+        / "comparison"
+        / "custom_example.png"
+    )
     save_image(processed_img, output_path)
     print(f"Saved to: {output_path}")
 
@@ -99,8 +113,8 @@ def example_4_fully_custom():
     print("\n=== Example 4: Fully Custom Composition ===")
 
     # Load image
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    sample_img = list(image_path.glob("*.jpg"))[0]
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    sample_img = (list(image_path.glob("*.jpg")) + list(image_path.glob("*.png")))[0]
     image = load_image(sample_img, mode="grayscale")
 
     # Build custom pipeline step by step
@@ -119,7 +133,11 @@ def example_4_fully_custom():
 
     # Save result
     output_path = (
-        project_root / "datasets" / "data_examples" / "fully_custom_example.png"
+        project_root
+        / "datasets"
+        / "data_examples"
+        / "comparison"
+        / "fully_custom_example.png"
     )
     save_image(processed_img, output_path)
     print(f"Saved to: {output_path}")
@@ -130,8 +148,8 @@ def example_5_with_augmentation():
     print("\n=== Example 5: With Augmentation ===")
 
     # Load image
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    sample_img = list(image_path.glob("*.jpg"))[0]
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    sample_img = (list(image_path.glob("*.jpg")) + list(image_path.glob("*.png")))[0]
     image = load_image(sample_img, mode="grayscale")
 
     # Pipeline with horizontal flip
@@ -148,7 +166,13 @@ def example_5_with_augmentation():
     processed_img, _ = pipeline(image, labels=None)
 
     # Save result
-    output_path = project_root / "datasets" / "data_examples" / "augmented_example.png"
+    output_path = (
+        project_root
+        / "datasets"
+        / "data_examples"
+        / "comparison"
+        / "augmented_example.png"
+    )
     save_image(processed_img, output_path)
     print(f"Saved to: {output_path}")
 
@@ -158,15 +182,15 @@ def example_6_compare_presets():
     print("\n=== Example 6: Compare All Presets ===")
 
     # Load image
-    image_path = project_root / "datasets" / "dataset" / "dataset_v0" / "images"
-    sample_img = list(image_path.glob("*.jpg"))[0]
+    image_path = project_root / "datasets" / "dataset_v0" / "images"
+    sample_img = (list(image_path.glob("*.jpg")) + list(image_path.glob("*.png")))[0]
     image = load_image(sample_img, mode="grayscale")
 
     presets = {
-        "basic": get_basic_pipeline(),
-        "v0": get_v0_pipeline(),
-        "v3_legacy": get_v3_legacy_pipeline(),
-        "notebook": get_notebook_pipeline(),
+        "resize_only": get_basic_pipeline(),
+        "blur_clahe2": get_v0_pipeline(),
+        "noBlur_clahe4": get_v3_legacy_pipeline(),
+        "blur_clahe2_notebook": get_notebook_pipeline(),
     }
 
     output_dir = project_root / "datasets" / "data_examples" / "comparison"
@@ -181,7 +205,7 @@ def example_6_compare_presets():
 
 if __name__ == "__main__":
     # Create output directory
-    output_dir = project_root / "datasets" / "data_examples"
+    output_dir = project_root / "datasets" / "data_examples" / "comparison"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # Run all examples
