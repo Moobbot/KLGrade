@@ -41,10 +41,40 @@ def load_yolo_boxes(label_path: Path):
 
 
 def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Visualize expanded knee regions",
+        epilog="Draws Original Box (Red), Expanded Box (Green), and KL Labels (Blue)",
+    )
+
+    parser.add_argument(
+        "--expanded-log",
+        type=str,
+        default="processed/knee/expanded_files.json",
+        help="Path to expanded_files.json (default: processed/knee/expanded_files.json)",
+    )
+
+    parser.add_argument(
+        "--dataset-dir",
+        type=str,
+        default="datasets/dataset/dataset_v0",
+        help="Dataset directory (default: datasets/dataset/dataset_v0)",
+    )
+
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="processed/knee/expanded_visualization",
+        help="Output directory (default: processed/knee/expanded_visualization)",
+    )
+
+    args = parser.parse_args()
+
     root_dir = Path(".")
-    expanded_log_path = root_dir / "processed/knee/expanded_files.json"
-    dataset_dir = root_dir / "dataset/dataset_v0"
-    output_dir = root_dir / "processed/knee/expanded_visualization"
+    expanded_log_path = root_dir / args.expanded_log
+    dataset_dir = root_dir / args.dataset_dir
+    output_dir = root_dir / args.output_dir
 
     if not expanded_log_path.exists():
         print(f"Error: {expanded_log_path} not found")
