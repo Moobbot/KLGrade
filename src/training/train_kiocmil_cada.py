@@ -214,7 +214,7 @@ class KiocmilCADATrainer:
         """Train for one epoch."""
         self.model.train()
         total_loss = 0.0
-        correct_10 = 0
+        correct_main = 0
         total_samples = 0
 
         pbar = tqdm(self.train_loader, desc="Training", leave=False)
@@ -229,29 +229,32 @@ class KiocmilCADATrainer:
             output = self.model(batch_data)
 
             # Compute losses
-            logits_10 = output["logits_10"]
+            logits_main = output["logits_10"]  # Main classification head
             logits_grade = output["logits_grade"]
             logits_type = output["logits_type"]
 
             # Get real targets
             labels = [item["label"] for item in batch_data]
-            target_10 = torch.tensor(labels, device=self.device).long()
-            batch_size = target_10.shape[0]
+            target_main = torch.tensor(labels, device=self.device).long()
+            batch_size = target_main.shape[0]
 
-            # Map 10-class (0-9) to 5-grade (0-4) and type (0=Ost, 1=JS)
-            # Even: a (Ost), Odd: b (JS)
-            # 0,1 -> Grade 0
-            # 2,3 -> Grade 1
-            # ...
-            target_grade = target_10 // 2
-            target_type = (target_10 % 2).float()  # 0 for 'a', 1 for 'b'
+            loss = 0.0
 
-            # Weighted loss
-            loss_10 = self.ce_loss(logits_10, target_10)
-            loss_grade = self.ce_loss(logits_grade, target_grade)
-            loss_type = nn.BCEWithLogitsLoss()(logits_type, target_type.unsqueeze(-1))
+            if self.args.num_classes in [8, 10]:
+                # Hierarchical Loss (Grade + Type)
+                # Map 10-class (0-9) -> Grade (0-4)
+                # Map 8-class (0-7) -> Grade (0-3) [KL1-4]
+                target_grade = target_main // 2
+                target_type = (target_main % 2).float()
 
-            loss = 0.5 * loss_10 + 0.3 * loss_grade + 0.2 * loss_type
+                loss_main = self.ce_loss(logits_main, target_main)
+                loss_grade = self.ce_loss(logits_grade, target_grade)
+                loss_type = nn.BCEWithLogitsLoss()(logits_type, target_type.unsqueeze(-1))
+
+                loss = 0.5 * loss_main + 0.3 * loss_grade + 0.2 * loss_type
+            else:
+                # Standard Loss (4 or 5 class)
+                loss = self.ce_loss(logits_main, target_main)
 
             # Backward
             loss.backward()
@@ -260,19 +263,19 @@ class KiocmilCADATrainer:
 
             # Metrics
             total_loss += loss.item()
-            pred_10 = logits_10.argmax(dim=1)
-            correct_10 += (pred_10 == target_10).sum().item()
+            pred_main = logits_main.argmax(dim=1)
+            correct_main += (pred_main == target_main).sum().item()
             total_samples += batch_size
 
             pbar.set_postfix(
                 {
                     "loss": loss.item(),
-                    "acc": correct_10 / total_samples if total_samples > 0 else 0,
+                    "acc": correct_main / total_samples if total_samples > 0 else 0,
                 }
             )
 
         avg_loss = total_loss / max(1, batch_idx + 1)
-        avg_acc = correct_10 / max(1, total_samples)
+        avg_acc = correct_main / max(1, total_samples)
 
         return avg_loss, avg_acc
 
@@ -280,7 +283,7 @@ class KiocmilCADATrainer:
         """Validate for one epoch."""
         self.model.eval()
         total_loss = 0.0
-        correct_10 = 0
+        correct_main = 0
         total_samples = 0
 
         pbar = tqdm(self.val_loader, desc="Validating", leave=False)
@@ -294,25 +297,24 @@ class KiocmilCADATrainer:
                     # Forward pass
                     output = self.model(batch_data)
 
-                    # Compute losses
-                    logits_10 = output["logits_10"]
+                    logits_main = output["logits_10"]
                     logits_grade = output["logits_grade"]
-
-                    # Get real targets
+                    
                     labels = [item["label"] for item in batch_data]
-                    target_10 = torch.tensor(labels, device=self.device).long()
-                    batch_size = target_10.shape[0]
+                    target_main = torch.tensor(labels, device=self.device).long()
+                    batch_size = target_main.shape[0]
 
-                    # Map to grade
-                    target_grade = target_10 // 2
-
-                    loss_10 = self.ce_loss(logits_10, target_10)
-                    loss_grade = self.ce_loss(logits_grade, target_grade)
-                    loss = 0.5 * loss_10 + 0.3 * loss_grade
+                    if self.args.num_classes in [8, 10]:
+                        target_grade = target_main // 2
+                        loss_main = self.ce_loss(logits_main, target_main)
+                        loss_grade = self.ce_loss(logits_grade, target_grade)
+                        loss = 0.5 * loss_main + 0.3 * loss_grade
+                    else:
+                        loss = self.ce_loss(logits_main, target_main)
 
                     total_loss += loss.item()
-                    pred_10 = logits_10.argmax(dim=1)
-                    correct_10 += (pred_10 == target_10).sum().item()
+                    pred_main = logits_main.argmax(dim=1)
+                    correct_main += (pred_main == target_main).sum().item()
                     total_samples += batch_size
 
                 except Exception as e:
@@ -320,7 +322,7 @@ class KiocmilCADATrainer:
                     continue
 
         avg_loss = total_loss / max(1, batch_idx + 1)
-        avg_acc = correct_10 / max(1, total_samples)
+        avg_acc = correct_main / max(1, total_samples)
 
         return avg_loss, avg_acc
 
@@ -332,6 +334,7 @@ class KiocmilCADATrainer:
 
         print("\n" + "=" * 80)
         print(f"Starting KIOCMIL CADA Training ({self.args.epochs} epochs)")
+        print(f"Classes: {self.args.num_classes}")
         print(f"Device: {self.device}")
         print("=" * 80 + "\n")
 
@@ -422,6 +425,7 @@ def main():
     parser.add_argument("--val_split_file", default="splits/knee_10_class/val.txt")
 
     # Training arguments
+    parser.add_argument("--num_classes", type=int, default=10, help="Number of classes (4, 5, 8, or 10)")
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-4)
