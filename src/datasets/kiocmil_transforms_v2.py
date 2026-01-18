@@ -94,14 +94,29 @@ class GeometricAugmentation:
                 - 'bboxes': Transformed bboxes (if provided)
                 - 'class_labels': Class labels for transformed bboxes (if provided)
         """
-        if bboxes is None or len(bboxes) == 0:
-            # No bboxes provided, transform image only
-            return self.transform(image=image)
-        else:
-            # Transform both image and bboxes
-            if class_labels is None:
-                class_labels = [0] * len(bboxes)  # Default class
-            return self.transform(image=image, bboxes=bboxes, class_labels=class_labels)
+        # Handle None inputs
+        if bboxes is None:
+            bboxes = []
+
+        if class_labels is None:
+            if len(bboxes) > 0:
+                class_labels = [0] * len(bboxes)
+            else:
+                class_labels = []
+
+        # If level is none, no bbox_params are set in Compose
+        if self.level == "none":
+            # Transform image only
+            result = self.transform(image=image)
+            # Pass through bboxes/labels as they are not transformed
+            result["bboxes"] = bboxes
+            result["class_labels"] = class_labels
+            return result
+
+        # For non-none levels, bbox_params are set with label_fields.
+        # Albumentations expects bboxes and class_labels to be passed,
+        # even if they are empty lists.
+        return self.transform(image=image, bboxes=bboxes, class_labels=class_labels)
 
 
 class PhotometricAugmentation:
