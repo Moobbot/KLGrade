@@ -79,7 +79,7 @@ python scripts/data_preparation/balance_dataset.py \
     --output-dir datasets/balanced/knees_cropped_4_class \
     --num-classes 4 \
     --aux-labels datasets/dataset_knees_cropped_4_class/labels_8_class \
-                 datasets/dataset_knees_cropped_4_class/labels-knee
+                 datasets/dataset_knees_cropped/labels-knee
 
 echo ""
 echo "─────────────────────────────────────────────────────────"
@@ -92,7 +92,7 @@ python scripts/data_preparation/balance_dataset.py \
     --output-dir datasets/balanced/knees_cropped_8_class \
     --num-classes 8 \
     --aux-labels datasets/dataset_knees_cropped_4_class/labels \
-                 datasets/dataset_knees_cropped_4_class/labels-knee
+                 datasets/dataset_knees_cropped/labels-knee
 
 echo ""
 echo "─────────────────────────────────────────────────────────"
@@ -131,7 +131,7 @@ python scripts/data_preparation/balance_dataset.py \
     --output-dir datasets/balanced/full_xray_4_class \
     --num-classes 4 \
     --aux-labels datasets/dataset_v0_4_class/labels_8_class \
-                 datasets/dataset_v0_4_class/labels-knee
+                 datasets/dataset_v0/labels-knee
 
 echo ""
 echo "─────────────────────────────────────────────────────────"
@@ -144,7 +144,7 @@ python scripts/data_preparation/balance_dataset.py \
     --output-dir datasets/balanced/full_xray_8_class \
     --num-classes 8 \
     --aux-labels datasets/dataset_v0_4_class/labels \
-                 datasets/dataset_v0_4_class/labels-knee
+                 datasets/dataset_v0/labels-knee
 
 echo ""
 echo "✅ Balancing complete for all datasets"

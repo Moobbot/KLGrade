@@ -1,6 +1,6 @@
 {
   "metadata": {
-    "created_at": "2026-01-18T09:13:48.411042",
+    "created_at": "2026-01-18T23:30:50.136524",
     "script_version": "1.0",
     "description": "Stratified dataset split for object detection"
   },
@@ -17,180 +17,180 @@
     "min_samples_per_class": 2
   },
   "summary": {
-    "total_images": 8741,
+    "total_images": 7365,
     "total_classes": 8,
     "splits": {
       "train": {
-        "num_images": 6118,
+        "num_images": 5155,
         "percentage": 69.99
       },
       "val": {
-        "num_images": 1311,
-        "percentage": 15.0
+        "num_images": 1104,
+        "percentage": 14.99
       },
       "test": {
-        "num_images": 1312,
-        "percentage": 15.01
+        "num_images": 1106,
+        "percentage": 15.02
       }
     }
   },
   "class_distribution": {
     "total": {
-      "0": 1567,
-      "1": 1794,
-      "2": 1061,
-      "3": 1818,
-      "4": 800,
-      "5": 1111,
-      "6": 888,
+      "0": 929,
+      "1": 1144,
+      "2": 749,
+      "3": 1130,
+      "4": 799,
+      "5": 1112,
+      "6": 883,
       "7": 1242
     },
     "train": {
-      "0": 1098,
-      "1": 1304,
-      "2": 737,
-      "3": 1258,
-      "4": 590,
-      "5": 780,
-      "6": 602,
-      "7": 859
+      "0": 657,
+      "1": 797,
+      "2": 518,
+      "3": 810,
+      "4": 544,
+      "5": 791,
+      "6": 607,
+      "7": 858
     },
     "val": {
-      "0": 241,
-      "1": 247,
-      "2": 159,
-      "3": 291,
-      "4": 98,
-      "5": 180,
-      "6": 128,
-      "7": 182
+      "0": 135,
+      "1": 160,
+      "2": 110,
+      "3": 167,
+      "4": 132,
+      "5": 169,
+      "6": 143,
+      "7": 183
     },
     "test": {
-      "0": 228,
-      "1": 243,
-      "2": 165,
-      "3": 269,
-      "4": 112,
-      "5": 151,
-      "6": 158,
+      "0": 137,
+      "1": 187,
+      "2": 121,
+      "3": 153,
+      "4": 123,
+      "5": 152,
+      "6": 133,
       "7": 201
     }
   },
   "class_balance": {
     "class_0": {
-      "total_instances": 1567,
+      "total_instances": 929,
       "train": {
-        "count": 1098,
-        "percentage": 70.07
+        "count": 657,
+        "percentage": 70.72
       },
       "val": {
-        "count": 241,
-        "percentage": 15.38
+        "count": 135,
+        "percentage": 14.53
       },
       "test": {
-        "count": 228,
-        "percentage": 14.55
+        "count": 137,
+        "percentage": 14.75
       }
     },
     "class_1": {
-      "total_instances": 1794,
+      "total_instances": 1144,
       "train": {
-        "count": 1304,
-        "percentage": 72.69
+        "count": 797,
+        "percentage": 69.67
       },
       "val": {
-        "count": 247,
-        "percentage": 13.77
+        "count": 160,
+        "percentage": 13.99
       },
       "test": {
-        "count": 243,
-        "percentage": 13.55
+        "count": 187,
+        "percentage": 16.35
       }
     },
     "class_2": {
-      "total_instances": 1061,
+      "total_instances": 749,
       "train": {
-        "count": 737,
-        "percentage": 69.46
+        "count": 518,
+        "percentage": 69.16
       },
       "val": {
-        "count": 159,
-        "percentage": 14.99
+        "count": 110,
+        "percentage": 14.69
       },
       "test": {
-        "count": 165,
-        "percentage": 15.55
+        "count": 121,
+        "percentage": 16.15
       }
     },
     "class_3": {
-      "total_instances": 1818,
+      "total_instances": 1130,
       "train": {
-        "count": 1258,
-        "percentage": 69.2
+        "count": 810,
+        "percentage": 71.68
       },
       "val": {
-        "count": 291,
-        "percentage": 16.01
+        "count": 167,
+        "percentage": 14.78
       },
       "test": {
-        "count": 269,
-        "percentage": 14.8
+        "count": 153,
+        "percentage": 13.54
       }
     },
     "class_4": {
-      "total_instances": 800,
+      "total_instances": 799,
       "train": {
-        "count": 590,
-        "percentage": 73.75
+        "count": 544,
+        "percentage": 68.09
       },
       "val": {
-        "count": 98,
-        "percentage": 12.25
+        "count": 132,
+        "percentage": 16.52
       },
       "test": {
-        "count": 112,
-        "percentage": 14.0
+        "count": 123,
+        "percentage": 15.39
       }
     },
     "class_5": {
-      "total_instances": 1111,
+      "total_instances": 1112,
       "train": {
-        "count": 780,
-        "percentage": 70.21
+        "count": 791,
+        "percentage": 71.13
       },
       "val": {
-        "count": 180,
-        "percentage": 16.2
+        "count": 169,
+        "percentage": 15.2
       },
       "test": {
-        "count": 151,
-        "percentage": 13.59
+        "count": 152,
+        "percentage": 13.67
       }
     },
     "class_6": {
-      "total_instances": 888,
+      "total_instances": 883,
       "train": {
-        "count": 602,
-        "percentage": 67.79
+        "count": 607,
+        "percentage": 68.74
       },
       "val": {
-        "count": 128,
-        "percentage": 14.41
+        "count": 143,
+        "percentage": 16.19
       },
       "test": {
-        "count": 158,
-        "percentage": 17.79
+        "count": 133,
+        "percentage": 15.06
       }
     },
     "class_7": {
       "total_instances": 1242,
       "train": {
-        "count": 859,
-        "percentage": 69.16
+        "count": 858,
+        "percentage": 69.08
       },
       "val": {
-        "count": 182,
-        "percentage": 14.65
+        "count": 183,
+        "percentage": 14.73
       },
       "test": {
         "count": 201,

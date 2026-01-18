@@ -1,0 +1,125 @@
+{
+  "metadata": {
+    "created_at": "2026-01-18T23:54:23.795660",
+    "script_version": "1.0",
+    "description": "Stratified dataset split for object detection"
+  },
+  "configuration": {
+    "image_directory": "datasets/processed_balanced/knees_cropped_4_class/blur_clahe2/images",
+    "label_directory": "datasets/processed_balanced/knees_cropped_4_class/blur_clahe2/labels",
+    "output_directory": "datasets/splits/processed_balanced/knees_cropped_4_class/blur_clahe2",
+    "split_ratios": {
+      "train": 0.7,
+      "val": 0.15,
+      "test": 0.15
+    },
+    "random_seed": 42,
+    "min_samples_per_class": 2
+  },
+  "summary": {
+    "total_images": 3358,
+    "total_classes": 4,
+    "splits": {
+      "train": {
+        "num_images": 2350,
+        "percentage": 69.98
+      },
+      "val": {
+        "num_images": 503,
+        "percentage": 14.98
+      },
+      "test": {
+        "num_images": 505,
+        "percentage": 15.04
+      }
+    }
+  },
+  "class_distribution": {
+    "total": {
+      "0": 1064,
+      "1": 860,
+      "2": 897,
+      "3": 1028
+    },
+    "train": {
+      "0": 750,
+      "1": 630,
+      "2": 610,
+      "3": 708
+    },
+    "val": {
+      "0": 149,
+      "1": 108,
+      "2": 147,
+      "3": 169
+    },
+    "test": {
+      "0": 165,
+      "1": 122,
+      "2": 140,
+      "3": 151
+    }
+  },
+  "class_balance": {
+    "class_0": {
+      "total_instances": 1064,
+      "train": {
+        "count": 750,
+        "percentage": 70.49
+      },
+      "val": {
+        "count": 149,
+        "percentage": 14.0
+      },
+      "test": {
+        "count": 165,
+        "percentage": 15.51
+      }
+    },
+    "class_1": {
+      "total_instances": 860,
+      "train": {
+        "count": 630,
+        "percentage": 73.26
+      },
+      "val": {
+        "count": 108,
+        "percentage": 12.56
+      },
+      "test": {
+        "count": 122,
+        "percentage": 14.19
+      }
+    },
+    "class_2": {
+      "total_instances": 897,
+      "train": {
+        "count": 610,
+        "percentage": 68.0
+      },
+      "val": {
+        "count": 147,
+        "percentage": 16.39
+      },
+      "test": {
+        "count": 140,
+        "percentage": 15.61
+      }
+    },
+    "class_3": {
+      "total_instances": 1028,
+      "train": {
+        "count": 708,
+        "percentage": 68.87
+      },
+      "val": {
+        "count": 169,
+        "percentage": 16.44
+      },
+      "test": {
+        "count": 151,
+        "percentage": 14.69
+      }
+    }
+  }
+}

@@ -339,6 +339,35 @@ case $MODE in
                 "datasets/balanced/full_xray_8_class/labels" \
                 "datasets/splits/balanced_full_xray_8_class"
         fi
+
+        # 6. Processed Balanced Datasets
+        if [ -d "datasets/processed_balanced" ]; then
+            echo ""
+            echo "----------------------------------------"
+            echo "Processing Processed Balanced Datasets..."
+            echo "----------------------------------------"
+            
+            for dataset_dir in datasets/processed_balanced/*; do
+                if [ -d "$dataset_dir" ]; then
+                    dataset_name=$(basename "$dataset_dir")
+                    
+                    for variant_dir in "$dataset_dir"/*; do
+                        if [ -d "$variant_dir" ]; then
+                            variant_name=$(basename "$variant_dir")
+                            
+                            # Check if valid dataset structure
+                            if [ -d "$variant_dir/images" ] && [ -d "$variant_dir/labels" ]; then
+                                create_splits \
+                                    "Processed Balanced - $dataset_name - $variant_name" \
+                                    "$variant_dir/images" \
+                                    "$variant_dir/labels" \
+                                    "datasets/splits/processed_balanced/$dataset_name/$variant_name"
+                            fi
+                        fi
+                    done
+                fi
+            done
+        fi
         ;;
 
     help|--help|-h)
