@@ -1,0 +1,239 @@
+{
+  "metadata": {
+    "created_at": "2026-01-18T09:13:47.232393",
+    "script_version": "1.0",
+    "description": "Stratified dataset split for object detection"
+  },
+  "configuration": {
+    "image_directory": "datasets/dataset_v0/images",
+    "label_directory": "datasets/dataset_v0/labels_10_class",
+    "output_directory": "datasets/splits/knee_full_10_class",
+    "split_ratios": {
+      "train": 0.7,
+      "val": 0.15,
+      "test": 0.15
+    },
+    "random_seed": 42,
+    "min_samples_per_class": 2
+  },
+  "summary": {
+    "total_images": 1473,
+    "total_classes": 10,
+    "splits": {
+      "train": {
+        "num_images": 1031,
+        "percentage": 69.99
+      },
+      "val": {
+        "num_images": 220,
+        "percentage": 14.94
+      },
+      "test": {
+        "num_images": 222,
+        "percentage": 15.07
+      }
+    }
+  },
+  "class_distribution": {
+    "total": {
+      "0": 68,
+      "1": 28,
+      "2": 557,
+      "3": 33,
+      "4": 749,
+      "5": 76,
+      "6": 317,
+      "7": 65,
+      "8": 186,
+      "9": 31
+    },
+    "train": {
+      "0": 52,
+      "1": 19,
+      "2": 404,
+      "3": 23,
+      "4": 510,
+      "5": 53,
+      "6": 220,
+      "7": 45,
+      "8": 136,
+      "9": 25
+    },
+    "val": {
+      "0": 6,
+      "1": 5,
+      "2": 87,
+      "3": 7,
+      "4": 114,
+      "5": 12,
+      "6": 49,
+      "7": 10,
+      "8": 25,
+      "9": 2
+    },
+    "test": {
+      "0": 10,
+      "1": 4,
+      "2": 66,
+      "3": 3,
+      "4": 125,
+      "5": 11,
+      "6": 48,
+      "7": 10,
+      "8": 25,
+      "9": 4
+    }
+  },
+  "class_balance": {
+    "class_0": {
+      "total_instances": 68,
+      "train": {
+        "count": 52,
+        "percentage": 76.47
+      },
+      "val": {
+        "count": 6,
+        "percentage": 8.82
+      },
+      "test": {
+        "count": 10,
+        "percentage": 14.71
+      }
+    },
+    "class_1": {
+      "total_instances": 28,
+      "train": {
+        "count": 19,
+        "percentage": 67.86
+      },
+      "val": {
+        "count": 5,
+        "percentage": 17.86
+      },
+      "test": {
+        "count": 4,
+        "percentage": 14.29
+      }
+    },
+    "class_2": {
+      "total_instances": 557,
+      "train": {
+        "count": 404,
+        "percentage": 72.53
+      },
+      "val": {
+        "count": 87,
+        "percentage": 15.62
+      },
+      "test": {
+        "count": 66,
+        "percentage": 11.85
+      }
+    },
+    "class_3": {
+      "total_instances": 33,
+      "train": {
+        "count": 23,
+        "percentage": 69.7
+      },
+      "val": {
+        "count": 7,
+        "percentage": 21.21
+      },
+      "test": {
+        "count": 3,
+        "percentage": 9.09
+      }
+    },
+    "class_4": {
+      "total_instances": 749,
+      "train": {
+        "count": 510,
+        "percentage": 68.09
+      },
+      "val": {
+        "count": 114,
+        "percentage": 15.22
+      },
+      "test": {
+        "count": 125,
+        "percentage": 16.69
+      }
+    },
+    "class_5": {
+      "total_instances": 76,
+      "train": {
+        "count": 53,
+        "percentage": 69.74
+      },
+      "val": {
+        "count": 12,
+        "percentage": 15.79
+      },
+      "test": {
+        "count": 11,
+        "percentage": 14.47
+      }
+    },
+    "class_6": {
+      "total_instances": 317,
+      "train": {
+        "count": 220,
+        "percentage": 69.4
+      },
+      "val": {
+        "count": 49,
+        "percentage": 15.46
+      },
+      "test": {
+        "count": 48,
+        "percentage": 15.14
+      }
+    },
+    "class_7": {
+      "total_instances": 65,
+      "train": {
+        "count": 45,
+        "percentage": 69.23
+      },
+      "val": {
+        "count": 10,
+        "percentage": 15.38
+      },
+      "test": {
+        "count": 10,
+        "percentage": 15.38
+      }
+    },
+    "class_8": {
+      "total_instances": 186,
+      "train": {
+        "count": 136,
+        "percentage": 73.12
+      },
+      "val": {
+        "count": 25,
+        "percentage": 13.44
+      },
+      "test": {
+        "count": 25,
+        "percentage": 13.44
+      }
+    },
+    "class_9": {
+      "total_instances": 31,
+      "train": {
+        "count": 25,
+        "percentage": 80.65
+      },
+      "val": {
+        "count": 2,
+        "percentage": 6.45
+      },
+      "test": {
+        "count": 4,
+        "percentage": 12.9
+      }
+    }
+  }
+}

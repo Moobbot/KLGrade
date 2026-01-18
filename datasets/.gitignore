@@ -1,6 +1,6 @@
 !.gitignore
 !visualize_*.py
 !data_examples/*
-dataset/*
+dataset*/*
 dataset_knees*/*
 processed*/*

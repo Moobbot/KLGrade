@@ -204,25 +204,46 @@ case $MODE in
         echo ""
         
         # 1. Cropped 5-class
-        create_splits \
-            "Cropped Knees - 5 Class" \
-            "datasets/dataset_knees_cropped/images" \
-            "datasets/dataset_knees_cropped/labels" \
-            "datasets/splits/dataset_knees_cropped"
+        if [ -d "datasets/dataset_knees_cropped/labels" ]; then
+            create_splits \
+                "Cropped Knees - 5 Class" \
+                "datasets/dataset_knees_cropped/images" \
+                "datasets/dataset_knees_cropped/labels" \
+                "datasets/splits/dataset_knees_cropped"
+        fi
         
         # 2. Cropped 4-class
-        create_splits \
-            "Cropped Knees - 4 Class" \
-            "datasets/dataset_knees_cropped/images" \
-            "datasets/dataset_knees_cropped/labels_4_class" \
-            "datasets/splits/dataset_knees_cropped_4_class"
+        if [ -d "datasets/dataset_knees_cropped_4_class/labels" ]; then
+             create_splits \
+                "Cropped Knees - 4 Class" \
+                "datasets/dataset_knees_cropped_4_class/images" \
+                "datasets/dataset_knees_cropped_4_class/labels" \
+                "datasets/splits/dataset_knees_cropped_4_class"
+        elif [ -d "datasets/dataset_knees_cropped/labels_4_class" ]; then
+             create_splits \
+                "Cropped Knees - 4 Class" \
+                "datasets/dataset_knees_cropped/images" \
+                "datasets/dataset_knees_cropped/labels_4_class" \
+                "datasets/splits/dataset_knees_cropped_4_class"
+        fi
         
         # 3. Cropped 8-class
-        create_splits \
-            "Cropped Knees - 8 Class" \
-            "datasets/dataset_knees_cropped/images" \
-            "datasets/dataset_knees_cropped/labels_8_class" \
-            "datasets/splits/dataset_knees_cropped_8_class"
+        if [ -d "datasets/dataset_knees_cropped_4_class/labels_8_class" ]; then
+            create_splits \
+                "Cropped Knees - 8 Class" \
+                "datasets/dataset_knees_cropped_4_class/images" \
+                "datasets/dataset_knees_cropped_4_class/labels_8_class" \
+                "datasets/splits/dataset_knees_cropped_8_class"
+        fi
+
+        # 3. Cropped 10-class
+        if [ -d "datasets/dataset_knees_cropped/labels_10_class" ]; then
+            create_splits \
+                "Cropped Knees - 10 Class" \
+                "datasets/dataset_knees_cropped/images" \
+                "datasets/dataset_knees_cropped/labels_10_class" \
+                "datasets/splits/dataset_knees_cropped_10_class"
+        fi
         
         # 4. Balanced Variants (if they exist)
         
@@ -271,6 +292,25 @@ case $MODE in
                 "datasets/dataset_v0/images" \
                 "datasets/dataset_v0/labels_10_class" \
                 "datasets/splits/knee_full_10_class"
+        fi
+
+        # Full 4-class (Base)
+        if [ -d "datasets/dataset_v0_4_class" ]; then
+            create_splits \
+                "Full X-rays - 4 Class" \
+                "datasets/dataset_v0_4_class/images" \
+                "datasets/dataset_v0_4_class/labels" \
+                "datasets/splits/knee_full_4_class"
+        fi
+
+
+        # Full 8-class (Base)
+        if [ -d "datasets/dataset_v0_4_class/labels_8_class" ]; then
+            create_splits \
+                "Full X-rays - 8 Class" \
+                "datasets/dataset_v0_4_class/images" \
+                "datasets/dataset_v0_4_class/labels_8_class" \
+                "datasets/splits/knee_full_8_class"
         fi
 
         # Balanced Full 10-class
