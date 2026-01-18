@@ -110,7 +110,18 @@ def main():
             aux_label_dirs.append(aux_dir)
 
             # Output aux dir same name as input
-            output_aux_label_dirs.append(output_dir / aux_dir.name)
+            aux_out_name = aux_dir.name
+            aux_out_path = output_dir / aux_out_name
+
+            # Check for collision with primary labels directory
+            if aux_out_path == output_labels:
+                new_name = f"{aux_out_name}_aux"
+                print(
+                    f"⚠️  Warning: Aux dir '{aux_out_name}' collides with primary output. Renaming to '{new_name}'"
+                )
+                aux_out_path = output_dir / new_name
+
+            output_aux_label_dirs.append(aux_out_path)
 
     # Show initial statistics
     if not args.skip_stats:

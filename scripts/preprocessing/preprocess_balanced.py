@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
 """
-Unified preprocessing script for all dataset variants.
+Preprocess balanced datasets with multiple variants.
 
-Supports:
-- Full X-rays (5-class + 10-class)
-- Full X-rays 4-class (4-class + 8-class)
-- Cropped knees (5-class + 10-class)
-- Cropped knees 4-class (4-class + 8-class)
-
-With multiple preprocessing variants:
-- resize_only
-- blur_clahe2
-- sharp_clahe4
-- blur_clahe2_notebook
+Applies preprocessing to datasets in datasets/balanced/ and outputs to
+datasets/processed_balanced/.
 """
 
 import sys
@@ -37,43 +28,30 @@ from src.data.preprocessing import (
 )
 
 
-def preprocess_dataset(
+def preprocess_balanced_dataset(
     input_dir: Path,
     output_dir: Path,
     label_dirs: list,
-    image_source_dir: Path = None,
-    filter_by_labels: bool = False,
 ):
     """
-    Preprocess a dataset with all preprocessing variants.
+    Preprocess a balanced dataset with all preprocessing variants.
 
     Args:
-        input_dir: Input dataset directory
+        input_dir: Input balanced dataset directory
         output_dir: Output base directory
         label_dirs: List of label directory names to copy
-        image_source_dir: Source of images (if different from input_dir)
-        filter_by_labels: If True, only process images that have labels
     """
 
     print("=" * 60)
-    print(f"PREPROCESSING: {input_dir.name}")
+    print(f"PREPROCESSING BALANCED: {input_dir.name}")
     print("=" * 60)
     print(f"Input:  {input_dir}")
     print(f"Output: {output_dir}")
     print()
 
     # Get images
-    if image_source_dir:
-        image_dir = image_source_dir / "images"
-    else:
-        image_dir = input_dir / "images"
-
+    image_dir = input_dir / "images"
     image_files = list(image_dir.glob("*.jpg")) + list(image_dir.glob("*.png"))
-
-    # Filter by labels if needed
-    if filter_by_labels:
-        label_files = set(f.stem for f in (input_dir / "labels").glob("*.txt"))
-        image_files = [f for f in image_files if f.stem in label_files]
 
     print(f"Found {len(image_files)} images")
 
@@ -94,7 +72,6 @@ def preprocess_dataset(
         "input_dir": str(input_dir),
         "output_dir": str(output_dir),
         "total_images": len(image_files),
-        "filter_by_labels": filter_by_labels,
         "variants": {},
     }
 
@@ -157,57 +134,79 @@ def preprocess_dataset(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Preprocess dataset with multiple variants"
+        description="Preprocess balanced dataset with multiple variants"
     )
 
     parser.add_argument(
         "--dataset",
         required=True,
         choices=[
-            "full_xrays",
-            "full_xrays_4_class",
             "knees_cropped",
             "knees_cropped_4_class",
+            "knees_cropped_8_class",
+            "knees_cropped_10_class",
+            "full_xray",
+            "full_xray_4_class",
+            "full_xray_8_class",
+            "full_xray_10_class",
         ],
-        help="Dataset to preprocess",
+        help="Balanced dataset to preprocess",
     )
 
     args = parser.parse_args()
 
-    # Configuration for each dataset
+    # Configuration for each balanced dataset
     configs = {
-        "full_xrays": {
-            "input_dir": project_root / "datasets/dataset_v0",
-            "output_dir": project_root / "datasets/processed/full_xray",
-            "label_dirs": ["labels", "labels_10_class", "labels-knee"],
-            "image_source_dir": None,
-            "filter_by_labels": False,
-        },
-        "full_xrays_4_class": {
-            "input_dir": project_root / "datasets/dataset_v0_4_class",
-            "output_dir": project_root / "datasets/processed/full_xray_4_class",
-            "label_dirs": ["labels", "labels_8_class", "labels-knee"],
-            "image_source_dir": project_root / "datasets/dataset_v0",
-            "filter_by_labels": True,
-        },
         "knees_cropped": {
-            "input_dir": project_root / "datasets/dataset_knees_cropped",
-            "output_dir": project_root / "datasets/processed/knees_cropped",
+            "input_dir": project_root / "datasets/balanced/knees_cropped",
+            "output_dir": project_root / "datasets/processed_balanced/knees_cropped",
             "label_dirs": ["labels", "labels_10_class", "labels-knee"],
-            "image_source_dir": None,
-            "filter_by_labels": False,
         },
         "knees_cropped_4_class": {
-            "input_dir": project_root / "datasets/dataset_knees_cropped_4_class",
-            "output_dir": project_root / "datasets/processed/knees_cropped_4_class",
+            "input_dir": project_root / "datasets/balanced/knees_cropped_4_class",
+            "output_dir": project_root
+            / "datasets/processed_balanced/knees_cropped_4_class",
             "label_dirs": ["labels", "labels_8_class", "labels-knee"],
-            "image_source_dir": project_root / "datasets/dataset_knees_cropped",
-            "filter_by_labels": True,
+        },
+        "knees_cropped_8_class": {
+            "input_dir": project_root / "datasets/balanced/knees_cropped_8_class",
+            "output_dir": project_root
+            / "datasets/processed_balanced/knees_cropped_8_class",
+            "label_dirs": ["labels", "labels-knee"],
+        },
+        "knees_cropped_10_class": {
+            "input_dir": project_root / "datasets/balanced/knees_cropped_10_class",
+            "output_dir": project_root
+            / "datasets/processed_balanced/knees_cropped_10_class",
+            "label_dirs": ["labels", "labels-knee"],
+        },
+        "full_xray": {
+            "input_dir": project_root / "datasets/balanced/full_xray",
+            "output_dir": project_root / "datasets/processed_balanced/full_xray",
+            "label_dirs": ["labels", "labels_10_class", "labels-knee"],
+        },
+        "full_xray_4_class": {
+            "input_dir": project_root / "datasets/balanced/full_xray_4_class",
+            "output_dir": project_root
+            / "datasets/processed_balanced/full_xray_4_class",
+            "label_dirs": ["labels", "labels_8_class", "labels-knee"],
+        },
+        "full_xray_8_class": {
+            "input_dir": project_root / "datasets/balanced/full_xray_8_class",
+            "output_dir": project_root
+            / "datasets/processed_balanced/full_xray_8_class",
+            "label_dirs": ["labels", "labels-knee"],
+        },
+        "full_xray_10_class": {
+            "input_dir": project_root / "datasets/balanced/full_xray_10_class",
+            "output_dir": project_root
+            / "datasets/processed_balanced/full_xray_10_class",
+            "label_dirs": ["labels", "labels-knee"],
         },
     }
 
     config = configs[args.dataset]
-    preprocess_dataset(**config)
+    preprocess_balanced_dataset(**config)
 
 
 if __name__ == "__main__":
