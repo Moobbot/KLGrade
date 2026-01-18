@@ -63,11 +63,48 @@ def generate_report(output_dir: Path):
     report_lines.append(f"Total cropped knee images: {len(image_files)}")
     report_lines.append("")
 
+    # Determine primary label mapping based on dataset name
+    dataset_name = output_dir.name
+
+    # Default 5-class mapping
+    primary_labels_name = "5-Class Labels (KL0-4)"
+    primary_labels_classes = {0: "KL0", 1: "KL1", 2: "KL2", 3: "KL3", 4: "KL4"}
+
+    if "4_class" in dataset_name or "4class" in dataset_name:
+        primary_labels_name = "4-Class Labels (KL1-4, filtered KL0)"
+        primary_labels_classes = {0: "KL1", 1: "KL2", 2: "KL3", 3: "KL4"}
+    elif "8_class" in dataset_name or "8class" in dataset_name:
+        primary_labels_name = "8-Class Labels (KL1-a/b to KL4-a/b)"
+        primary_labels_classes = {
+            0: "KL1-a",
+            1: "KL1-b",
+            2: "KL2-a",
+            3: "KL2-b",
+            4: "KL3-a",
+            5: "KL3-b",
+            6: "KL4-a",
+            7: "KL4-b",
+        }
+    elif "10_class" in dataset_name or "10class" in dataset_name:
+        primary_labels_name = "10-Class Labels (KL0-a/b to KL4-a/b)"
+        primary_labels_classes = {
+            0: "KL0-a",
+            1: "KL0-b",
+            2: "KL1-a",
+            3: "KL1-b",
+            4: "KL2-a",
+            5: "KL2-b",
+            6: "KL3-a",
+            7: "KL3-b",
+            8: "KL4-a",
+            9: "KL4-b",
+        }
+
     # Analyze each label variant
     label_variants = {
         "labels": {
-            "name": "5-Class Labels (KL0-4)",
-            "classes": {0: "KL0", 1: "KL1", 2: "KL2", 3: "KL3", 4: "KL4"},
+            "name": primary_labels_name,
+            "classes": primary_labels_classes,
         },
         "labels_10_class": {
             "name": "10-Class Labels (KL0-a/b to KL4-a/b)",
@@ -175,7 +212,7 @@ if __name__ == "__main__":
     report = generate_report(dataset_dir)
 
     # Print to console
-    print(report)
+    # print(report)
 
     # Save to file
     report_path = dataset_dir / "dataset_statistics.txt"

@@ -166,13 +166,13 @@ def main():
             "input_dir": project_root / "datasets/balanced/knees_cropped_4_class",
             "output_dir": project_root
             / "datasets/processed_balanced/knees_cropped_4_class",
-            "label_dirs": ["labels", "labels_8_class", "labels-knee"],
+            "label_dirs": ["labels", "labels_8_class"],
         },
         "knees_cropped_8_class": {
             "input_dir": project_root / "datasets/balanced/knees_cropped_8_class",
             "output_dir": project_root
             / "datasets/processed_balanced/knees_cropped_8_class",
-            "label_dirs": ["labels", "labels-knee"],
+            "label_dirs": ["labels"],
         },
         "knees_cropped_10_class": {
             "input_dir": project_root / "datasets/balanced/knees_cropped_10_class",

@@ -158,6 +158,46 @@ case $MODE in
             "datasets/dataset_v0/labels_10_class" \
             "datasets/splits/knee_full_10_class"
         ;;
+
+    balanced-10)
+        echo "Mode: Creating balanced 10-class cropped splits only"
+        echo ""
+        create_splits \
+            "Balanced Knees - 10 Class" \
+            "datasets/balanced/knees_cropped_10_class/images" \
+            "datasets/balanced/knees_cropped_10_class/labels" \
+            "datasets/splits/balanced_knees_cropped_10_class"
+        ;;
+
+    balanced-full-10)
+        echo "Mode: Creating balanced 10-class full splits only"
+        echo ""
+        create_splits \
+            "Balanced Full X-rays - 10 Class" \
+            "datasets/balanced/full_xray_10_class/images" \
+            "datasets/balanced/full_xray_10_class/labels" \
+            "datasets/splits/balanced_full_xray_10_class"
+        ;;
+
+    balanced-full-4)
+        echo "Mode: Creating balanced 4-class full splits only"
+        echo ""
+        create_splits \
+            "Balanced Full X-rays - 4 Class" \
+            "datasets/balanced/full_xray_4_class/images" \
+            "datasets/balanced/full_xray_4_class/labels" \
+            "datasets/splits/balanced_full_xray_4_class"
+        ;;
+
+    balanced-full-8)
+        echo "Mode: Creating balanced 8-class full splits only"
+        echo ""
+        create_splits \
+            "Balanced Full X-rays - 8 Class" \
+            "datasets/balanced/full_xray_8_class/images" \
+            "datasets/balanced/full_xray_8_class/labels" \
+            "datasets/splits/balanced_full_xray_8_class"
+        ;;
         
     all)
         echo "Mode: Creating ALL splits"
@@ -170,79 +210,117 @@ case $MODE in
             "datasets/dataset_knees_cropped/labels" \
             "datasets/splits/dataset_knees_cropped"
         
-        # 2. Cropped 4-class (separate output dir)
+        # 2. Cropped 4-class
         create_splits \
             "Cropped Knees - 4 Class" \
             "datasets/dataset_knees_cropped/images" \
             "datasets/dataset_knees_cropped/labels_4_class" \
             "datasets/splits/dataset_knees_cropped_4_class"
         
-        # 3. Cropped 8-class (separate output dir)
+        # 3. Cropped 8-class
         create_splits \
             "Cropped Knees - 8 Class" \
             "datasets/dataset_knees_cropped/images" \
             "datasets/dataset_knees_cropped/labels_8_class" \
             "datasets/splits/dataset_knees_cropped_8_class"
         
-        # 4. Balanced 5-class (if exists)
+        # 4. Balanced Variants (if they exist)
+        
+        # Balanced 5-class
         if [ -d "datasets/balanced/knees_cropped" ]; then
             create_splits \
                 "Balanced Knees - 5 Class" \
                 "datasets/balanced/knees_cropped/images" \
                 "datasets/balanced/knees_cropped/labels" \
                 "datasets/splits/balanced_knees_cropped"
-            
-            # 4a. Balanced 4-class
+        fi
+
+        # Balanced 4-class
+        if [ -d "datasets/balanced/knees_cropped_4_class" ]; then
             create_splits \
                 "Balanced Knees - 4 Class" \
-                "datasets/balanced/knees_cropped/images" \
-                "datasets/balanced/knees_cropped/labels_4_class" \
+                "datasets/balanced/knees_cropped_4_class/images" \
+                "datasets/balanced/knees_cropped_4_class/labels" \
                 "datasets/splits/balanced_knees_cropped_4_class"
-            
-            # 4b. Balanced 8-class
+        fi
+
+        # Balanced 8-class
+        if [ -d "datasets/balanced/knees_cropped_8_class" ]; then
             create_splits \
                 "Balanced Knees - 8 Class" \
-                "datasets/balanced/knees_cropped/images" \
-                "datasets/balanced/knees_cropped/labels_8_class" \
+                "datasets/balanced/knees_cropped_8_class/images" \
+                "datasets/balanced/knees_cropped_8_class/labels" \
                 "datasets/splits/balanced_knees_cropped_8_class"
-        else
-            echo "⚠️  Skipping balanced dataset (not found)"
-            echo ""
         fi
         
-        # 5. Full X-rays 10-class
-        if [ -d "datasets/dataset_v0" ]; then
+        # Balanced 10-class
+        if [ -d "datasets/balanced/knees_cropped_10_class" ]; then
+            create_splits \
+                "Balanced Knees - 10 Class" \
+                "datasets/balanced/knees_cropped_10_class/images" \
+                "datasets/balanced/knees_cropped_10_class/labels" \
+                "datasets/splits/balanced_knees_cropped_10_class"
+        fi
+
+        # 5. Full X-rays
+        
+        # Full 10-class (Base)
+        if [ -d "datasets/dataset_v0/labels_10_class" ]; then
             create_splits \
                 "Full X-rays - 10 Class" \
                 "datasets/dataset_v0/images" \
                 "datasets/dataset_v0/labels_10_class" \
                 "datasets/splits/knee_full_10_class"
-        else
-            echo "⚠️  Skipping full X-rays dataset (not found)"
-            echo ""
+        fi
+
+        # Balanced Full 10-class
+        if [ -d "datasets/balanced/full_xray_10_class" ]; then
+            create_splits \
+                "Balanced Full X-rays - 10 Class" \
+                "datasets/balanced/full_xray_10_class/images" \
+                "datasets/balanced/full_xray_10_class/labels" \
+                "datasets/splits/balanced_full_xray_10_class"
+        fi
+
+        # Balanced Full 4-class
+        if [ -d "datasets/balanced/full_xray_4_class" ]; then
+             create_splits \
+                "Balanced Full X-rays - 4 Class" \
+                "datasets/balanced/full_xray_4_class/images" \
+                "datasets/balanced/full_xray_4_class/labels" \
+                "datasets/splits/balanced_full_xray_4_class"
+        fi
+
+        # Balanced Full 8-class
+        if [ -d "datasets/balanced/full_xray_8_class" ]; then
+             create_splits \
+                "Balanced Full X-rays - 8 Class" \
+                "datasets/balanced/full_xray_8_class/images" \
+                "datasets/balanced/full_xray_8_class/labels" \
+                "datasets/splits/balanced_full_xray_8_class"
         fi
         ;;
-        
+
     help|--help|-h)
         echo "Usage: $0 [MODE]"
         echo ""
         echo "Modes:"
-        echo "  all          - Create all splits (default)"
-        echo "  5_class       - Cropped 5-class only"
-        echo "  4_class       - Cropped 4-class only"
-        echo "  8_class       - Cropped 8-class only"
-        echo "  balanced     - Balanced 5-class only"
-        echo "  balanced-4   - Balanced 4-class only"
-        echo "  balanced-8   - Balanced 8-class only"
-        echo "  10_class      - Full X-rays 10-class only"
+        echo "  all                 - Create all splits (default)"
+        echo "  5_class              - Cropped 5-class only"
+        echo "  4_class              - Cropped 4-class only"
+        echo "  8_class              - Cropped 8-class only"
+        echo "  10_class             - Full X-rays 10-class only"
+        echo "  balanced            - Balanced 5-class only"
+        echo "  balanced-4          - Balanced 4-class only"
+        echo "  balanced-8          - Balanced 8-class only"
+        echo "  balanced-10         - Balanced 10-class only"
+        echo "  balanced-full-10    - Balanced Full X-ray 10-class"
+        echo "  balanced-full-4     - Balanced Full X-ray 4-class"
+        echo "  balanced-full-8     - Balanced Full X-ray 8-class"
         echo ""
-        echo "Examples:"
-        echo "  $0 all              # Create all splits"
-        echo "  $0 5_class           # Only 5-class cropped"
-        echo "  $0 balanced         # Only balanced dataset"
         exit 0
         ;;
-        
+
     *)
         echo "❌ Error: Unknown mode '$MODE'"
         echo "   Run '$0 help' for usage information"
