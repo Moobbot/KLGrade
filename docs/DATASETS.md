@@ -46,13 +46,13 @@ dataset_knees_cropped/
 ---
 
 ### 2. Cropped Knees (Balanced)
-**Path**: `datasets/dataset_knees_cropped_balanced/`
+**Path**: `datasets/balanced/knees_cropped/`
 
 **Structure**: Same as unbalanced
 
 **Features**:
 - Balanced via oversampling with augmentation
-- Target: ~500 samples per class
+- Target: ~500-1000 samples per class
 - See `balance_report.txt` for details
 
 **Use Case**: Training with balanced class distribution
@@ -89,10 +89,8 @@ dataset_v0/
 ### 4. Preprocessing Variants (Experimental)
 
 **Paths**: 
-- `datasets/processed/full_xray/*` - Full X-ray variants (unbalanced)
-- `datasets/processed/knees_cropped/*` - Cropped knee variants (unbalanced)  
-- `datasets/balanced/full_xray/*` - Full X-ray variants (balanced)
-- `datasets/balanced/knees_cropped/` - Cropped knees (balanced)
+- `datasets/processed_balanced/full_xray/*` - Full X-ray variants (balanced)
+- `datasets/processed_balanced/knees_cropped/*` - Cropped knee variants (balanced)  
 
 **Variants**:
 - `resize_only/` - No enhancement, resize only
@@ -133,9 +131,9 @@ dataset = YoloDataset(
 **Example - Balanced 4-class**:
 ```python
 dataset = YoloDataset(
-    img_dir="datasets/dataset_knees_cropped_balanced/images",
-    label_dir="datasets/dataset_knees_cropped_balanced/labels_4_class",
-    split_file="datasets/splits/dataset_knees_cropped_balanced/train.txt",
+    img_dir="datasets/balanced/knees_cropped/images",
+    label_dir="datasets/balanced/knees_cropped/labels_4_class",
+    split_file="datasets/splits/balanced_knees_cropped_4_class/train.txt",
     transform=get_default_train_transform()
 )
 ```

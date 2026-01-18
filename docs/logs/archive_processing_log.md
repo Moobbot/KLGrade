@@ -411,13 +411,13 @@ bash scripts/run_comprehensive_analysis_all.sh
    - `yolo_utils.py` - YOLO-specific transformations
    - `__init__.py` - Package exports
 
-### New Scripts Created
-1. **`scripts/balance_dataset.py`** - Balance dataset via oversampling
-2. **`scripts/validate_dataset.py`** - Validate dataset integrity
-3. **`scripts/data_preparation/filter_no_labels.py`** - Filter empty labels
-4. **`scripts/preprocess_knees_balanced.sh`** - Preprocess balanced dataset
-5. **`scripts/filter_all_processed_datasets.sh`** - Batch filter processed datasets
-6. **`scripts/run_comprehensive_analysis_all.sh`** - Analyze all datasets
+2. **Scripts**:
+   - `scripts/balance_dataset.py` - Balance dataset via oversampling
+   - `scripts/validate_dataset.py` - Validate dataset integrity
+   - `scripts/data_preparation/filter_no_labels.py` - Filter empty labels
+   - `scripts/preprocess_knees_balanced.sh` - Preprocess balanced dataset
+   - `scripts/filter_all_processed_datasets.sh` - Batch filter processed datasets
+   - `scripts/run_comprehensive_analysis_all.sh` - Analyze all datasets
 
 ### Enhanced Tools
 1. **`tools/check_dataset/comprehensive_analysis.py`**
@@ -474,23 +474,26 @@ datasets/
 │       ├── dataset_statistics.txt
 │       └── no_label_files.json
 │
-├── data_processed/                 # Preprocessed unbalanced (Stage 2)
+├── data_processed/                 # Preprocessed full X-rays (Stage 2)
 │   ├── resize_only/
 │   ├── blur_clahe2/
 │   ├── sharp_clahe4/
 │   └── blur_clahe2_notebook/
-│       └── (each: 1,473 images + labels)
+│       └── (each has images/ + labels/)
 │
-├── data_processed_balanced/        # Preprocessed balanced (Stage 4.4) ⭐ NEW
+├── data_processed_knees/           # Preprocessed cropped knees (Stage 2.1)
 │   ├── resize_only/
 │   ├── blur_clahe2/
 │   ├── sharp_clahe4/
 │   └── blur_clahe2_notebook/
-│       └── (each: 4,645 images + all label variants)
+│       └── (each has images/ + 5 label variants)
 │
 ├── data_examples/                  # Visualization examples
-│   └── (Stage 3)
-│
+│   ├── *.png (example outputs)
+│   ├── knees_cropped/
+│   │   ├── comparison_raw_vs_processed.png
+│   │   └── comparison_detailed.png
+│   └── comparison/ (preset comparisons)
 └── analysis/                      # Comprehensive analysis (Stage 5) ⭐ NEW
     ├── dataset_v0/
     ├── knees_cropped/
@@ -519,7 +522,7 @@ datasets/
 
 ### Label Variants
 - 5-class: KL0-4 (standard)
-- 10-class: KL0-a/b to KL4-a/b (shape-based)
+- 10-class: KL0-a/b to KL4-a/b (shape-based split)
 - 4-class: KL1-4 (filtered KL0)
 - 8-class: KL1-a/b to KL4-a/b (filtered KL0)
 
@@ -531,141 +534,3 @@ datasets/
 - KL0-4: 20% each (~1,363 instances per class)
 
 ---
-
-## Next Steps
-
-1. ✅ **Data balancing pipeline** - COMPLETE
-2. ✅ **Filtering integration** - COMPLETE
-3. ✅ **Comprehensive analysis** - COMPLETE
-4. ⏳ **Create train/val/test splits** - Use `scripts/split_dataset.py`
-5. ⏳ **Model training** - Ready to begin
-   - Compare balanced vs unbalanced
-   - Compare preprocessing presets
-6. ⏳ **Performance analysis** - Evaluate results
-
----
-
-## Notes
-
-- All datasets cleaned (92 empty labels removed)
-- Balanced dataset enables fair class comparison
-- 8 training configurations available (4 presets × 2 balance strategies)
-- Comprehensive analysis with bbox visualization for anchor box optimization
-- Auto-filtering integrated into workflow (no manual step needed)
-- Ready for large-scale model training and A/B testing
-
-
-### New Files Created
-1. **Modular Preprocessing Architecture**:
-   - `src/data/preprocessing/core/base.py` - Base operations
-   - `src/data/preprocessing/core/blur.py` - Blur filters
-   - `src/data/preprocessing/core/clahe.py` - CLAHE operations
-   - `src/data/preprocessing/core/augmentation.py` - Flip, brightness, contrast
-   - `src/data/preprocessing/core/knee_crop.py` - Knee cropping utilities
-   - `src/data/preprocessing/pipeline.py` - Pipeline composer
-   - `src/data/preprocessing/presets.py` - Preset pipelines
-   - `src/data/preprocessing/__init__.py` - Package exports
-
-2. **Scripts**:
-   - `scripts/prepare_knee_crops.py` - Knee cropping with 10-class generation
-   - `scripts/preprocess_production.py` - Production preprocessing
-   - `scripts/preprocess_knees_cropped.sh` - Wrapper for cropped knees
-   - `scripts/analyzes/analyze_knee_dataset.py` - Dataset statistics
-
-3. **Examples**:
-   - `examples/preprocessing_custom.py` - Modular preprocessing demos
-   - `examples/preprocessing_comparison.py` - Before/after visualizations (full X-rays)
-   - `examples/preprocessing_comparison_knees.py` - Before/after visualizations (cropped knees)
-
-4. **Documentation**:
-   - `PREPROCESSING_WORKFLOW.md` - Complete workflow guide
-
-### Modified Files
-- `scripts/run_full_pipeline.sh` - Updated paths to use `datasets/`
-- Various __init__.py files for module exports
-
----
-
-## Final Dataset Structure
-
-```
-datasets/
-├── dataset/
-│   ├── dataset_v0/                 # Original full X-rays
-│   │   ├── images/                 # 1,473 full X-rays
-│   │   ├── labels/                 # 5-class KL labels
-│   │   ├── labels_10_class/        # 10-class (Stage 0)
-│   │   ├── labels-knee/            # Knee bounding boxes
-│   │   └── labels_10_class/             # 10-class (original)
-│   │
-│   └── knees_cropped/              # Cropped knees (Stage 1)
-│       ├── images/                 # 1,783 knee crops
-│       ├── labels/                 # 5-class
-│       ├── labels_10_class/             # 10-class
-│       ├── labels_4_class/          # 4-class (filtered)
-│       ├── labels_8_class/          # 8-class (filtered)
-│       ├── labels-knee/            # Knee boxes
-│       └── dataset_statistics.txt
-│
-├── data_processed/                 # Preprocessed full X-rays (Stage 2)
-│   ├── resize_only/
-│   ├── blur_clahe2/
-│   ├── sharp_clahe4/
-│   └── blur_clahe2_notebook/
-│       └── (each has images/ + labels/)
-│
-├── data_processed_knees/           # Preprocessed cropped knees (Stage 2.1)
-│   ├── resize_only/
-│   ├── blur_clahe2/
-│   ├── sharp_clahe4/
-│   └── blur_clahe2_notebook/
-│       └── (each has images/ + 5 label variants)
-│
-└── data_examples/                  # Visualization examples
-    ├── *.png (example outputs)
-    ├── knees_cropped/
-    │   ├── comparison_raw_vs_processed.png
-    │   └── comparison_detailed.png
-    └── comparison/ (preset comparisons)
-```
-
----
-
-## Summary Statistics
-
-### Dataset Sizes
-- Original full X-rays: 1,473 images
-- Cropped knees: 1,783 images
-- Preprocessed full X-rays: 5,892 images (4 presets)
-- Preprocessed cropped knees: 7,132 images (4 presets)
-- **Total processed images**: 15,280
-
-### Label Variants
-- 5-class: KL0-4 (standard)
-- 10-class: KL0-a/b to KL4-a/b (shape-based split)
-- 4-class: KL1-4 (filtered KL0)
-- 8-class: KL1-a/b to KL4-a/b (filtered KL0)
-
-### Processing Time
-- Knee cropping: ~33 seconds (1,473 → 1,783 images)
-- Full X-ray preprocessing: ~1 minute (1,473 × 4)
-- Cropped knee preprocessing: ~1.5 minutes (1,783 × 4)
-- **Total processing time**: ~3 minutes
-
----
-
-## Next Steps
-
-1. **Create train/val/test splits** for each dataset variant
-2. **Choose preprocessing preset** based on analysis
-3. **Start training** with selected datasets
-4. **Compare performance** across different preprocessing methods and class variants
-
----
-
-## Notes
-
-- All 10-class labels auto-generated using shape classification (no manual labeling required)
-- Preprocessing maintains all label variants (5/10/4/8-class) throughout pipeline
-- Statistics consistent across preprocessing methods (only pixel values change)
-- Ready for training with 16 different dataset configurations (4 presets × 4 class variants)
