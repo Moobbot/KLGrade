@@ -275,6 +275,64 @@ def evaluate(args):
     cm_main = metrics.confusion_matrix(all_targets_main, all_preds_main)
     cm_list = cm_main.tolist()
 
+    # --- Derived Metrics (Grade Level) ---
+    derived_metrics = None
+    acc_grade = 0.0 # Access for plots later
+    
+    if args.num_classes in [8, 10]:
+        print("\nCalculating derived grade metrics...")
+        acc_grade = metrics.accuracy_score(all_targets_grade, all_preds_grade)
+        kappa_grade = metrics.cohen_kappa_score(all_targets_grade, all_preds_grade)
+        
+        # Macro F1, Prec, Recall for grade
+        f1_macro_grade = metrics.f1_score(all_targets_grade, all_preds_grade, average="macro", zero_division=0)
+        prec_macro_grade = metrics.precision_score(all_targets_grade, all_preds_grade, average="macro", zero_division=0)
+        rec_macro_grade = metrics.recall_score(all_targets_grade, all_preds_grade, average="macro", zero_division=0)
+        
+        # Aggregate probabilities for Grade AUC
+        try:
+            num_grades = 5 if args.num_classes == 10 else 4
+            probs_grade = np.zeros((len(all_targets_grade), num_grades))
+            for g in range(num_grades):
+                # Sum prob of class 2*g and 2*g+1 (e.g. 0a+0b -> KL0)
+                probs_grade[:, g] = all_probs_main[:, 2*g] + all_probs_main[:, 2*g + 1]
+            
+            auc_macro_grade = metrics.roc_auc_score(
+                all_targets_grade, 
+                probs_grade, 
+                multi_class="ovr", 
+                average="macro"
+            )
+        except Exception as e:
+            print(f"⚠️  Could not calculate Derived Grade AUC: {e}")
+            auc_macro_grade = 0.0
+            
+        # Grade Report Dict
+        num_grade_classes = 5 if args.num_classes == 10 else 4
+        grade_labels = list(range(num_grade_classes))
+        
+        grade_report_dict = metrics.classification_report(
+            all_targets_grade,
+            all_preds_grade,
+            labels=grade_labels,
+            target_names=grade_names,
+            output_dict=True,
+            zero_division=0
+        )
+        
+        cm_grade_val = metrics.confusion_matrix(all_targets_grade, all_preds_grade)
+        
+        derived_metrics = {
+            "accuracy": acc_grade,
+            "kappa": kappa_grade,
+            "auc_macro": auc_macro_grade,
+            "f1_macro": f1_macro_grade,
+            "precision_macro": prec_macro_grade,
+            "recall_macro": rec_macro_grade,
+            "classification_report": grade_report_dict,
+            "confusion_matrix": cm_grade_val.tolist()
+        }
+
     # --- Construct Results Dictionary ---
     results = {
         "accuracy": acc_main,
@@ -285,17 +343,19 @@ def evaluate(args):
         "recall_macro": recall_macro,
         "classification_report": cls_report_dict,
         "confusion_matrix": cm_list,
+        "derived_metrics": derived_metrics
     }
 
     # --- Print & Save Text Report ---
     report_str = "=" * 60 + "\n"
     report_str += f" EVALUATION RESULTS (KIOCMIL CADA - {args.num_classes} Classes)\n"
     report_str += "=" * 60 + "\n\n"
-
+    
     report_str += f"Accuracy:        {acc_main:.4f}\n"
     report_str += f"Kappa Score:     {kappa_main:.4f}\n"
     report_str += f"AUC (Macro):     {auc_macro:.4f}\n"
     report_str += f"F1 (Macro):      {f1_macro:.4f}\n"
+    
     report_str += "\n--- Detailed Classification Report ---\n"
     report_str += metrics.classification_report(
         all_targets_main,
@@ -308,6 +368,29 @@ def evaluate(args):
     report_str += "\n\n--- Confusion Matrix ---\n"
     report_str += str(cm_main)
     report_str += "\n"
+    
+    # Append Derived Grade Report
+    if derived_metrics:
+        report_str += "\n" + "=" * 60 + "\n"
+        report_str += f" DERIVED GRADE REPORT ({num_grade_classes}-Class)\n"
+        report_str += "=" * 60 + "\n\n"
+        report_str += f"Accuracy:        {derived_metrics['accuracy']:.4f}\n"
+        report_str += f"Kappa Score:     {derived_metrics['kappa']:.4f}\n"
+        report_str += f"AUC (Macro):     {derived_metrics['auc_macro']:.4f}\n"
+        report_str += f"F1 (Macro):      {derived_metrics['f1_macro']:.4f}\n"
+        
+        report_str += "\n--- Detailed Grade Report ---\n"
+        report_str += metrics.classification_report(
+            all_targets_grade,
+            all_preds_grade,
+            labels=list(range(num_grade_classes)),
+            target_names=grade_names,
+            digits=4,
+            zero_division=0,
+        )
+        report_str += "\n\n--- Grade Confusion Matrix ---\n"
+        report_str += str(np.array(derived_metrics['confusion_matrix']))
+        report_str += "\n"
 
     # Save Results
     json_path = save_dir / "metrics.json"
