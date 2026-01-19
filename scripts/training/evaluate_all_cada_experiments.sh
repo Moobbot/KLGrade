@@ -67,7 +67,31 @@ evaluate_experiment \
     "datasets/balanced/full_xray_10_class/images" \
     "datasets/splits/balanced_full_xray_10_class" \
     "datasets/balanced/full_xray_10_class/labels-knee" \
-    "datasets/balanced/full_xray_10_class/labels_10_class"
+    "datasets/balanced/full_xray_10_class/labels"
+
+# Balanced + Resize Only
+evaluate_experiment \
+    "cada_10class_balanced_resize" 10 \
+    "datasets/processed_balanced/full_xray/resize_only/images" \
+    "datasets/splits/balanced_full_xray_10_class" \
+    "datasets/processed_balanced/full_xray/resize_only/labels-knee" \
+    "datasets/processed_balanced/full_xray/resize_only/labels_10_class"
+
+# Balanced + Blur CLAHE
+evaluate_experiment \
+    "cada_10class_balanced_blur" 10 \
+    "datasets/processed_balanced/full_xray/blur_clahe2/images" \
+    "datasets/splits/balanced_full_xray_10_class" \
+    "datasets/processed_balanced/full_xray/blur_clahe2/labels-knee" \
+    "datasets/processed_balanced/full_xray/blur_clahe2/labels_10_class"
+
+# Balanced + Sharp CLAHE
+evaluate_experiment \
+    "cada_10class_balanced_sharp" 10 \
+    "datasets/processed_balanced/full_xray/sharp_clahe4/images" \
+    "datasets/splits/balanced_full_xray_10_class" \
+    "datasets/processed_balanced/full_xray/sharp_clahe4/labels-knee" \
+    "datasets/processed_balanced/full_xray/sharp_clahe4/labels_10_class"
 
 # ============================================================
 # 2. 5-Class Experiments
@@ -85,6 +109,30 @@ evaluate_experiment \
     "datasets/splits/balanced_full_xray_10_class" \
     "datasets/balanced/full_xray/labels-knee" \
     "datasets/balanced/full_xray/labels"
+
+# Balanced + Resize Only
+evaluate_experiment \
+    "cada_5class_balanced_resize" 5 \
+    "datasets/processed_balanced/full_xray/resize_only/images" \
+    "datasets/splits/balanced_full_xray_10_class" \
+    "datasets/processed_balanced/full_xray/resize_only/labels-knee" \
+    "datasets/processed_balanced/full_xray/resize_only/labels"
+
+# Balanced + Blur CLAHE
+evaluate_experiment \
+    "cada_5class_balanced_blur" 5 \
+    "datasets/processed_balanced/full_xray/blur_clahe2/images" \
+    "datasets/splits/balanced_full_xray_10_class" \
+    "datasets/processed_balanced/full_xray/blur_clahe2/labels-knee" \
+    "datasets/processed_balanced/full_xray/blur_clahe2/labels"
+
+# Balanced + Sharp CLAHE
+evaluate_experiment \
+    "cada_5class_balanced_sharp" 5 \
+    "datasets/processed_balanced/full_xray/sharp_clahe4/images" \
+    "datasets/splits/balanced_full_xray_10_class" \
+    "datasets/processed_balanced/full_xray/sharp_clahe4/labels-knee" \
+    "datasets/processed_balanced/full_xray/sharp_clahe4/labels"
 
 # ============================================================
 # 3. 4-Class Experiments
@@ -118,7 +166,7 @@ evaluate_experiment \
     "datasets/balanced/full_xray_8_class/images" \
     "datasets/splits/balanced_full_xray_8_class" \
     "datasets/balanced/full_xray_8_class/labels-knee" \
-    "datasets/balanced/full_xray_8_class/labels_8_class"
+    "datasets/balanced/full_xray_8_class/labels"
 
 echo "========================================================"
 echo "ALL EVALUATIONS COMPLETED"

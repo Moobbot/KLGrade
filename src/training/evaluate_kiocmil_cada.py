@@ -231,55 +231,104 @@ def evaluate(args):
         class_names_main = [str(i) for i in range(args.num_classes)]
         grade_names = None
 
-    # Main Report
-    print(f"\n--- Detailed Classification ({args.num_classes}-Class) ---")
+    # --- Metrics Calculation ---
+    print("\nCalculating metrics...")
 
-    if len(all_targets_main) == 0:
-        print("⚠️  No samples evaluated! Check dataset paths or knee detection.")
-        return
-
+    # 1. Main Classification Metrics
     acc_main = metrics.accuracy_score(all_targets_main, all_preds_main)
-    print(f"Accuracy: {acc_main:.4f}")
+    kappa_main = metrics.cohen_kappa_score(all_targets_main, all_preds_main)
 
-    # Generate list of all possible label indices
-    main_labels = list(range(args.num_classes))
-    print(
-        metrics.classification_report(
-            all_targets_main,
-            all_preds_main,
-            labels=main_labels,
-            target_names=class_names_main,
-            digits=4,
-            zero_division=0,
-        )
+    # F1, Precision, Recall (Macro & Weighted)
+    f1_macro = metrics.f1_score(
+        all_targets_main, all_preds_main, average="macro", zero_division=0
+    )
+    precision_macro = metrics.precision_score(
+        all_targets_main, all_preds_main, average="macro", zero_division=0
+    )
+    recall_macro = metrics.recall_score(
+        all_targets_main, all_preds_main, average="macro", zero_division=0
     )
 
-    # Derived Report
-    if args.num_classes in [8, 10]:
-        print(f"\n--- Aggregate Grade Classification ---")
-        acc_grade = metrics.accuracy_score(all_targets_grade, all_preds_grade)
-        print(f"Accuracy: {acc_grade:.4f}")
-
-        # Determine number of grade classes
-        num_grade_classes = 5 if args.num_classes == 10 else 4
-        grade_labels = list(range(num_grade_classes))
-
-        print(
-            metrics.classification_report(
-                all_targets_grade,
-                all_preds_grade,
-                labels=grade_labels,
-                target_names=grade_names,
-                digits=4,
-                zero_division=0,
+    # AUC (requires probabilities)
+    try:
+        if args.num_classes == 2:
+            auc_macro = metrics.roc_auc_score(all_targets_main, all_probs_main[:, 1])
+        else:
+            auc_macro = metrics.roc_auc_score(
+                all_targets_main, all_probs_main, multi_class="ovr", average="macro"
             )
-        )
+    except Exception as e:
+        print(f"⚠️  Could not calculate AUC: {e}")
+        auc_macro = 0.0
+
+    # Classification Report (Dict)
+    cls_report_dict = metrics.classification_report(
+        all_targets_main,
+        all_preds_main,
+        labels=list(range(args.num_classes)),
+        target_names=class_names_main,
+        output_dict=True,
+        zero_division=0,
+    )
+
+    # Confusion Matrix (List of Lists for JSON)
+    cm_main = metrics.confusion_matrix(all_targets_main, all_preds_main)
+    cm_list = cm_main.tolist()
+
+    # --- Construct Results Dictionary ---
+    results = {
+        "accuracy": acc_main,
+        "kappa": kappa_main,
+        "auc_macro": auc_macro,
+        "f1_macro": f1_macro,
+        "precision_macro": precision_macro,
+        "recall_macro": recall_macro,
+        "classification_report": cls_report_dict,
+        "confusion_matrix": cm_list,
+    }
+
+    # --- Print & Save Text Report ---
+    report_str = "=" * 60 + "\n"
+    report_str += f" EVALUATION RESULTS (KIOCMIL CADA - {args.num_classes} Classes)\n"
+    report_str += "=" * 60 + "\n\n"
+
+    report_str += f"Accuracy:        {acc_main:.4f}\n"
+    report_str += f"Kappa Score:     {kappa_main:.4f}\n"
+    report_str += f"AUC (Macro):     {auc_macro:.4f}\n"
+    report_str += f"F1 (Macro):      {f1_macro:.4f}\n"
+    report_str += "\n--- Detailed Classification Report ---\n"
+    report_str += metrics.classification_report(
+        all_targets_main,
+        all_preds_main,
+        labels=list(range(args.num_classes)),
+        target_names=class_names_main,
+        digits=4,
+        zero_division=0,
+    )
+    report_str += "\n\n--- Confusion Matrix ---\n"
+    report_str += str(cm_main)
+    report_str += "\n"
+
+    # Save Results
+    json_path = save_dir / "metrics.json"
+    txt_path = save_dir / "metrics.txt"
+
+    import json
+
+    with open(json_path, "w") as f:
+        json.dump(results, f, indent=4)
+
+    with open(txt_path, "w") as f:
+        f.write(report_str)
+
+    print(f"saved metrics to {json_path}")
+    print(f"saved report to {txt_path}")
+    print(report_str)
 
     # --- Generate Plots ---
     print("\nGenerating plots...")
 
     # Confusion Matrix - Main
-    cm_main = metrics.confusion_matrix(all_targets_main, all_preds_main)
     plot_confusion_matrix(
         cm_main,
         class_names_main,
@@ -299,15 +348,16 @@ def evaluate(args):
 
     # Confusion Matrix - Grade (Derived)
     if args.num_classes in [8, 10]:
+        acc_grade = metrics.accuracy_score(all_targets_grade, all_preds_grade)
         cm_grade = metrics.confusion_matrix(all_targets_grade, all_preds_grade)
         plot_confusion_matrix(
             cm_grade,
             grade_names,
             save_dir / "cm_grade_derived.png",
-            "Confusion Matrix (Derived Grade)",
+            f"Confusion Matrix (Derived Grade) - Acc: {acc_grade:.4f}",
         )
 
-    print(f"\nEvaluation complete. Plots saved to {save_dir}")
+    print(f"\nEvaluation complete. Results saved to {save_dir}")
 
 
 if __name__ == "__main__":
