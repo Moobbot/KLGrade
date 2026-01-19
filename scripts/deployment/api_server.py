@@ -28,7 +28,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--grade-model",
         type=str,
-        default="runs/detect_2026_01_09/E007_10_class_conservative4/weights/best.pt",
+        default="runs/kiocmil_cada/cada_10class_unbalanced/best_acc_model.pt",
         help="Path to KL Grading model (.pt)",
     )
     parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind")

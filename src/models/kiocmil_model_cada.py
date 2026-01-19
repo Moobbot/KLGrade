@@ -62,7 +62,7 @@ class KiocmilModelCADA(nn.Module):
         # 1. YOLO Backbone for patch feature extraction
         print(f"Loading {backbone_name} backbone...")
         try:
-            yolo = YOLO(f"{backbone_name}.pt")
+            yolo = YOLO(f"weight/{backbone_name}.pt")
             self.backbone, self.backbone_dim = self._extract_yolo_backbone(yolo)
             print(f"✅ YOLO backbone loaded. Feature dim: {self.backbone_dim}")
         except Exception as e:

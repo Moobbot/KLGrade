@@ -214,7 +214,9 @@ if __name__ == "__main__":
     parser.add_argument("--label_dir", type=str, required=True, help="Label directory")
     parser.add_argument("--split_dir", type=str, default=None, help="Split directory")
     parser.add_argument("--num_classes", type=int, default=5, help="Number of classes")
-    parser.add_argument("--model", type=str, default="yolo11l.pt", help="YOLO model")
+    parser.add_argument(
+        "--model", type=str, default="weight/yolo11l.pt", help="YOLO model"
+    )
     parser.add_argument("--epochs", type=int, default=100, help="Training epochs")
     parser.add_argument("--batch", type=int, default=8, help="Batch size")
     parser.add_argument("--imgsz", type=int, default=640, help="Image size")
