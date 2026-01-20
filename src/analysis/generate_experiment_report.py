@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 import glob
 from datetime import datetime
+import os
 
 def to_markdown_table(records, headers):
     if not records:
@@ -103,11 +104,94 @@ def generate_report():
         if best_model:
             md += f"\n**🏆 Best {nc}-Class Model:** `{best_model['Experiment']}` (Acc: {best_model['Accuracy']:.4f})\n"
 
-    output_file = "docs/EXPERIMENT_REPORT_FULL.md"
-    with open(output_file, "w") as f:
+    # ---------------------------------------------------------
+    # YOLO Detection Metrics
+    # ---------------------------------------------------------
+    md += "\n\n## YOLO Detection Performance (Knee/Lesion Localization)\n\n"
+    md += "Performance of the YOLO models used to generate the bounding boxes for the above experiments.\n\n"
+    
+    yolo_records = []
+    detect_dirs = glob.glob("runs/before_2026_01_17/detect/*")
+    
+    for d_dir in detect_dirs:
+        exp_name = os.path.basename(d_dir)
+        csv_path = os.path.join(d_dir, "results.csv")
+        
+        if os.path.exists(csv_path):
+            try:
+                # Simple CSV parser to avoid pandas dependency
+                with open(csv_path, "r") as f:
+                    lines = f.readlines()
+                    
+                if len(lines) < 2:
+                    continue
+                    
+                headers = lines[0].strip().split(",")
+                # Indices
+                try:
+                    idx_prec = headers.index("metrics/precision(B)")
+                    idx_rec = headers.index("metrics/recall(B)")
+                    idx_map50 = headers.index("metrics/mAP50(B)")
+                    idx_map5095 = headers.index("metrics/mAP50-95(B)")
+                except ValueError:
+                    continue # Column not found
+                
+                best_map50 = -1.0
+                best_row = None
+                
+                for line in lines[1:]:
+                    parts = line.strip().split(",")
+                    if len(parts) != len(headers):
+                        continue
+                    try:
+                        map50 = float(parts[idx_map50])
+                        if map50 > best_map50:
+                            best_map50 = map50
+                            best_row = parts
+                    except ValueError:
+                        continue
+                
+                if best_row:
+                    yolo_records.append({
+                        "Model": exp_name,
+                        "Precision": float(best_row[idx_prec]),
+                        "Recall": float(best_row[idx_rec]),
+                        "mAP50": float(best_row[idx_map50]),
+                        "mAP50-95": float(best_row[idx_map5095])
+                    })
+                    
+            except Exception as e:
+                print(f"Error parsing YOLO {exp_name}: {e}")
+                
+    if yolo_records:
+        yolo_headers = ["Model", "mAP50", "mAP50-95", "Precision", "Recall"]
+        
+        # Sort by mAP50 desc
+        yolo_records.sort(key=lambda x: -x["mAP50"])
+        
+        # Build Table
+        # Header
+        md += "| " + " | ".join(yolo_headers) + " |\n"
+        md += "| " + " | ".join(["---"] * len(yolo_headers)) + " |\n"
+        
+        # Rows
+        for rec in yolo_records:
+            row = [
+                rec["Model"],
+                f"{rec['mAP50']:.4f}",
+                f"{rec['mAP50-95']:.4f}",
+                f"{rec['Precision']:.4f}",
+                f"{rec['Recall']:.4f}"
+            ]
+            md += "| " + " | ".join(row) + " |\n"
+    else:
+        md += "No YOLO results found in `runs/before_2026_01_17/detect/`.\n"
+
+    # Save Report
+    with open("docs/EXPERIMENT_REPORT_FULL.md", "w") as f:
         f.write(md)
         
-    print(f"Report generated at {output_file}")
+    print("Report generated at docs/EXPERIMENT_REPORT_FULL.md")
     
     # Print table to verify
     for r in records:

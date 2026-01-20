@@ -333,6 +333,53 @@ def evaluate(args):
             "confusion_matrix": cm_grade_val.tolist()
         }
 
+    # --- Derived Metric: Type (0=a, 1=b) ---
+    if args.num_classes in [8, 10]:
+        print("\nCalculating derived type (box/compartment) metrics...")
+        # 10-class: 0->0(a), 1->1(b), 2->0(a), 3->1(b)... => pred % 2
+        # 8-class: 0->0(a), 1->1(b)...
+        preds_type = all_preds_main % 2
+        targets_type = all_targets_main % 2
+        
+        acc_type = metrics.accuracy_score(targets_type, preds_type)
+        kappa_type = metrics.cohen_kappa_score(targets_type, preds_type)
+        
+        f1_type = metrics.f1_score(targets_type, preds_type, average="macro", zero_division=0)
+        prec_type = metrics.precision_score(targets_type, preds_type, average="macro", zero_division=0)
+        rec_type = metrics.recall_score(targets_type, preds_type, average="macro", zero_division=0)
+        
+        try:
+            # Aggregate probs for Type AUC
+            # Prob(type=0) = Sum(Prob(class k)) where k%2==0
+            # Prob(type=1) = Sum(Prob(class k)) where k%2==1
+            probs_type = np.zeros((len(all_probs_main), 2))
+            probs_type[:, 0] = np.sum(all_probs_main[:, ::2], axis=1) # Sum even columns
+            probs_type[:, 1] = np.sum(all_probs_main[:, 1::2], axis=1) # Sum odd columns
+            
+            auc_type = metrics.roc_auc_score(targets_type, probs_type[:, 1])
+        except Exception as e:
+            print(f"⚠️  Could not calculate Derived Type AUC: {e}")
+            auc_type = 0.0
+
+        type_names = ["Type A (Medial)", "Type B (Lateral)"]
+        type_report_dict = metrics.classification_report(
+            targets_type,
+            preds_type,
+            target_names=type_names,
+            output_dict=True,
+            zero_division=0
+        )
+        cm_type = metrics.confusion_matrix(targets_type, preds_type)
+        
+        derived_metrics["type_metrics"] = {
+            "accuracy": acc_type,
+            "kappa": kappa_type,
+            "auc_macro": auc_type,
+            "f1_macro": f1_type,
+            "classification_report": type_report_dict,
+            "confusion_matrix": cm_type.tolist()
+        }
+
     # --- Construct Results Dictionary ---
     results = {
         "accuracy": acc_main,
@@ -369,18 +416,19 @@ def evaluate(args):
     report_str += str(cm_main)
     report_str += "\n"
     
-    # Append Derived Grade Report
+    # Append Derived Reports
     if derived_metrics:
+        # Grade Report
         report_str += "\n" + "=" * 60 + "\n"
         report_str += f" DERIVED GRADE REPORT ({num_grade_classes}-Class)\n"
         report_str += "=" * 60 + "\n\n"
         report_str += f"Accuracy:        {derived_metrics['accuracy']:.4f}\n"
         report_str += f"Kappa Score:     {derived_metrics['kappa']:.4f}\n"
-        report_str += f"AUC (Macro):     {derived_metrics['auc_macro']:.4f}\n"
-        report_str += f"F1 (Macro):      {derived_metrics['f1_macro']:.4f}\n"
         
         report_str += "\n--- Detailed Grade Report ---\n"
-        report_str += metrics.classification_report(
+        # We need to reconstruct the string report for Grade manually or re-run classification_report with string output
+        # Re-running for string output
+        grade_report_str = metrics.classification_report(
             all_targets_grade,
             all_preds_grade,
             labels=list(range(num_grade_classes)),
@@ -388,9 +436,33 @@ def evaluate(args):
             digits=4,
             zero_division=0,
         )
+        report_str += grade_report_str
         report_str += "\n\n--- Grade Confusion Matrix ---\n"
         report_str += str(np.array(derived_metrics['confusion_matrix']))
         report_str += "\n"
+
+        # Type Report
+        if "type_metrics" in derived_metrics:
+            tm = derived_metrics["type_metrics"]
+            report_str += "\n" + "=" * 60 + "\n"
+            report_str += f" DERIVED TYPE REPORT (a/b)\n"
+            report_str += "=" * 60 + "\n\n"
+            report_str += f"Accuracy:        {tm['accuracy']:.4f}\n"
+            report_str += f"Kappa Score:     {tm['kappa']:.4f}\n"
+            report_str += f"AUC:             {tm['auc_macro']:.4f}\n"
+            
+            report_str += "\n--- Detailed Type Report ---\n"
+            type_report_str = metrics.classification_report(
+                targets_type,
+                preds_type,
+                target_names=type_names,
+                digits=4,
+                zero_division=0
+            )
+            report_str += type_report_str
+            report_str += "\n\n--- Type Confusion Matrix ---\n"
+            report_str += str(np.array(tm['confusion_matrix']))
+            report_str += "\n"
 
     # Save Results
     json_path = save_dir / "metrics.json"
@@ -439,6 +511,17 @@ def evaluate(args):
             save_dir / "cm_grade_derived.png",
             f"Confusion Matrix (Derived Grade) - Acc: {acc_grade:.4f}",
         )
+        
+        # Confusion Matrix - Type (Derived)
+        if "type_metrics" in derived_metrics:
+            cm_type = np.array(derived_metrics["type_metrics"]["confusion_matrix"])
+            acc_type = derived_metrics["type_metrics"]["accuracy"]
+            plot_confusion_matrix(
+                cm_type,
+                type_names,
+                save_dir / "cm_type_derived.png",
+                f"Confusion Matrix (Derived Type) - Acc: {acc_type:.4f}",
+            )
 
     print(f"\nEvaluation complete. Results saved to {save_dir}")
 

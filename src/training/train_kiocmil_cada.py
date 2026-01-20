@@ -81,6 +81,7 @@ class KiocmilCADATrainer:
                 entity=args.wandb_entity,
                 name=args.wandb_name,
                 config=vars(args),
+                settings=wandb.Settings(init_timeout=300),
             )
             wandb.config.update({"log_dir": str(self.log_dir)})
 
