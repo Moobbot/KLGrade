@@ -9,11 +9,15 @@
 
 ### Getting Started
 - [Setup Guide](guides/SETUP.md) - Installation and environment setup
-- [Training Guide](guides/TRAINING.md) - How to train models
 - [Data Pipeline](guides/DATA_PIPELINE.md) - Dataset preparation workflow
 
+### Model Training
+- [**Training Index**](TRAINING_INDEX.md) - Overview of all models
+- [KIOCMIL CADA Training](KIOCMIL_CADA_TRAINING.md) - KIOCMIL CADA model training
+- [Training Guide](guides/KIOCMIL_CADA_TRAINING_GUIDE.md) - Step-by-step tutorial
+
 ### Experimental Results
-- [**CADA Complete Results**](experiments/CADA_COMPLETE_RESULTS.md) - Full KIOCMIL CADA evaluation (30 experiments)
+- [**CADA Complete Results**](experiments/CADA_COMPLETE_RESULTS.md) - Full KIOCMIL CADA evaluation (20 experiments)
 - [Experiment Report](logs/EXPERIMENT_REPORT_FULL.md) - Comprehensive training & evaluation walkthrough
 - [Results CSV](experiments/cada_complete_results.csv) - Raw experimental data
 
@@ -25,7 +29,7 @@
 ### Data & Preprocessing
 - [Datasets Overview](DATASETS.md) - Available datasets and configurations
 - [Preprocessing Labels](PREPROCESSING_LABELS.md) - Label generation and balancing
-- [Training Output Structure](reference/TRAINING_OUTPUT_STRUCTURE.md) - Understanding results
+- [Output Structure](reference/KIOCMIL_CADA_OUTPUT_STRUCTURE.md) - Understanding results
 
 ---
 
@@ -124,7 +128,7 @@ Discovered and fixed training script bug where `num_classes` was hardcoded to 10
 ### Key Findings
 1. **Data balancing crucial** for fine-grained classification (8/10-class)
 2. **No preprocessing best** for most configurations
-3. **Type classification exceptional**: 99.79% accuracy (medial/lateral)
+3. **Type classification exceptional**: 99.79% accuracy (osteophytes vs joint space)
 4. **Corrected models enable proper AUC calculation**
 
 ---

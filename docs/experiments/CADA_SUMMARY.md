@@ -93,7 +93,7 @@
 
 ### Type (a/b) Classification
 - Extremely accurate across all configurations (95-99%)
-- Model excels at distinguishing medial/lateral compartments
+- Model excels at distinguishing osteophytes vs joint space narrowing
 
 ### Grade-Level Performance
 - 8-class: Grade accuracy (79%) > Main accuracy (76%)
@@ -131,7 +131,7 @@
 |------|---------------|----------|-------|
 | **Simple KL Grading** | 4-class unbalanced | 83.09% | Fast, accurate, simple |
 | **Full KL Grading** | 5-class unbalanced | 80.65% | Includes KL0 detection |
-| **Compartment Analysis** | 8-class balanced+resize | 76.03% | Best for medial/lateral |
+| **Lesion Type Analysis** | 8-class balanced+resize | 76.03% | Best for osteophytes vs joint space |
 | **Fine-grained Analysis** | 10-class balanced | 82.66% | Highest granularity |
 
 ---

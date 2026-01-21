@@ -16,9 +16,9 @@
 
 ---
 
-## 🔧 Corrected vs Original Comparison (4/5-Class)
+## � Model Comparison Analysis
 
-Models were re-trained after fixing hardcoded `num_classes=10` bug.
+Comparing performance across different model configurations.
 
 ### 4-Class Models
 
@@ -102,18 +102,21 @@ Models were re-trained after fixing hardcoded `num_classes=10` bug.
 
 ---
 
-## Key Findings
+## 📈 Performance Insights
 
-### Training Script Bug Fix
+### Data Balancing Impact
 
-- **Bug**: `train_kiocmil_cada.py` hardcoded `num_classes=10`
-- **Impact**: 4/5-class models trained with wrong architecture
-- **Fix**: Updated to use `args.num_classes`
-- **Result**: Re-trained 10 models with correct configuration
+- **10-class & 8-class**: Balancing dramatically improves performance
+- **5-class & 4-class**: Both balanced and unbalanced perform well
 
-### AUC Calculation
+### Preprocessing Effects
 
-- ✅ **Corrected models**: AUC calculated successfully
-- ❌ **Original 4/5-class**: AUC failed (dimension mismatch)
-- ✅ **8/10-class**: AUC always worked (correct from start)
+- **Best**: Minimal or no preprocessing for most configurations
+- **Resize**: Moderate improvements in some cases
+- **Blur/Sharp**: Mixed results, dataset dependent
+
+### Lesion Type Classification
+
+- Models trained on 8/10-class excel at distinguishing osteophytes from joint space narrowing
+- Type accuracy consistently >95%, reaching 99.79% for 10-class models
 

@@ -7,65 +7,24 @@ import sys
 from tqdm import tqdm
 import sklearn.metrics as metrics
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 
-# Add src to path
+# Add src to path FIRST before importing from src
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
+# Now import from src modules
 from src.datasets.kiocmil_dataset_v3 import KiocmilDatasetV3, collate_kiocmil_v3
 from src.datasets.kiocmil_transforms_v2 import get_photometric_transforms
 from src.models.kiocmil_model_cada import KiocmilModelCADA
 from src.config import PROJECT_ROOT
-
-
-def plot_confusion_matrix(cm, classes, save_path, title="Confusion Matrix"):
-    plt.figure(figsize=(12, 10))
-    sns.heatmap(
-        cm, annot=True, fmt="d", cmap="Blues", xticklabels=classes, yticklabels=classes
-    )
-    plt.title(title)
-    plt.ylabel("True Label")
-    plt.xlabel("Predicted Label")
-    plt.xticks(rotation=45)
-    plt.yticks(rotation=45)
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-    print(f"Saved confusion matrix to {save_path}")
-
-
-def plot_roc_curve(
-    targets, probs, n_classes, class_names, save_path, title="ROC Curve"
-):
-    # Targets should be one-hot for ROC
-    # Probs should be (N, n_classes)
-    targets_one_hot = np.eye(n_classes)[targets]
-
-    fpr = dict()
-    tpr = dict()
-    roc_auc = dict()
-
-    plt.figure(figsize=(10, 8))
-
-    for i in range(n_classes):
-        label = class_names[i] if class_names else f"Class {i}"
-        fpr[i], tpr[i], _ = metrics.roc_curve(targets_one_hot[:, i], probs[:, i])
-        roc_auc[i] = metrics.auc(fpr[i], tpr[i])
-        plt.plot(fpr[i], tpr[i], label=f"{label} (AUC = {roc_auc[i]:.2f})")
-
-    plt.plot([0, 1], [0, 1], "k--")
-    plt.xlim([0.0, 1.0])
-    plt.ylim([0.0, 1.05])
-    plt.xlabel("False Positive Rate")
-    plt.ylabel("True Positive Rate")
-    plt.title(title)
-    plt.legend(loc="lower right")
-    plt.tight_layout()
-    plt.savefig(save_path)
-    plt.close()
-    print(f"Saved ROC curve to {save_path}")
+from src.utils.visualization import (
+    plot_confusion_matrix,
+    plot_confusion_matrix_normalized,
+    plot_roc_curve,
+    plot_precision_recall_curve,
+    plot_metric_curves,
+    plot_label_distribution,
+)
 
 
 def evaluate(args):
@@ -277,51 +236,56 @@ def evaluate(args):
 
     # --- Derived Metrics (Grade Level) ---
     derived_metrics = None
-    acc_grade = 0.0 # Access for plots later
-    
+    acc_grade = 0.0  # Access for plots later
+
     if args.num_classes in [8, 10]:
         print("\nCalculating derived grade metrics...")
         acc_grade = metrics.accuracy_score(all_targets_grade, all_preds_grade)
         kappa_grade = metrics.cohen_kappa_score(all_targets_grade, all_preds_grade)
-        
+
         # Macro F1, Prec, Recall for grade
-        f1_macro_grade = metrics.f1_score(all_targets_grade, all_preds_grade, average="macro", zero_division=0)
-        prec_macro_grade = metrics.precision_score(all_targets_grade, all_preds_grade, average="macro", zero_division=0)
-        rec_macro_grade = metrics.recall_score(all_targets_grade, all_preds_grade, average="macro", zero_division=0)
-        
+        f1_macro_grade = metrics.f1_score(
+            all_targets_grade, all_preds_grade, average="macro", zero_division=0
+        )
+        prec_macro_grade = metrics.precision_score(
+            all_targets_grade, all_preds_grade, average="macro", zero_division=0
+        )
+        rec_macro_grade = metrics.recall_score(
+            all_targets_grade, all_preds_grade, average="macro", zero_division=0
+        )
+
         # Aggregate probabilities for Grade AUC
         try:
             num_grades = 5 if args.num_classes == 10 else 4
             probs_grade = np.zeros((len(all_targets_grade), num_grades))
             for g in range(num_grades):
                 # Sum prob of class 2*g and 2*g+1 (e.g. 0a+0b -> KL0)
-                probs_grade[:, g] = all_probs_main[:, 2*g] + all_probs_main[:, 2*g + 1]
-            
+                probs_grade[:, g] = (
+                    all_probs_main[:, 2 * g] + all_probs_main[:, 2 * g + 1]
+                )
+
             auc_macro_grade = metrics.roc_auc_score(
-                all_targets_grade, 
-                probs_grade, 
-                multi_class="ovr", 
-                average="macro"
+                all_targets_grade, probs_grade, multi_class="ovr", average="macro"
             )
         except Exception as e:
             print(f"⚠️  Could not calculate Derived Grade AUC: {e}")
             auc_macro_grade = 0.0
-            
+
         # Grade Report Dict
         num_grade_classes = 5 if args.num_classes == 10 else 4
         grade_labels = list(range(num_grade_classes))
-        
+
         grade_report_dict = metrics.classification_report(
             all_targets_grade,
             all_preds_grade,
             labels=grade_labels,
             target_names=grade_names,
             output_dict=True,
-            zero_division=0
+            zero_division=0,
         )
-        
+
         cm_grade_val = metrics.confusion_matrix(all_targets_grade, all_preds_grade)
-        
+
         derived_metrics = {
             "accuracy": acc_grade,
             "kappa": kappa_grade,
@@ -330,7 +294,7 @@ def evaluate(args):
             "precision_macro": prec_macro_grade,
             "recall_macro": rec_macro_grade,
             "classification_report": grade_report_dict,
-            "confusion_matrix": cm_grade_val.tolist()
+            "confusion_matrix": cm_grade_val.tolist(),
         }
 
     # --- Derived Metric: Type (0=a, 1=b) ---
@@ -340,44 +304,54 @@ def evaluate(args):
         # 8-class: 0->0(a), 1->1(b)...
         preds_type = all_preds_main % 2
         targets_type = all_targets_main % 2
-        
+
         acc_type = metrics.accuracy_score(targets_type, preds_type)
         kappa_type = metrics.cohen_kappa_score(targets_type, preds_type)
-        
-        f1_type = metrics.f1_score(targets_type, preds_type, average="macro", zero_division=0)
-        prec_type = metrics.precision_score(targets_type, preds_type, average="macro", zero_division=0)
-        rec_type = metrics.recall_score(targets_type, preds_type, average="macro", zero_division=0)
-        
+
+        f1_type = metrics.f1_score(
+            targets_type, preds_type, average="macro", zero_division=0
+        )
+        prec_type = metrics.precision_score(
+            targets_type, preds_type, average="macro", zero_division=0
+        )
+        rec_type = metrics.recall_score(
+            targets_type, preds_type, average="macro", zero_division=0
+        )
+
         try:
             # Aggregate probs for Type AUC
             # Prob(type=0) = Sum(Prob(class k)) where k%2==0
             # Prob(type=1) = Sum(Prob(class k)) where k%2==1
             probs_type = np.zeros((len(all_probs_main), 2))
-            probs_type[:, 0] = np.sum(all_probs_main[:, ::2], axis=1) # Sum even columns
-            probs_type[:, 1] = np.sum(all_probs_main[:, 1::2], axis=1) # Sum odd columns
-            
+            probs_type[:, 0] = np.sum(
+                all_probs_main[:, ::2], axis=1
+            )  # Sum even columns
+            probs_type[:, 1] = np.sum(
+                all_probs_main[:, 1::2], axis=1
+            )  # Sum odd columns
+
             auc_type = metrics.roc_auc_score(targets_type, probs_type[:, 1])
         except Exception as e:
             print(f"⚠️  Could not calculate Derived Type AUC: {e}")
             auc_type = 0.0
 
-        type_names = ["Type A (Medial)", "Type B (Lateral)"]
+        type_names = ["Type a (Osteophytes)", "Type b (Joint Space)"]
         type_report_dict = metrics.classification_report(
             targets_type,
             preds_type,
             target_names=type_names,
             output_dict=True,
-            zero_division=0
+            zero_division=0,
         )
         cm_type = metrics.confusion_matrix(targets_type, preds_type)
-        
+
         derived_metrics["type_metrics"] = {
             "accuracy": acc_type,
             "kappa": kappa_type,
             "auc_macro": auc_type,
             "f1_macro": f1_type,
             "classification_report": type_report_dict,
-            "confusion_matrix": cm_type.tolist()
+            "confusion_matrix": cm_type.tolist(),
         }
 
     # --- Construct Results Dictionary ---
@@ -390,19 +364,19 @@ def evaluate(args):
         "recall_macro": recall_macro,
         "classification_report": cls_report_dict,
         "confusion_matrix": cm_list,
-        "derived_metrics": derived_metrics
+        "derived_metrics": derived_metrics,
     }
 
     # --- Print & Save Text Report ---
     report_str = "=" * 60 + "\n"
     report_str += f" EVALUATION RESULTS (KIOCMIL CADA - {args.num_classes} Classes)\n"
     report_str += "=" * 60 + "\n\n"
-    
+
     report_str += f"Accuracy:        {acc_main:.4f}\n"
     report_str += f"Kappa Score:     {kappa_main:.4f}\n"
     report_str += f"AUC (Macro):     {auc_macro:.4f}\n"
     report_str += f"F1 (Macro):      {f1_macro:.4f}\n"
-    
+
     report_str += "\n--- Detailed Classification Report ---\n"
     report_str += metrics.classification_report(
         all_targets_main,
@@ -415,7 +389,7 @@ def evaluate(args):
     report_str += "\n\n--- Confusion Matrix ---\n"
     report_str += str(cm_main)
     report_str += "\n"
-    
+
     # Append Derived Reports
     if derived_metrics:
         # Grade Report
@@ -424,7 +398,7 @@ def evaluate(args):
         report_str += "=" * 60 + "\n\n"
         report_str += f"Accuracy:        {derived_metrics['accuracy']:.4f}\n"
         report_str += f"Kappa Score:     {derived_metrics['kappa']:.4f}\n"
-        
+
         report_str += "\n--- Detailed Grade Report ---\n"
         # We need to reconstruct the string report for Grade manually or re-run classification_report with string output
         # Re-running for string output
@@ -438,7 +412,7 @@ def evaluate(args):
         )
         report_str += grade_report_str
         report_str += "\n\n--- Grade Confusion Matrix ---\n"
-        report_str += str(np.array(derived_metrics['confusion_matrix']))
+        report_str += str(np.array(derived_metrics["confusion_matrix"]))
         report_str += "\n"
 
         # Type Report
@@ -450,18 +424,18 @@ def evaluate(args):
             report_str += f"Accuracy:        {tm['accuracy']:.4f}\n"
             report_str += f"Kappa Score:     {tm['kappa']:.4f}\n"
             report_str += f"AUC:             {tm['auc_macro']:.4f}\n"
-            
+
             report_str += "\n--- Detailed Type Report ---\n"
             type_report_str = metrics.classification_report(
                 targets_type,
                 preds_type,
                 target_names=type_names,
                 digits=4,
-                zero_division=0
+                zero_division=0,
             )
             report_str += type_report_str
             report_str += "\n\n--- Type Confusion Matrix ---\n"
-            report_str += str(np.array(tm['confusion_matrix']))
+            report_str += str(np.array(tm["confusion_matrix"]))
             report_str += "\n"
 
     # Save Results
@@ -491,6 +465,14 @@ def evaluate(args):
         f"Confusion Matrix ({args.num_classes}-Class)",
     )
 
+    # Normalized Confusion Matrix
+    plot_confusion_matrix_normalized(
+        cm_main,
+        class_names_main,
+        save_dir / "confusion_matrix_normalized.png",
+        f"Normalized Confusion Matrix ({args.num_classes}-Class)",
+    )
+
     # ROC Curve - Main
     plot_roc_curve(
         all_targets_main,
@@ -500,6 +482,29 @@ def evaluate(args):
         save_dir / f"roc_{args.num_classes}_class.png",
         f"ROC Curve ({args.num_classes}-Class)",
     )
+
+    # Precision-Recall Curve
+    plot_precision_recall_curve(
+        all_targets_main,
+        all_probs_main,
+        args.num_classes,
+        class_names_main,
+        save_dir / "PR_curve.png",
+        f"Precision-Recall Curve ({args.num_classes}-Class)",
+    )
+
+    # F1, Precision, Recall Curves
+    plot_metric_curves(
+        all_targets_main,
+        all_probs_main,
+        all_preds_main,
+        args.num_classes,
+        class_names_main,
+        save_dir,
+    )
+
+    # Label Distribution
+    plot_label_distribution(all_targets_main, class_names_main, save_dir / "labels.jpg")
 
     # Confusion Matrix - Grade (Derived)
     if args.num_classes in [8, 10]:
@@ -511,7 +516,7 @@ def evaluate(args):
             save_dir / "cm_grade_derived.png",
             f"Confusion Matrix (Derived Grade) - Acc: {acc_grade:.4f}",
         )
-        
+
         # Confusion Matrix - Type (Derived)
         if "type_metrics" in derived_metrics:
             cm_type = np.array(derived_metrics["type_metrics"]["confusion_matrix"])

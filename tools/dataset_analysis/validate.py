@@ -21,8 +21,6 @@ from tqdm import tqdm
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.utils import yolo_to_xyxy_norm
-
 
 MIN_WH = 0.001  # Minimum width/height threshold
 

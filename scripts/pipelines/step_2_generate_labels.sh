@@ -38,7 +38,7 @@ echo ""
 
 # 2.1.1 Generate 10-class
 echo "  2.1.1 Generating 10-class labels..."
-python tools/check_dataset/class_split_report.py \
+python tools/dataset_analysis/class_split_report.py \
     --labels-dir datasets/dataset_v0/labels \
     --knee-labels-dir datasets/dataset_v0/labels-knee \
     --save-dir datasets/dataset_v0/labels_10_class \
@@ -60,7 +60,7 @@ echo "  ✅ 4-class: datasets/dataset_v0_4_class/labels/"
 # 2.1.3 Generate 8-class
 echo ""
 echo "  2.1.3 Generating 8-class labels (from 4-class)..."
-python tools/check_dataset/class_split_report.py \
+python tools/dataset_analysis/class_split_report.py \
     --labels-dir datasets/dataset_v0_4_class/labels \
     --knee-labels-dir datasets/dataset_v0/labels-knee \
     --save-dir datasets/dataset_v0_4_class/labels_8_class \
@@ -83,7 +83,7 @@ echo ""
 if [ -d "datasets/dataset_knees_cropped/labels" ]; then
     # 2.2.1 Generate 10-class
     echo "  2.2.1 Generating 10-class labels..."
-    python tools/check_dataset/class_split_report.py \
+    python tools/dataset_analysis/class_split_report.py \
         --labels-dir datasets/dataset_knees_cropped/labels \
         --save-dir datasets/dataset_knees_cropped/labels_10_class \
         --limit 0
@@ -104,7 +104,7 @@ if [ -d "datasets/dataset_knees_cropped/labels" ]; then
     # 2.2.3 Generate 8-class
     echo ""
     echo "  2.2.3 Generating 8-class labels (from 4-class)..."
-    python tools/check_dataset/class_split_report.py \
+    python tools/dataset_analysis/class_split_report.py \
         --labels-dir datasets/dataset_knees_cropped_4_class/labels \
         --save-dir datasets/dataset_knees_cropped_4_class/labels_8_class \
         --limit 0
