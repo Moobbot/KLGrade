@@ -46,8 +46,7 @@ def create_comparison_visualization(num_samples=3):
         "raw": (None, "Original"),
         "resize_only": (get_basic_pipeline(), "Resize Only"),
         "blur_clahe2": (get_v0_pipeline(), "Blur + CLAHE 2.0"),
-        "noBlur_clahe4": (get_v3_legacy_pipeline(), "No Blur + CLAHE 4.0"),
-        "blur_clahe2_notebook": (get_notebook_pipeline(), "Notebook Method"),
+        "noBlur_clahe4": (get_v3_legacy_pipeline(), "Sharp + CLAHE 4.0"),
     }
 
     # Create figure
@@ -141,7 +140,7 @@ def create_detailed_comparison_single_image():
         "raw": (None, "Original"),
         "resize_only": (get_basic_pipeline(), "Resize Only"),
         "blur_clahe2": (get_v0_pipeline(), "Blur + CLAHE 2.0"),
-        "noBlur_clahe4": (get_v3_legacy_pipeline(), "No Blur + CLAHE 4.0"),
+        "sharp_clahe4": (get_v3_legacy_pipeline(), "Sharp + CLAHE 4.0"),
     }
 
     # Create figure with 2 rows: images + histograms

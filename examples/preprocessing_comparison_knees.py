@@ -36,7 +36,6 @@ def create_multi_sample_comparison(image_paths, output_path):
         "Basic": (get_basic_pipeline(), "Resize Only"),
         "v0": (get_v0_pipeline(), "Blur + CLAHE 2.0"),
         "v3_legacy": (get_v3_legacy_pipeline(), "Sharp + CLAHE 4.0"),
-        "Notebook": (get_notebook_pipeline(), "Notebook Method"),
     }
 
     n_samples = len(image_paths)
