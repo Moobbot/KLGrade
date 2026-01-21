@@ -265,8 +265,8 @@ class KiocmilInference:
     def predict(
         self,
         image: np.ndarray,
-        knee_conf: float = 0.25,
-        lesion_conf: float = 0.25,
+        knee_conf: float = 0.5,
+        lesion_conf: float = 0.5,
     ) -> List[Dict]:
         """
         Run full KIOCMIL inference pipeline.

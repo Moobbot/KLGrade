@@ -240,17 +240,19 @@ class KiocmilModelCADA(nn.Module):
             - 'logits_grade': (B, 5) KL grade predictions
             - 'logits_type': (B, 1) lesion type predictions
             - 'embedding': (B, feature_dim) final embeddings
+            - 'knee_boxes': List[Tensor(K_i, 4)] knee bounding boxes for each sample
             - 'deform_weights': attention weights for visualization
         """
         device = next(self.parameters()).device
         B = len(batch_data)
 
-        # 1. Extract all patches
+        # 1. Extract all patches and track knee boxes
         all_ctx = []
         all_js = []
         all_ost = []
         all_js_bboxes = []
         all_ost_bboxes = []
+        all_knee_boxes = []
 
         patch_map = []
 
@@ -264,6 +266,12 @@ class KiocmilModelCADA(nn.Module):
                 # Context patch
                 ctx = knee["ctx"].to(device)
                 all_ctx.append(ctx)
+                
+                # Store knee bounding box if available
+                knee_bbox = knee.get("ctx_bbox", torch.zeros(4, device=device))
+                if not isinstance(knee_bbox, torch.Tensor):
+                    knee_bbox = torch.tensor(knee_bbox, device=device)
+                all_knee_boxes.append(knee_bbox)
 
                 # JS lesions
                 js = knee["js"].to(device)
@@ -452,9 +460,26 @@ class KiocmilModelCADA(nn.Module):
         logits_grade = self.head_grade(self.dropout_layer(final_emb))
         logits_type = self.head_type(self.dropout_layer(final_emb))
 
+        # 7. Organize knee boxes by batch
+        # all_knee_boxes is a flat list aligned with patch_map
+        # We need to group them back by batch index
+        batch_knee_boxes = [[] for _ in range(B)]
+        for i, info in enumerate(patch_map):
+            batch_knee_boxes[info["b_idx"]].append(all_knee_boxes[i])
+        
+        # Stack each batch's knee boxes into tensors
+        knee_boxes_output = []
+        for b_idx in range(B):
+            if batch_knee_boxes[b_idx]:
+                knee_boxes_output.append(torch.stack(batch_knee_boxes[b_idx]))
+            else:
+                # Empty tensor if no knees in this batch item
+                knee_boxes_output.append(torch.empty(0, 4, device=device))
+
         return {
             "logits_10": logits_10,
             "logits_grade": logits_grade,
             "logits_type": logits_type,
             "embedding": final_emb,
+            "knee_boxes": knee_boxes_output,  # List[Tensor(K_i, 4)] where K_i = num_knees for sample i
         }

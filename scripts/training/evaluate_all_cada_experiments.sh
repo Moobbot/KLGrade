@@ -156,7 +156,7 @@ evaluate_experiment \
     "cada_4class_balanced_resize" 4 \
     "datasets/processed_balanced/full_xray_4_class/resize_only/images" \
     "datasets/splits/balanced_full_xray_4_class" \
-    "datasets/balanced/full_xray_4_class/labels-knee" \
+    "datasets/processed_balanced/full_xray_4_class/resize_only/labels-knee" \
     "datasets/processed_balanced/full_xray_4_class/resize_only/labels"
 
 # Balanced + Blur CLAHE

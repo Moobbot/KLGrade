@@ -170,7 +170,7 @@ class KiocmilCADATrainer:
 
         self.model = KiocmilModelCADA(
             backbone_name="yolo11l",
-            num_classes=10,
+            num_classes=self.args.num_classes,
             feature_dim=256,
             num_deformable_points=4,
             num_context_scales=3,
