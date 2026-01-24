@@ -126,7 +126,7 @@ class KiocmilInference:
         Detect knees and extract context patches.
 
         Returns:
-            List of knee dictionaries with context patches and bboxes
+            List of knee dictionaries with context patches, bboxes, and confidence
         """
         results = self.knee_detector.predict(image, conf=knee_conf, verbose=False)
 
@@ -137,9 +137,10 @@ class KiocmilInference:
         knees = []
 
         for box in results[0].boxes:
-            # Get bbox
+            # Get bbox and confidence
             xyxy = box.xyxy[0].cpu().numpy().astype(int)
             x1, y1, x2, y2 = xyxy
+            knee_confidence = float(box.conf[0].item())  # Get knee confidence
 
             # Add padding
             pad_w = int((x2 - x1) * 0.1)
@@ -172,6 +173,7 @@ class KiocmilInference:
                     "ctx": ctx_tensor,
                     "ctx_bbox": torch.tensor(ctx_bbox, dtype=torch.float32),
                     "knee_region": (x1, y1, x2, y2),
+                    "knee_confidence": knee_confidence,  # Store knee confidence
                 }
             )
 
@@ -182,7 +184,9 @@ class KiocmilInference:
         image: np.ndarray,
         knee_region: Tuple[int, int, int, int],
         lesion_conf: float = 0.25,
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    ) -> Tuple[
+        torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, List[Tuple], List[Tuple]
+    ]:
         """
         Detect lesions within knee region and extract patches.
 
@@ -192,7 +196,7 @@ class KiocmilInference:
             lesion_conf: Confidence threshold for lesion detection
 
         Returns:
-            (js_patches, js_bboxes, ost_patches, ost_bboxes)
+            (js_patches, js_bboxes, ost_patches, ost_bboxes, js_global_bboxes, ost_global_bboxes)
         """
         x1, y1, x2, y2 = knee_region
         knee_crop = image[y1:y2, x1:x2]
@@ -206,6 +210,8 @@ class KiocmilInference:
         js_bboxes = []
         ost_patches = []
         ost_bboxes = []
+        js_global_bboxes = []  # Global coordinates for API response
+        ost_global_bboxes = []  # Global coordinates for API response
 
         if results and len(results[0].boxes) > 0:
             h, w = knee_crop.shape[:2]
@@ -237,14 +243,28 @@ class KiocmilInference:
                 ]
                 bbox_tensor = torch.tensor(bbox, dtype=torch.float32)
 
+                # Calculate global coordinates (relative to full image)
+                global_x1 = x1 + lx1
+                global_y1 = y1 + ly1
+                global_x2 = x1 + lx2
+                global_y2 = y1 + ly2
+                global_bbox = (
+                    int(global_x1),
+                    int(global_y1),
+                    int(global_x2),
+                    int(global_y2),
+                )
+
                 # Categorize by class (JS vs OST)
                 # Assuming classes 4,5 are JS and 0,1,2,3 are OST (from config)
                 if cls_id in [4, 5]:  # JS classes
                     js_patches.append(lesion_tensor)
                     js_bboxes.append(bbox_tensor)
+                    js_global_bboxes.append(global_bbox)
                 else:  # OST classes
                     ost_patches.append(lesion_tensor)
                     ost_bboxes.append(bbox_tensor)
+                    ost_global_bboxes.append(global_bbox)
 
         # Stack or create empty tensors
         js_tensor = (
@@ -260,7 +280,14 @@ class KiocmilInference:
         )
         ost_bbox_tensor = torch.stack(ost_bboxes) if ost_bboxes else torch.empty(0, 4)
 
-        return js_tensor, js_bbox_tensor, ost_tensor, ost_bbox_tensor
+        return (
+            js_tensor,
+            js_bbox_tensor,
+            ost_tensor,
+            ost_bbox_tensor,
+            js_global_bboxes,
+            ost_global_bboxes,
+        )
 
     def predict(
         self,
@@ -285,15 +312,17 @@ class KiocmilInference:
         if not knees:
             return []
 
-        # Step 2: For each knee, detect lesions
+        # Step 2: For each knee, detect lesions and store bboxes
         for knee in knees:
-            js, js_bbox, ost, ost_bbox = self._extract_lesion_patches(
-                image, knee["knee_region"], lesion_conf
+            js, js_bbox, ost, ost_bbox, js_global, ost_global = (
+                self._extract_lesion_patches(image, knee["knee_region"], lesion_conf)
             )
             knee["js"] = js
             knee["js_bboxes"] = js_bbox
             knee["ost"] = ost
             knee["ost_bboxes"] = ost_bbox
+            knee["js_global_bboxes"] = js_global  # Store global coordinates
+            knee["ost_global_bboxes"] = ost_global  # Store global coordinates
 
         # Step 3: Prepare batch data for KIOCMIL model
         batch_data = [{"knees": knees, "label": 0}]  # Dummy label for inference
@@ -309,17 +338,18 @@ class KiocmilInference:
 
         # Format results
         results = []
+        # Class names from config.py CLASSES_10_CLASS
         class_names_10 = [
-            "Healthy",
-            "DoubtfulJS",
-            "MinimalJS",
-            "ModerateJS",
-            "SevereJS",
-            "DoubtfulOST",
-            "MinimalOST",
-            "ModerateOST",
-            "SevereOST",
-            "Total",
+            "KL0-a",  # Osteophyte (gai xương)
+            "KL0-b",  # Joint space (khe khớp)
+            "KL1-a",
+            "KL1-b",
+            "KL2-a",
+            "KL2-b",
+            "KL3-a",
+            "KL3-b",
+            "KL4-a",
+            "KL4-b",
         ]
 
         for i, knee in enumerate(knees):
@@ -342,6 +372,8 @@ class KiocmilInference:
                     },
                     "num_js_lesions": len(knee["js"]),
                     "num_ost_lesions": len(knee["ost"]),
+                    "js_lesion_bboxes": knee.get("js_global_bboxes", []),
+                    "ost_lesion_bboxes": knee.get("ost_global_bboxes", []),
                 }
             )
 

@@ -19,6 +19,15 @@ def fix_splits_to_relative():
         "knee_10_class": "processed/knee_10_class/images",
         "knee_4_class": "processed/knee_4_class/images",
         "knee_8_class": "processed/knee_8_class/images",
+        # Balanced datasets
+        "balanced_knees_cropped": "datasets/balanced/knees_cropped/images",
+        "balanced_knees_cropped_4_class": "datasets/balanced/knees_cropped_4_class/images",
+        "balanced_knees_cropped_8_class": "datasets/balanced/knees_cropped_8_class/images",
+        "balanced_knees_cropped_10_class": "datasets/balanced/knees_cropped_10_class/images",
+        "balanced_full_xray": "datasets/balanced/full_xray/images",
+        "balanced_full_xray_4_class": "datasets/balanced/full_xray_4_class/images",
+        "balanced_full_xray_8_class": "datasets/balanced/full_xray_8_class/images",
+        "balanced_full_xray_10_class": "datasets/balanced/full_xray_10_class/images",
     }
 
     print("🔧 Fixing split files to use relative paths...")

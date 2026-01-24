@@ -16,7 +16,7 @@ from src.data.preprocessing import (
     get_basic_pipeline,
     get_v0_pipeline,
     get_v3_legacy_pipeline,
-    get_notebook_pipeline,
+    # get_notebook_pipeline,
     get_custom_pipeline,
     load_image,
     save_image,
@@ -190,7 +190,7 @@ def example_6_compare_presets():
         "resize_only": get_basic_pipeline(),
         "blur_clahe2": get_v0_pipeline(),
         "noBlur_clahe4": get_v3_legacy_pipeline(),
-        "blur_clahe2_notebook": get_notebook_pipeline(),
+        # "blur_clahe2_notebook": get_notebook_pipeline(),
     }
 
     output_dir = project_root / "datasets" / "data_examples" / "comparison"

@@ -19,7 +19,7 @@ from src.data.preprocessing import (
     get_basic_pipeline,
     get_v0_pipeline,
     get_v3_legacy_pipeline,
-    get_notebook_pipeline,
+    # get_notebook_pipeline,
 )
 
 
@@ -135,10 +135,10 @@ def main():
             "Legacy Sharp (No Blur + CLAHE 4.0)",
             get_v3_legacy_pipeline(),
         ),
-        "blur_clahe2_notebook": (
-            "Notebook Method (Blur + CLAHE 2.0)",
-            get_notebook_pipeline(),
-        ),
+        # "blur_clahe2_notebook": (
+        #     "Notebook Method (Blur + CLAHE 2.0)",
+        #     get_notebook_pipeline(),
+        # ),
     }
 
     # Ask user which presets to run

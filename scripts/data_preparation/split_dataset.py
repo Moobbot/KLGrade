@@ -129,9 +129,9 @@ def load_image_class_mapping(
                 class_to_imgs[cls].append(stem)
 
     if missing_labels:
-        print(f"⚠️  Warning: {len(missing_labels)} images have no labels")
+        print(f"[WARNING] Warning: {len(missing_labels)} images have no labels")
 
-    print(f"✅ Loaded {len(img_to_classes)} images with labels")
+    print(f"[OK] Loaded {len(img_to_classes)} images with labels")
 
     return img_to_classes, class_to_imgs, stem_to_filename
 
@@ -219,7 +219,7 @@ def stratified_split(
     assigned = set()
 
     # First pass: ensure minimum samples for rare classes
-    print("\n📊 First pass: ensuring minimum samples for rare classes...")
+    print("\n[INFO] First pass: ensuring minimum samples for rare classes...")
     for cls, imgs in sorted(class_to_imgs.items(), key=lambda x: len(x[1])):
         class_imgs = [img for img in imgs if img not in assigned]
 
@@ -246,7 +246,7 @@ def stratified_split(
                 print(f"  Class {cls}: {n_class} samples (rare) - distributed")
 
     # Second pass: distribute remaining images
-    print("\n📊 Second pass: distributing remaining images...")
+    print("\n[INFO] Second pass: distributing remaining images...")
     remaining = [stem for stem in all_stems if stem not in assigned]
     random.shuffle(remaining)
 
@@ -312,7 +312,7 @@ def save_splits(
         # If absolute path provided, try to make it relative or just use it as is
         # Usually user runs script from project root
         print(
-            f"⚠️  Warning: {img_dir} is not relative to {Path.cwd()}. Using provided path."
+            f"[WARNING] Warning: {img_dir} is not relative to {Path.cwd()}. Using provided path."
         )
         rel_img_dir = img_dir
 
@@ -330,7 +330,7 @@ def save_splits(
     write_stems(val_stems, "val.txt")
     write_stems(test_stems, "test.txt")
 
-    print(f"\n✅ Saved split files to {output_dir}")
+    print(f"\n[OK] Saved split files to {output_dir}")
     print(f"   train.txt: {len(train_stems)} images")
     print(f"   val.txt: {len(val_stems)} images")
     print(f"   test.txt: {len(test_stems)} images")
@@ -382,9 +382,9 @@ def save_split_info(
             "description": "Stratified dataset split for object detection",
         },
         "configuration": {
-            "image_directory": str(config["img_dir"]),
-            "label_directory": str(config["label_dir"]),
-            "output_directory": str(config["out_dir"]),
+            "image_directory": str(config["img_dir"]).replace("\\", "/"),
+            "label_directory": str(config["label_dir"]).replace("\\", "/"),
+            "output_directory": str(config["out_dir"]).replace("\\", "/"),
             "split_ratios": {
                 "train": config["train_ratio"],
                 "val": config["val_ratio"],
@@ -471,7 +471,7 @@ def save_split_info(
     with open(info_path, "w", encoding="utf-8") as f:
         json.dump(split_info, f, indent=2, ensure_ascii=False)
 
-    print(f"\n✅ Saved split information to {info_path}")
+    print(f"\n[OK] Saved split information to {info_path}")
 
 
 def main():
@@ -510,7 +510,7 @@ def main():
     )
 
     # Show class statistics
-    print(f"\n📊 Dataset statistics:")
+    print(f"\n[INFO] Dataset statistics:")
     print(f"  Total images: {len(img_to_classes)}")
     print(f"  Total classes: {len(class_to_imgs)}")
     print(f"\n  Class distribution:")
@@ -568,7 +568,7 @@ def main():
     )
 
     print("\n" + "=" * 70)
-    print("✅ Dataset splitting completed successfully!")
+    print("[OK] Dataset splitting completed successfully!")
     print("=" * 70)
 
 

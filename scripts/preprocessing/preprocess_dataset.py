@@ -12,7 +12,7 @@ With multiple preprocessing variants:
 - resize_only
 - blur_clahe2
 - sharp_clahe4
-- blur_clahe2_notebook
+# - blur_clahe2_notebook
 """
 
 import sys
@@ -33,7 +33,7 @@ from src.data.preprocessing import (
     get_basic_pipeline,
     get_v0_pipeline,
     get_v3_legacy_pipeline,
-    get_notebook_pipeline,
+    # get_notebook_pipeline,
 )
 
 
@@ -82,10 +82,10 @@ def preprocess_dataset(
         "resize_only": ("Resize only", get_basic_pipeline()),
         "blur_clahe2": ("Blur + CLAHE 2.0", get_v0_pipeline()),
         "sharp_clahe4": ("No Blur + CLAHE 4.0", get_v3_legacy_pipeline()),
-        "blur_clahe2_notebook": (
-            "Notebook (Blur + CLAHE 2.0)",
-            get_notebook_pipeline(),
-        ),
+        # "blur_clahe2_notebook": (
+        #     "Notebook (Blur + CLAHE 2.0)",
+        #     get_notebook_pipeline(),
+        # ),
     }
 
     # Track processing log

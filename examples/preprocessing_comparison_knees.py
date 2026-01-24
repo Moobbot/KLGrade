@@ -21,7 +21,7 @@ from src.data.preprocessing import (
     get_basic_pipeline,
     get_v0_pipeline,
     get_v3_legacy_pipeline,
-    get_notebook_pipeline,
+    # get_notebook_pipeline,
 )
 
 # Set matplotlib style
