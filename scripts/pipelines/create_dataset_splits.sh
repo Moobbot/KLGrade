@@ -15,9 +15,11 @@ conda activate klgrade || echo "⚠️  Warning: Failed to activate klgrade env"
 
 # Configuration
 SEED=42
-TRAIN_RATIO=0.7
-VAL_RATIO=0.15
-TEST_RATIO=0.15
+# Allow overriding from environment variables
+TRAIN_RATIO=${TRAIN_RATIO:-0.7}
+VAL_RATIO=${VAL_RATIO:-0.15}
+TEST_RATIO=${TEST_RATIO:-0.15}
+SPLIT_SUFFIX=${SPLIT_SUFFIX:-""}
 
 echo "========================================"
 echo "Dataset Splits Creation"
@@ -79,6 +81,12 @@ create_splits() {
 # Parse command line argument
 MODE=${1:-all}
 
+# Helper to append suffix if needed
+get_out_dir() {
+    local base_dir=$1
+    echo "${base_dir}${SPLIT_SUFFIX}"
+}
+
 case $MODE in
     5_class|5-class|cropped-5)
         echo "Mode: Creating 5-class cropped splits only"
@@ -87,7 +95,7 @@ case $MODE in
             "Cropped Knees - 5 Class" \
             "datasets/dataset_knees_cropped/images" \
             "datasets/dataset_knees_cropped/labels" \
-            "datasets/splits/dataset_knees_cropped"
+            "$(get_out_dir datasets/splits/dataset_knees_cropped)"
         ;;
         
     4_class|4-class|cropped-4)
@@ -97,7 +105,7 @@ case $MODE in
             "Cropped Knees - 4 Class" \
             "datasets/dataset_knees_cropped/images" \
             "datasets/dataset_knees_cropped/labels_4_class" \
-            "datasets/splits/dataset_knees_cropped_4_class"
+            "$(get_out_dir datasets/splits/dataset_knees_cropped_4_class)"
         ;;
         
     8_class|8-class|cropped-8)
@@ -107,7 +115,7 @@ case $MODE in
             "Cropped Knees - 8 Class" \
             "datasets/dataset_knees_cropped/images" \
             "datasets/dataset_knees_cropped/labels_8_class" \
-            "datasets/splits/dataset_knees_cropped_8_class"
+            "$(get_out_dir datasets/splits/dataset_knees_cropped_8_class)"
         ;;
         
     balanced|balanced-5)
@@ -126,7 +134,7 @@ case $MODE in
             "Balanced Knees - 5 Class" \
             "datasets/balanced/knees_cropped/images" \
             "datasets/balanced/knees_cropped/labels" \
-            "datasets/splits/balanced_knees_cropped"
+            "$(get_out_dir datasets/splits/balanced_knees_cropped)"
         ;;
         
     balanced-4)
@@ -136,7 +144,7 @@ case $MODE in
             "Balanced Knees - 4 Class" \
             "datasets/balanced/knees_cropped/images" \
             "datasets/balanced/knees_cropped/labels_4_class" \
-            "datasets/splits/balanced_knees_cropped_4_class"
+            "$(get_out_dir datasets/splits/balanced_knees_cropped_4_class)"
         ;;
         
     balanced-8)
@@ -146,7 +154,7 @@ case $MODE in
             "Balanced Knees - 8 Class" \
             "datasets/balanced/knees_cropped/images" \
             "datasets/balanced/knees_cropped/labels_8_class" \
-            "datasets/splits/balanced_knees_cropped_8_class"
+            "$(get_out_dir datasets/splits/balanced_knees_cropped_8_class)"
         ;;
         
     10_class|10-class|full)
@@ -156,7 +164,7 @@ case $MODE in
             "Full X-rays - 10 Class" \
             "datasets/dataset_v0/images" \
             "datasets/dataset_v0/labels_10_class" \
-            "datasets/splits/knee_full_10_class"
+            "$(get_out_dir datasets/splits/knee_full_10_class)"
         ;;
 
     balanced-10)
@@ -166,7 +174,7 @@ case $MODE in
             "Balanced Knees - 10 Class" \
             "datasets/balanced/knees_cropped_10_class/images" \
             "datasets/balanced/knees_cropped_10_class/labels" \
-            "datasets/splits/balanced_knees_cropped_10_class"
+            "$(get_out_dir datasets/splits/balanced_knees_cropped_10_class)"
         ;;
 
     balanced-full-10)
@@ -176,7 +184,7 @@ case $MODE in
             "Balanced Full X-rays - 10 Class" \
             "datasets/balanced/full_xray_10_class/images" \
             "datasets/balanced/full_xray_10_class/labels" \
-            "datasets/splits/balanced_full_xray_10_class"
+            "$(get_out_dir datasets/splits/balanced_full_xray_10_class)"
         ;;
 
     balanced-full-4)
@@ -186,7 +194,7 @@ case $MODE in
             "Balanced Full X-rays - 4 Class" \
             "datasets/balanced/full_xray_4_class/images" \
             "datasets/balanced/full_xray_4_class/labels" \
-            "datasets/splits/balanced_full_xray_4_class"
+            "$(get_out_dir datasets/splits/balanced_full_xray_4_class)"
         ;;
 
     balanced-full-8)
@@ -196,7 +204,7 @@ case $MODE in
             "Balanced Full X-rays - 8 Class" \
             "datasets/balanced/full_xray_8_class/images" \
             "datasets/balanced/full_xray_8_class/labels" \
-            "datasets/splits/balanced_full_xray_8_class"
+            "$(get_out_dir datasets/splits/balanced_full_xray_8_class)"
         ;;
         
     all)
@@ -209,7 +217,7 @@ case $MODE in
                 "Cropped Knees - 5 Class" \
                 "datasets/dataset_knees_cropped/images" \
                 "datasets/dataset_knees_cropped/labels" \
-                "datasets/splits/dataset_knees_cropped"
+                "$(get_out_dir datasets/splits/dataset_knees_cropped)"
         fi
         
         # 2. Cropped 4-class
@@ -218,13 +226,13 @@ case $MODE in
                 "Cropped Knees - 4 Class" \
                 "datasets/dataset_knees_cropped_4_class/images" \
                 "datasets/dataset_knees_cropped_4_class/labels" \
-                "datasets/splits/dataset_knees_cropped_4_class"
+                "$(get_out_dir datasets/splits/dataset_knees_cropped_4_class)"
         elif [ -d "datasets/dataset_knees_cropped/labels_4_class" ]; then
              create_splits \
                 "Cropped Knees - 4 Class" \
                 "datasets/dataset_knees_cropped/images" \
                 "datasets/dataset_knees_cropped/labels_4_class" \
-                "datasets/splits/dataset_knees_cropped_4_class"
+                "$(get_out_dir datasets/splits/dataset_knees_cropped_4_class)"
         fi
         
         # 3. Cropped 8-class
@@ -233,7 +241,7 @@ case $MODE in
                 "Cropped Knees - 8 Class" \
                 "datasets/dataset_knees_cropped_4_class/images" \
                 "datasets/dataset_knees_cropped_4_class/labels_8_class" \
-                "datasets/splits/dataset_knees_cropped_8_class"
+                "$(get_out_dir datasets/splits/dataset_knees_cropped_8_class)"
         fi
 
         # 3. Cropped 10-class
@@ -242,7 +250,7 @@ case $MODE in
                 "Cropped Knees - 10 Class" \
                 "datasets/dataset_knees_cropped/images" \
                 "datasets/dataset_knees_cropped/labels_10_class" \
-                "datasets/splits/dataset_knees_cropped_10_class"
+                "$(get_out_dir datasets/splits/dataset_knees_cropped_10_class)"
         fi
         
         # 4. Balanced Variants (if they exist)
@@ -253,7 +261,7 @@ case $MODE in
                 "Balanced Knees - 5 Class" \
                 "datasets/balanced/knees_cropped/images" \
                 "datasets/balanced/knees_cropped/labels" \
-                "datasets/splits/balanced_knees_cropped"
+                "$(get_out_dir datasets/splits/balanced_knees_cropped)"
         fi
 
         # Balanced 4-class
@@ -262,7 +270,7 @@ case $MODE in
                 "Balanced Knees - 4 Class" \
                 "datasets/balanced/knees_cropped_4_class/images" \
                 "datasets/balanced/knees_cropped_4_class/labels" \
-                "datasets/splits/balanced_knees_cropped_4_class"
+                "$(get_out_dir datasets/splits/balanced_knees_cropped_4_class)"
         fi
 
         # Balanced 8-class
@@ -271,7 +279,7 @@ case $MODE in
                 "Balanced Knees - 8 Class" \
                 "datasets/balanced/knees_cropped_8_class/images" \
                 "datasets/balanced/knees_cropped_8_class/labels" \
-                "datasets/splits/balanced_knees_cropped_8_class"
+                "$(get_out_dir datasets/splits/balanced_knees_cropped_8_class)"
         fi
         
         # Balanced 10-class
@@ -280,7 +288,7 @@ case $MODE in
                 "Balanced Knees - 10 Class" \
                 "datasets/balanced/knees_cropped_10_class/images" \
                 "datasets/balanced/knees_cropped_10_class/labels" \
-                "datasets/splits/balanced_knees_cropped_10_class"
+                "$(get_out_dir datasets/splits/balanced_knees_cropped_10_class)"
         fi
 
         # 5. Full X-rays
@@ -291,7 +299,7 @@ case $MODE in
                 "Full X-rays - 10 Class" \
                 "datasets/dataset_v0/images" \
                 "datasets/dataset_v0/labels_10_class" \
-                "datasets/splits/knee_full_10_class"
+                "$(get_out_dir datasets/splits/knee_full_10_class)"
         fi
 
         # Full 4-class (Base)
@@ -300,7 +308,7 @@ case $MODE in
                 "Full X-rays - 4 Class" \
                 "datasets/dataset_v0_4_class/images" \
                 "datasets/dataset_v0_4_class/labels" \
-                "datasets/splits/knee_full_4_class"
+                "$(get_out_dir datasets/splits/knee_full_4_class)"
         fi
 
 
@@ -310,7 +318,7 @@ case $MODE in
                 "Full X-rays - 8 Class" \
                 "datasets/dataset_v0_4_class/images" \
                 "datasets/dataset_v0_4_class/labels_8_class" \
-                "datasets/splits/knee_full_8_class"
+                "$(get_out_dir datasets/splits/knee_full_8_class)"
         fi
 
         # Balanced Full 10-class
@@ -319,7 +327,7 @@ case $MODE in
                 "Balanced Full X-rays - 10 Class" \
                 "datasets/balanced/full_xray_10_class/images" \
                 "datasets/balanced/full_xray_10_class/labels" \
-                "datasets/splits/balanced_full_xray_10_class"
+                "$(get_out_dir datasets/splits/balanced_full_xray_10_class)"
         fi
 
         # Balanced Full 4-class
@@ -328,7 +336,7 @@ case $MODE in
                 "Balanced Full X-rays - 4 Class" \
                 "datasets/balanced/full_xray_4_class/images" \
                 "datasets/balanced/full_xray_4_class/labels" \
-                "datasets/splits/balanced_full_xray_4_class"
+                "$(get_out_dir datasets/splits/balanced_full_xray_4_class)"
         fi
 
         # Balanced Full 8-class
@@ -337,7 +345,7 @@ case $MODE in
                 "Balanced Full X-rays - 8 Class" \
                 "datasets/balanced/full_xray_8_class/images" \
                 "datasets/balanced/full_xray_8_class/labels" \
-                "datasets/splits/balanced_full_xray_8_class"
+                "$(get_out_dir datasets/splits/balanced_full_xray_8_class)"
         fi
 
         # 6. Processed Balanced Datasets
@@ -361,7 +369,7 @@ case $MODE in
                                     "Processed Balanced - $dataset_name - $variant_name" \
                                     "$variant_dir/images" \
                                     "$variant_dir/labels" \
-                                    "datasets/splits/processed_balanced/$dataset_name/$variant_name"
+                                    "$(get_out_dir datasets/splits/processed_balanced/$dataset_name/$variant_name)"
                             fi
                         fi
                     done
