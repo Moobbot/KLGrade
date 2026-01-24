@@ -219,8 +219,21 @@ class KiocmilDatasetV3(Dataset):
         if image is None:
             raise ValueError(f"Cannot read image: {img_path}")
 
-        H, W = image.shape
-        image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        # Robustly handle image shape (some environments/files might load as 3-channel even with flag)
+        if image.ndim == 2:
+            H, W = image.shape
+            image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
+        else:
+            # Handle multi-channel (H, W, C)
+            H, W = image.shape[:2]
+            if image.shape[2] == 3:
+                # Assuming BGR from opencv
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            elif image.shape[2] == 4:
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_BGRA2RGB)
+            else:
+                # Fallback for 1-channel 3D or other
+                image_rgb = cv2.cvtColor(image, cv2.COLOR_GRAY2RGB)
 
         # Load bounding boxes first
         knee_path = self.knee_label_dir / f"{stem}.txt"

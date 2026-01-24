@@ -101,6 +101,8 @@ def evaluate(args):
     # Derived metrics containers (if applicable)
     all_preds_grade = []
     all_targets_grade = []
+    all_preds_type = []
+    all_targets_type = []
 
     print("Running inference...")
     with torch.no_grad():
@@ -111,15 +113,38 @@ def evaluate(args):
             # Forward
             outputs = model(batch_data)
 
-            # --- Main Metrics ---
-            # Output key depends on num_classes in model definition, but typically is "logits_10"
-            # However, if we change num_classes, the model output key MIGHT change if the model code does.
-            # Looking at KiocmilModelCADA, it returns "logits_10" but the size matches num_classes.
-            # Let's trust "logits_10" is the main head regardless of name, or check keys.
-            logits_main = outputs["logits_10"]
+            # --- Explicit Heads ---
+            # The model outputs explicit heads for grade and type in addition to the 10-class head
+            # We should evaluate these as well if available
 
+            # 1. Main 10-class Head
+            logits_main = outputs["logits_10"]
             probs_main = torch.softmax(logits_main, dim=1)
             preds_main = torch.argmax(logits_main, dim=1)
+
+            # 2. explicit Grade Head (5-class)
+            logits_grade_head = outputs.get("logits_grade")
+            if logits_grade_head is not None:
+                preds_grade_head = torch.argmax(logits_grade_head, dim=1)
+                all_preds_grade.extend(preds_grade_head.cpu().numpy())
+            else:
+                # Fallback to deriving from 10-class if head missing (backward compatibility)
+                if args.num_classes in [8, 10]:
+                    all_preds_grade.extend((preds_main // 2).cpu().numpy())
+
+            # 3. Explicit Type Head (binary)
+            logits_type_head = outputs.get("logits_type")
+            # Note: The model code uses BCEWithLogitsLoss for type, so shape is (B, 1) usually?
+            # Model definition: self.head_type = nn.Linear(feature_dim, 1)
+            # So output is (B, 1) logits.
+            if logits_type_head is not None:
+                probs_type_head = torch.sigmoid(logits_type_head)
+                preds_type_head = (probs_type_head > 0.5).long().squeeze(-1)
+                # Need to store this for type metrics
+                # We'll use a temporary list or just repurpose the loop
+                # Let's add a container for explicit type preds
+                all_preds_type.extend(preds_type_head.cpu().numpy())
+                # For now, let's keep the logic below simple and just add containers
 
             # Get targets
             labels = [item["label"] for item in batch_data]
@@ -129,15 +154,13 @@ def evaluate(args):
             all_targets_main.extend(targets_main.cpu().numpy())
             all_probs_main.extend(probs_main.cpu().numpy())
 
-            # --- Derived Grade Metrics ---
+            # Targets for Grade and Type
             if args.num_classes in [8, 10]:
-                # 10-class (0-9) -> 5-Grade (0-4)
-                # 8-class (0-7) -> 4-Grade (0-3) [which represents KL1-4]
-                preds_grade = preds_main // 2
                 targets_grade = targets_main // 2
-
-                all_preds_grade.extend(preds_grade.cpu().numpy())
                 all_targets_grade.extend(targets_grade.cpu().numpy())
+
+                targets_type_derived = targets_main % 2
+                all_targets_type.extend(targets_type_derived.cpu().numpy())
 
     # Convert to arrays
     all_targets_main = np.array(all_targets_main)
@@ -147,8 +170,12 @@ def evaluate(args):
     if args.num_classes in [8, 10]:
         all_targets_grade = np.array(all_targets_grade)
         all_preds_grade = np.array(all_preds_grade)
+        all_targets_type = np.array(all_targets_type)
+        # If we used explicit head, `all_preds_grade` has correct length.
+        # If we fell back, it also has correct length.
+        # If all_preds_type is empty, it means the explicit head was not used.
+        # In that case, we will derive preds_type from all_preds_main later.
 
-    # --- Print Text Reports ---
     print("\n" + "=" * 60)
     print(f" EVALUATION RESULTS (KIOCMIL CADA - {args.num_classes} Classes)")
     print("=" * 60)
@@ -394,7 +421,7 @@ def evaluate(args):
     if derived_metrics:
         # Grade Report
         report_str += "\n" + "=" * 60 + "\n"
-        report_str += f" DERIVED GRADE REPORT ({num_grade_classes}-Class)\n"
+        report_str += f" EXPLICIT GRADE REPORT ({num_grade_classes}-Class)\n"
         report_str += "=" * 60 + "\n\n"
         report_str += f"Accuracy:        {derived_metrics['accuracy']:.4f}\n"
         report_str += f"Kappa Score:     {derived_metrics['kappa']:.4f}\n"
