@@ -227,6 +227,7 @@ class KiocmilWithDetection(nn.Module):
         self,
         images: torch.Tensor,
         mode: str = "train",
+        skip_classification: bool = False,
     ) -> Dict[str, torch.Tensor]:
         """
         Forward pass for end-to-end detection + classification.
@@ -234,6 +235,7 @@ class KiocmilWithDetection(nn.Module):
         Args:
             images: (B, 3, H, W) input images
             mode: "train" or "inference"
+            skip_classification: If True, skip KIOCMIL module (for detection warmup)
 
         Returns:
             Dict containing:
@@ -259,6 +261,18 @@ class KiocmilWithDetection(nn.Module):
         # Note: In full implementation, should detect lesions within knee regions
         # For now, detect on full image
         lesion_boxes, lesion_confs = self.lesion_detector(features)
+
+        if skip_classification:
+            return {
+                "knee_boxes": knee_boxes,
+                "knee_confs": knee_confs,
+                "lesion_boxes": lesion_boxes,
+                "lesion_confs": lesion_confs,
+                "logits_10": torch.zeros(B, self.num_classes, device=device),
+                "logits_grade": torch.zeros(B, 5, device=device),
+                "logits_type": torch.zeros(B, 1, device=device),
+                "embedding": torch.zeros(B, self.feature_dim, device=device),
+            }
 
         # 4. Create batch_data for KIOCMIL
         # TODO: Implement proper cropping and patch extraction
@@ -291,47 +305,152 @@ class KiocmilWithDetection(nn.Module):
         lesion_confs: torch.Tensor,
     ) -> List[Dict]:
         """
-        Create batch_data structure for KIOCMIL from detected boxes.
-
-        TODO: Implement proper patch cropping from detected boxes.
-        Currently returns dummy structure.
+        Create batch_data structure for KIOCMIL from detected boxes by cropping real patches.
         """
-        B = images.shape[0]
+        B, C, H, W = images.shape
         device = images.device
 
         batch_data = []
         for b in range(B):
-            # Filter valid detections
-            valid_knees = knee_confs[b, :, 0] > 0.5
-            knees_b = knee_boxes[b][valid_knees]
+            # 1. Filter valid knee detections
+            # Use top-K or threshold. For now, threshold 0.5
+            valid_knees_mask = knee_confs[b, :, 0] > 0.5
+            knees_b = knee_boxes[b][valid_knees_mask]
 
             if len(knees_b) == 0:
-                # No knees detected, use full image
-                knees_b = torch.tensor([[0.5, 0.5, 1.0, 1.0]], device=device)
+                # Fallback: Use center crop or full image if no knee found
+                # Create a "fake" knee box covering center 50%
+                knees_b = torch.tensor([[0.5, 0.5, 0.5, 0.8]], device=device)
+
+            # 2. Filter valid lesion detections
+            # Shape of lesion_confs: (B, N, 2) [JS, OST]
+            # We take max confidence over classes
+            lesion_scores, lesion_labels = lesion_confs[b].max(dim=1)
+
+            # Use higher threshold to reduce garbage
+            valid_lesions_mask = lesion_scores > 0.5
+            lesions_b = lesion_boxes[b][valid_lesions_mask]
+            lesion_labels_b = lesion_labels[valid_lesions_mask]
+            scores_b = lesion_scores[valid_lesions_mask]
+
+            # Limit to top K lesions (e.g., 20) to prevent OOM
+            if len(lesions_b) > 20:
+                topk_scores, topk_indices = torch.topk(scores_b, 20)
+                lesions_b = lesions_b[topk_indices]
+                lesion_labels_b = lesion_labels_b[topk_indices]
 
             knees_data = []
             for knee_box in knees_b:
-                # TODO: Crop actual patches from image using knee_box
-                # For now, use dummy patches
-                ctx_patch = torch.randn(3, 384, 384, device=device)
-                js_patches = torch.empty(0, 3, 224, 224, device=device)
-                ost_patches = torch.empty(0, 3, 224, 224, device=device)
+                # Convert normalized box to pixel coords
+                k_cx, k_cy, k_w, k_h = knee_box
+                x1 = int((k_cx - k_w / 2) * W)
+                y1 = int((k_cy - k_h / 2) * H)
+                x2 = int((k_cx + k_w / 2) * W)
+                y2 = int((k_cy + k_h / 2) * H)
+
+                # Check bounds
+                x1, y1 = max(0, x1), max(0, y1)
+                x2, y2 = min(W, x2), min(H, y2)
+
+                if x2 <= x1 or y2 <= y1:
+                    continue  # Skip invalid box
+
+                # Crop context patch (Knee)
+                ctx_patch = images[b, :, y1:y2, x1:x2]
+
+                # Resize to (384, 384)
+                # Use torch.nn.functional.interpolate
+                # Need (1, C, H, W) for interpolate
+                ctx_patch = torch.nn.functional.interpolate(
+                    ctx_patch.unsqueeze(0),
+                    size=(384, 384),
+                    mode="bilinear",
+                    align_corners=False,
+                ).squeeze(0)
+
+                # Find lesions inside this knee
+                js_patches = []
+                js_bboxes = []
+                ost_patches = []
+                ost_bboxes = []
+
+                for l_idx, l_box in enumerate(lesions_b):
+                    l_cls = lesion_labels_b[l_idx]
+
+                    # Check overlap with knee
+                    l_cx, l_cy, l_w, l_h = l_box
+                    lx1 = int((l_cx - l_w / 2) * W)
+                    ly1 = int((l_cy - l_h / 2) * H)
+                    lx2 = int((l_cx + l_w / 2) * W)
+                    ly2 = int((l_cy + l_h / 2) * H)
+
+                    # Intersect
+                    ix1, iy1 = max(x1, lx1), max(y1, ly1)
+                    ix2, iy2 = min(x2, lx2), min(y2, ly2)
+
+                    if ix2 > ix1 and iy2 > iy1:
+                        # Valid overlap
+                        # Crop lesion patch
+                        # Pad slightly 10%
+                        pw = (lx2 - lx1) * 0.1
+                        ph = (ly2 - ly1) * 0.1
+                        lx1 = max(0, int(lx1 - pw))
+                        ly1 = max(0, int(ly1 - ph))
+                        lx2 = min(W, int(lx2 + pw))
+                        ly2 = min(H, int(ly2 + ph))
+
+                        lesion_patch = images[b, :, ly1:ly2, lx1:lx2]
+                        if lesion_patch.numel() == 0:
+                            continue
+
+                        # Resize to (224, 224)
+                        lesion_patch = torch.nn.functional.interpolate(
+                            lesion_patch.unsqueeze(0),
+                            size=(224, 224),
+                            mode="bilinear",
+                            align_corners=False,
+                        ).squeeze(0)
+
+                        # Normalize bbox relative to IMAGE (already normalized)
+                        # Dataset V3 expects normalized boxes
+
+                        if l_cls == 0:  # JS
+                            js_patches.append(lesion_patch)
+                            js_bboxes.append(l_box)
+                        else:  # OST
+                            ost_patches.append(lesion_patch)
+                            ost_bboxes.append(l_box)
+
+                # Stack patches
+                if js_patches:
+                    js_tensor = torch.stack(js_patches)
+                    js_bbox_tensor = torch.stack(js_bboxes)
+                else:
+                    js_tensor = torch.empty(0, 3, 224, 224, device=device)
+                    js_bbox_tensor = torch.empty(0, 4, device=device)
+
+                if ost_patches:
+                    ost_tensor = torch.stack(ost_patches)
+                    ost_bbox_tensor = torch.stack(ost_bboxes)
+                else:
+                    ost_tensor = torch.empty(0, 3, 224, 224, device=device)
+                    ost_bbox_tensor = torch.empty(0, 4, device=device)
 
                 knees_data.append(
                     {
                         "ctx": ctx_patch,
                         "ctx_bbox": knee_box,
-                        "js": js_patches,
-                        "js_bboxes": torch.empty(0, 4, device=device),
-                        "ost": ost_patches,
-                        "ost_bboxes": torch.empty(0, 4, device=device),
+                        "js": js_tensor,
+                        "js_bboxes": js_bbox_tensor,
+                        "ost": ost_tensor,
+                        "ost_bboxes": ost_bbox_tensor,
                     }
                 )
 
             batch_data.append(
                 {
                     "knees": knees_data,
-                    "label": 0,  # Dummy label
+                    "label": 0,  # Placeholder, will be populated by trainer if needed
                 }
             )
 
