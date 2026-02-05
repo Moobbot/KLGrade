@@ -291,6 +291,11 @@ def main():
         help="Pretrained KIOCMIL checkpoint",
     )
     parser.add_argument(
+        "--no-pretrained",
+        action="store_true",
+        help="Train from scratch without pretrained KIOCMIL weights",
+    )
+    parser.add_argument(
         "--freeze-kiocmil",
         action="store_true",
         default=True,
@@ -352,7 +357,7 @@ def main():
     model = KiocmilWithDetection(
         backbone_name=args.backbone,
         num_classes=args.num_classes,
-        pretrained_kiocmil=args.pretrained_kiocmil,
+        pretrained_kiocmil=None if args.no_pretrained else args.pretrained_kiocmil,
         freeze_kiocmil=args.freeze_kiocmil,
     )
     print(f"✅ Model initialized")

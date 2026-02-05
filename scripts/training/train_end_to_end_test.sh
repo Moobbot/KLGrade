@@ -7,14 +7,13 @@ echo "===================================================="
 
 # Activate conda environment
 source "$(conda info --base)/etc/profile.d/conda.sh"
-conda activate klgrade_api
+conda activate klgrade
 
 # Run training
 python scripts/training/train_end_to_end.py \
   --backbone yolo11l \
   --num-classes 10 \
-  --pretrained-kiocmil runs/kiocmil_cada/cada_10class_balanced/best_acc_model.pt \
-  --freeze-kiocmil \
+  --no-pretrained \
   --train-img-dir datasets/dataset_v0/images \
   --train-knee-label-dir datasets/dataset_v0/labels \
   --train-lesion-label-dir datasets/dataset_v0/labels \

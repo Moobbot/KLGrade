@@ -117,7 +117,7 @@ class KiocmilWithDetection(nn.Module):
             backbone_name: YOLO backbone to use
             num_classes: Number of classification classes (10 for KL grading)
             feature_dim: Feature dimension for KIOCMIL
-            pretrained_kiocmil: Path to pretrained KIOCMIL checkpoint
+            pretrained_kiocmil: Path to pretrained KIOCMIL checkpoint (None = train from scratch)
             pretrained_knee_detector: Path to pretrained YOLO knee detector
             freeze_kiocmil: Whether to freeze KIOCMIL weights initially
         """
@@ -129,29 +129,30 @@ class KiocmilWithDetection(nn.Module):
         # 1. Shared Backbone (YOLO)
         print(f"Loading {backbone_name} backbone...")
         yolo = YOLO(f"weight/{backbone_name}.pt")
-        self.backbone = self._extract_backbone(yolo)
-        print(f"✅ Backbone loaded")
+        self.backbone, self.backbone_dim = self._extract_backbone(yolo)
+        print(f"✅ Backbone loaded. Feature dim: {self.backbone_dim}")
 
-        # 2. Detection Heads
+        # 2. Detection Heads (use actual backbone output dimension)
         self.knee_detector = DetectionHead(
-            in_channels=1024,
+            in_channels=self.backbone_dim,
             num_classes=1,  # Only "knee" class
             num_anchors=3,
         )
         print("✅ Knee detection head initialized")
 
         self.lesion_detector = DetectionHead(
-            in_channels=1024,
+            in_channels=self.backbone_dim,
             num_classes=2,  # JS (0) and OST (1)
             num_anchors=3,
         )
         print("✅ Lesion detection head initialized")
 
-        # 3. KIOCMIL-CADA Classification Module
+        # 3. KIOCMIL-CADA Classification Module (share the backbone)
         self.kiocmil = KiocmilModelCADA(
             backbone_name=backbone_name,
             num_classes=num_classes,
             feature_dim=feature_dim,
+            external_backbone=(self.backbone, self.backbone_dim),  # Share backbone!
         )
         print("✅ KIOCMIL-CADA module initialized")
 
@@ -160,19 +161,37 @@ class KiocmilWithDetection(nn.Module):
             self._load_kiocmil_weights(pretrained_kiocmil)
             if freeze_kiocmil:
                 self._freeze_kiocmil()
+        else:
+            print("⚠️  Training KIOCMIL from scratch (no pretrained weights)")
 
         if pretrained_knee_detector:
             self._load_knee_detector_weights(pretrained_knee_detector)
 
     def _extract_backbone(self, yolo_model):
-        """Extract feature extraction backbone from YOLO."""
+        """Extract feature extraction backbone from YOLO and determine output dimension."""
         model = yolo_model.model
         # Extract first 10 layers (backbone before neck)
         if hasattr(model, "model"):
             layers = list(model.model.children())
         else:
             layers = list(model.children())
-        return nn.Sequential(*layers[:10])
+
+        backbone = nn.Sequential(*layers[:10])
+
+        # Determine output dimension with dummy forward pass
+        with torch.no_grad():
+            dummy_input = torch.randn(1, 3, 224, 224)
+            dummy_output = backbone(dummy_input)
+
+            if isinstance(dummy_output, (list, tuple)):
+                dummy_output = dummy_output[-1]
+
+            if dummy_output.dim() == 4:
+                feature_dim = dummy_output.shape[1]
+            else:
+                feature_dim = dummy_output.shape[-1]
+
+        return backbone, feature_dim
 
     def _load_kiocmil_weights(self, path: str):
         """Load pretrained KIOCMIL-CADA weights."""

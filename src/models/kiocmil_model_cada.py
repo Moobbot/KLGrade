@@ -51,6 +51,7 @@ class KiocmilModelCADA(nn.Module):
         num_context_scales: int = 3,
         use_positional_encoding: bool = True,
         dropout: float = 0.1,
+        external_backbone: Optional[Tuple[nn.Module, int]] = None,
     ):
         super().__init__()
         self.backbone_name = backbone_name
@@ -60,20 +61,26 @@ class KiocmilModelCADA(nn.Module):
         self.use_positional_encoding = use_positional_encoding
 
         # 1. YOLO Backbone for patch feature extraction
-        print(f"Loading {backbone_name} backbone...")
-        try:
-            yolo = YOLO(f"weight/{backbone_name}.pt")
-            self.backbone, self.backbone_dim = self._extract_yolo_backbone(yolo)
-            print(f"✅ YOLO backbone loaded. Feature dim: {self.backbone_dim}")
-        except Exception as e:
-            warnings.warn(
-                f"Failed to load YOLO backbone: {e}. Using ResNet18 fallback."
-            )
-            import torchvision.models as models
+        if external_backbone is not None:
+            # Use shared backbone from parent model
+            self.backbone, self.backbone_dim = external_backbone
+            print(f"✅ Using shared backbone. Feature dim: {self.backbone_dim}")
+        else:
+            # Load new backbone
+            print(f"Loading {backbone_name} backbone...")
+            try:
+                yolo = YOLO(f"weight/{backbone_name}.pt")
+                self.backbone, self.backbone_dim = self._extract_yolo_backbone(yolo)
+                print(f"✅ YOLO backbone loaded. Feature dim: {self.backbone_dim}")
+            except Exception as e:
+                warnings.warn(
+                    f"Failed to load YOLO backbone: {e}. Using ResNet18 fallback."
+                )
+                import torchvision.models as models
 
-            resnet = models.resnet18(pretrained=True)
-            self.backbone = nn.Sequential(*list(resnet.children())[:-1])
-            self.backbone_dim = 512
+                resnet = models.resnet18(pretrained=True)
+                self.backbone = nn.Sequential(*list(resnet.children())[:-1])
+                self.backbone_dim = 512
 
         # 2. Context Encoder - Multi-scale context feature extraction
         self.context_encoder = ContextEncoder(
@@ -266,7 +273,7 @@ class KiocmilModelCADA(nn.Module):
                 # Context patch
                 ctx = knee["ctx"].to(device)
                 all_ctx.append(ctx)
-                
+
                 # Store knee bounding box if available
                 knee_bbox = knee.get("ctx_bbox", torch.zeros(4, device=device))
                 if not isinstance(knee_bbox, torch.Tensor):
@@ -466,7 +473,7 @@ class KiocmilModelCADA(nn.Module):
         batch_knee_boxes = [[] for _ in range(B)]
         for i, info in enumerate(patch_map):
             batch_knee_boxes[info["b_idx"]].append(all_knee_boxes[i])
-        
+
         # Stack each batch's knee boxes into tensors
         knee_boxes_output = []
         for b_idx in range(B):
