@@ -117,8 +117,9 @@ class EndToEndTrainer:
 
             # For now, create dummy images since dataset doesn't provide them
             # In production, modify dataset to return images
+            # Using 256x256 to reduce memory usage (optimized from 640x640)
             B = len(batch_data)
-            dummy_images = torch.randn(B, 3, 640, 640, device=self.device)
+            dummy_images = torch.randn(B, 3, 256, 256, device=self.device)
 
             # Forward pass
             outputs = self.model(dummy_images)
@@ -176,8 +177,9 @@ class EndToEndTrainer:
 
         with torch.no_grad():
             for batch_data in tqdm(self.val_loader, desc=f"Val {epoch}"):
+                # Create dummy images (256x256 for memory efficiency)
                 B = len(batch_data)
-                dummy_images = torch.randn(B, 3, 640, 640, device=self.device)
+                dummy_images = torch.randn(B, 3, 256, 256, device=self.device)
 
                 # Forward
                 outputs = self.model(dummy_images)

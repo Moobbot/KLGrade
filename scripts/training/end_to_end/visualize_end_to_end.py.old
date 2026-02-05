@@ -1,0 +1,286 @@
+"""
+Visualize end-to-end model predictions on images.
+Draws knee boxes, lesion boxes, and KL grade predictions.
+"""
+
+import torch
+import sys
+from pathlib import Path
+from PIL import Image, ImageDraw, ImageFont
+import torchvision.transforms as T
+import numpy as np
+
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+
+from src.models.kiocmil_with_detection import KiocmilWithDetection
+
+
+def load_model(checkpoint_path: str, device: str = "cuda"):
+    """Load trained model from checkpoint."""
+    print(f"Loading model from {checkpoint_path}...")
+
+    model = KiocmilWithDetection(
+        backbone_name="yolo11s",
+        num_classes=10,
+        pretrained_kiocmil=None,
+        freeze_kiocmil=False,
+    )
+
+    checkpoint = torch.load(checkpoint_path, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    model = model.to(device)
+    model.eval()
+
+    print(
+        f"✅ Model loaded (Epoch {checkpoint.get('epoch', 'N/A')}, Val Acc: {checkpoint.get('metrics', {}).get('val_accuracy', 0):.2%})"
+    )
+    return model
+
+
+def load_and_preprocess_image(image_path: str, size: int = 384):
+    """Load image and prepare for model."""
+    img_pil = Image.open(image_path).convert("RGB")
+
+    # Resize for model
+    img_resized = img_pil.resize((size, size))
+
+    # To tensor
+    transform = T.ToTensor()
+    img_tensor = transform(img_resized).unsqueeze(0)
+
+    return img_pil, img_tensor
+
+
+def draw_boxes(img_pil, boxes, confs, color, label, conf_threshold=0.5, max_boxes=10):
+    """Draw bounding boxes on image."""
+    draw = ImageDraw.Draw(img_pil)
+    w, h = img_pil.size
+
+    # Filter by confidence
+    valid_indices = (confs > conf_threshold).nonzero(as_tuple=True)[0]
+
+    if len(valid_indices) == 0:
+        return 0
+
+    # Sort by confidence and take top N
+    sorted_indices = valid_indices[torch.argsort(confs[valid_indices], descending=True)]
+    top_indices = sorted_indices[:max_boxes]
+
+    count = 0
+    for idx in top_indices:
+        box = boxes[idx]
+        conf = confs[idx].item()
+
+        # Convert from normalized [cx, cy, w, h] to pixel [x1, y1, x2, y2]
+        cx, cy, bw, bh = box
+        x1 = int((cx - bw / 2) * w)
+        y1 = int((cy - bh / 2) * h)
+        x2 = int((cx + bw / 2) * w)
+        y2 = int((cy + bh / 2) * h)
+
+        # Draw box
+        draw.rectangle([x1, y1, x2, y2], outline=color, width=2)
+
+        # Draw label
+        text = f"{label} {conf:.2f}"
+        draw.text((x1, y1 - 15), text, fill=color)
+        count += 1
+
+    return count
+
+
+def visualize_prediction(model, image_path, output_path, device="cuda", image_size=384):
+    """Run inference and visualize results."""
+    print(f"\nProcessing: {Path(image_path).name}")
+
+    # Load image
+    img_pil, img_tensor = load_and_preprocess_image(image_path, image_size)
+    img_tensor = img_tensor.to(device)
+
+    # Clear cache before inference
+    torch.cuda.empty_cache()
+
+    # Run inference
+    with torch.no_grad():
+        try:
+            outputs = model(img_tensor)
+        except RuntimeError as e:
+            if "out of memory" in str(e):
+                print(f"  ❌ OOM error - skipping")
+                torch.cuda.empty_cache()
+                return False
+            raise
+
+    # Get predictions
+    knee_boxes = outputs["knee_boxes"][0].cpu()  # (N, 4)
+    knee_confs = outputs["knee_confs"][0, :, 0].cpu()  # (N,)
+    lesion_boxes = outputs["lesion_boxes"][0].cpu()  # (M, 4)
+    lesion_confs = outputs["lesion_confs"][0].cpu()  # (M, 2)
+    logits = outputs["logits_10"][0].cpu()
+
+    # Get KL grade prediction
+    pred_class = torch.argmax(logits).item()
+    confidence = torch.softmax(logits, dim=0)[pred_class].item()
+
+    # Map class to KL grade
+    class_names = [
+        "KL0-JS",
+        "KL1-JS",
+        "KL2-JS",
+        "KL3-JS",
+        "KL4-JS",
+        "KL0-OST",
+        "KL1-OST",
+        "KL2-OST",
+        "KL3-OST",
+        "KL4-OST",
+    ]
+    pred_label = (
+        class_names[pred_class]
+        if pred_class < len(class_names)
+        else f"Class {pred_class}"
+    )
+
+    print(f"  Prediction: {pred_label} (conf: {confidence:.2%})")
+
+    # Draw on image
+    img_vis = img_pil.copy()
+
+    # Draw knee boxes (green)
+    n_knees = draw_boxes(
+        img_vis,
+        knee_boxes,
+        knee_confs,
+        color="green",
+        label="Knee",
+        conf_threshold=0.3,
+        max_boxes=5,
+    )
+
+    # Draw lesion boxes - JS (blue) and OST (red)
+    lesion_js_confs = lesion_confs[:, 0]
+    lesion_ost_confs = lesion_confs[:, 1]
+
+    n_js = draw_boxes(
+        img_vis,
+        lesion_boxes,
+        lesion_js_confs,
+        color="blue",
+        label="JS",
+        conf_threshold=0.3,
+        max_boxes=5,
+    )
+
+    n_ost = draw_boxes(
+        img_vis,
+        lesion_boxes,
+        lesion_ost_confs,
+        color="red",
+        label="OST",
+        conf_threshold=0.3,
+        max_boxes=5,
+    )
+
+    # Draw prediction text at top
+    draw = ImageDraw.Draw(img_vis)
+    text = f"Prediction: {pred_label} ({confidence:.1%})"
+    draw.rectangle([0, 0, img_vis.width, 40], fill="black")
+    draw.text((10, 10), text, fill="white")
+
+    # Save
+    img_vis.save(output_path)
+    print(f"  ✅ Saved to {output_path}")
+    print(f"     Detected: {n_knees} knees, {n_js} JS lesions, {n_ost} OST lesions")
+
+    # Clear cache after inference
+    torch.cuda.empty_cache()
+    return True
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        description="Visualize end-to-end model predictions"
+    )
+    parser.add_argument(
+        "--checkpoint",
+        type=str,
+        default="runs/end_to_end/test_5epochs/best.pt",
+        help="Path to model checkpoint",
+    )
+    parser.add_argument(
+        "--image-dir",
+        type=str,
+        default="datasets/dataset_v0/images",
+        help="Directory containing test images",
+    )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="runs/end_to_end/visualizations",
+        help="Output directory for visualizations",
+    )
+    parser.add_argument(
+        "--num-samples",
+        type=int,
+        default=5,
+        help="Number of sample images to visualize",
+    )
+    parser.add_argument(
+        "--image-size",
+        type=int,
+        default=384,
+        help="Input image size",
+    )
+    parser.add_argument(
+        "--device",
+        type=str,
+        default="cuda",
+        help="Device (cuda/cpu)",
+    )
+
+    args = parser.parse_args()
+
+    # Setup
+    device = torch.device(args.device if torch.cuda.is_available() else "cpu")
+    output_dir = Path(args.output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+
+    print(f"Using device: {device}")
+    print(f"Output directory: {output_dir}\n")
+
+    # Load model
+    model = load_model(args.checkpoint, device)
+
+    # Get sample images
+    image_dir = Path(args.image_dir)
+    image_paths = sorted(list(image_dir.glob("*.jpg")))
+    if not image_paths:
+        image_paths = sorted(list(image_dir.glob("*.png")))
+
+    if not image_paths:
+        print(f"❌ No images found in {image_dir}")
+        return
+
+    image_paths = image_paths[: args.num_samples]
+    print(f"Processing {len(image_paths)} images...\n")
+
+    # Process each image
+    success_count = 0
+    for img_path in image_paths:
+        output_path = output_dir / f"vis_{img_path.name}"
+        if visualize_prediction(model, img_path, output_path, device, args.image_size):
+            success_count += 1
+
+    print(f"\n{'='*60}")
+    print(
+        f"Completed! {success_count}/{len(image_paths)} images processed successfully"
+    )
+    print(f"Results saved to: {output_dir}")
+    print(f"{'='*60}")
+
+
+if __name__ == "__main__":
+    main()

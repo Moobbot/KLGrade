@@ -9,9 +9,9 @@ echo "===================================================="
 source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate klgrade
 
-# Run training
+# Run training with memory-optimized settings
 python scripts/training/train_end_to_end.py \
-  --backbone yolo11l \
+  --backbone yolo11s \
   --num-classes 10 \
   --no-pretrained \
   --train-img-dir datasets/dataset_v0/images \
@@ -20,7 +20,7 @@ python scripts/training/train_end_to_end.py \
   --train-split-file datasets/dataset_v0/train.txt \
   --val-split-file datasets/dataset_v0/val.txt \
   --epochs 5 \
-  --batch-size 4 \
+  --batch-size 1 \
   --lr 0.001 \
   --device cuda \
   --save-dir runs/end_to_end/test_5epochs
