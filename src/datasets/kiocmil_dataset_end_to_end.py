@@ -179,9 +179,19 @@ class KiocmilDatasetEndToEnd(Dataset):
 
         # Apply Transform
         if self.transform:
+            # Sanitize boxes before transform to fix rounding errors
+            sanitized_boxes = []
+            sanitized_cls = []
+            for box, cls in zip(all_boxes, all_cls_ids):
+                sanitized_box = self._sanitize_box(box)
+                # Filter out degenerate boxes (w or h <= 0)
+                if sanitized_box[2] > 0.001 and sanitized_box[3] > 0.001:
+                    sanitized_boxes.append(sanitized_box)
+                    sanitized_cls.append(cls)
+
             try:
                 transformed = self.transform(
-                    image=image, bboxes=all_boxes, class_labels=all_cls_ids
+                    image=image, bboxes=sanitized_boxes, class_labels=sanitized_cls
                 )
                 image_tensor = transformed["image"]
                 boxes_trans = transformed["bboxes"]
@@ -266,6 +276,37 @@ class KiocmilDatasetEndToEnd(Dataset):
         }
 
         return image_tensor, target_dict
+
+    def _sanitize_box(self, box: List[float]) -> List[float]:
+        """
+        Sanitize YOLO box [cx, cy, w, h] to be strictly within [0, 1].
+        """
+        cx, cy, w, h = box
+
+        # Convert to corners
+        x1 = cx - w / 2
+        y1 = cy - h / 2
+        x2 = cx + w / 2
+        y2 = cy + h / 2
+
+        # Clip to [0, 1]
+        x1 = max(0.0, min(1.0, x1))
+        y1 = max(0.0, min(1.0, y1))
+
+        x2 = max(0.0, min(1.0, x2))
+        y2 = max(0.0, min(1.0, y2))
+
+        # Ensure x2 >= x1 and y2 >= y1
+        x2 = max(x1, x2)
+        y2 = max(y1, y2)
+
+        # Recalculate YOLO
+        new_w = x2 - x1
+        new_h = y2 - y1
+        new_cx = x1 + new_w / 2
+        new_cy = y1 + new_h / 2
+
+        return [new_cx, new_cy, new_w, new_h]
 
 
 def collate_end_to_end(batch):

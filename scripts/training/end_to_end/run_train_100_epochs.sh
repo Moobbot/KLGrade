@@ -8,7 +8,7 @@ source "$(conda info --base)/etc/profile.d/conda.sh"
 conda activate klgrade
 
 python scripts/training/end_to_end/train_end_to_end.py \
-  --backbone yolo11s \
+  --backbone yolo11l \
   --epochs 100 \
   --batch-size 1 \
   --save-dir runs/end_to_end/train_100epochs \

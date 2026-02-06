@@ -11,7 +11,7 @@ conda activate klgrade
 
 # Run training with memory-optimized settings
 python scripts/training/train_end_to_end.py \
-  --backbone yolo11s \
+  --backbone yolo11l \
   --num-classes 10 \
   --no-pretrained \
   --train-img-dir datasets/dataset_v0/images \

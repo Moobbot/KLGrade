@@ -20,7 +20,7 @@ def visualize_single_image(
 
     # Load model
     model = KiocmilWithDetection(
-        backbone_name="yolo11s",
+        backbone_name="yolo11l",
         num_classes=10,
         pretrained_kiocmil=None,
         freeze_kiocmil=False,

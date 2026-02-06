@@ -11,7 +11,7 @@ conda activate klgrade || echo "⚠️  Warning: Failed to activate klgrade env"
 
 # Common settings
 EPOCHS=100
-BATCH_SIZE=1  # Conservative batch size to prevent OOM
+BATCH_SIZE=4  # Conservative batch size to prevent OOM
 PATIENCE=15
 
 echo "========================================================"
@@ -39,7 +39,7 @@ run_experiment() {
     echo "--------------------------------------------------------"
 
     python scripts/training/end_to_end/train_end_to_end.py \
-        --backbone yolo11s \
+        --backbone yolo11l \
         --epochs $EPOCHS \
         --batch-size $BATCH_SIZE \
         --save-dir "$SAVE_DIR" \

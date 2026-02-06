@@ -21,7 +21,7 @@ def load_model(checkpoint_path: str, device: str = "cuda"):
 
     # Initialize model
     model = KiocmilWithDetection(
-        backbone_name="yolo11s",
+        backbone_name="yolo11l",
         num_classes=10,
         pretrained_kiocmil=None,
         freeze_kiocmil=False,
