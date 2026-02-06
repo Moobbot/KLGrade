@@ -16,6 +16,7 @@ import json
 import numpy as np
 from scipy.optimize import linear_sum_assignment
 import torch.nn.functional as F
+import wandb
 
 # Add project root to path
 # File is at: scripts/training/end_to_end/train_end_to_end.py
@@ -320,6 +321,7 @@ class EndToEndTrainer:
         device="cuda",
         learning_rate=1e-3,
         save_dir="runs/end_to_end",
+        use_wandb=False,
     ):
         self.model = model.to(device)
         self.train_loader = train_loader
@@ -327,6 +329,7 @@ class EndToEndTrainer:
         self.device = device
         self.save_dir = Path(save_dir)
         self.save_dir.mkdir(parents=True, exist_ok=True)
+        self.use_wandb = use_wandb
 
         # Matcher & Criterion
         self.matcher = HungarianMatcher(cost_class=1, cost_bbox=5, cost_giou=2)
@@ -428,6 +431,17 @@ class EndToEndTrainer:
                     "Cls": f"{loss_cls.item():.2f}",
                 }
             )
+
+            if self.use_wandb:
+                wandb.log(
+                    {
+                        "train/loss": loss.item(),
+                        "train/loss_knee": loss_knee.item(),
+                        "train/loss_lesion": loss_lesion.item(),
+                        "train/loss_cls": loss_cls.item(),
+                        "epoch": epoch,
+                    }
+                )
         return total_loss / len(self.train_loader)
 
     def save_checkpoint(self, epoch, loss):
@@ -506,7 +520,12 @@ class EndToEndTrainer:
             loss = loss_knee + loss_lesion + loss_cls
             total_loss += loss.item()
 
-        return total_loss / len(self.val_loader)
+        avg_val_loss = total_loss / len(self.val_loader)
+
+        if self.use_wandb:
+            wandb.log({"val/loss": avg_val_loss, "epoch": epoch})
+
+        return avg_val_loss
 
     def train(self, num_epochs, patience=10):
         print(f"Starting training for {num_epochs} epochs with patience {patience}...")
@@ -566,7 +585,20 @@ def main():
     parser.add_argument("--val-lesion-label-dir", required=True)
     parser.add_argument("--val-split-file", required=True)
 
+    # WandB args
+    parser.add_argument("--no-wandb", action="store_true", help="Disable WandB logging")
+    parser.add_argument(
+        "--project", type=str, default="KIOCMIL-EndToEnd", help="WandB Project Name"
+    )
+    parser.add_argument("--entity", type=str, default=None, help="WandB Entity")
+    parser.add_argument("--name", type=str, default=None, help="WandB Run Name")
+
     args = parser.parse_args()
+
+    if not args.no_wandb:
+        wandb.init(
+            project=args.project, entity=args.entity, name=args.name, config=vars(args)
+        )
 
     # Model
     model = KiocmilWithDetection(
@@ -613,9 +645,13 @@ def main():
         train_loader,
         val_loader,
         save_dir=args.save_dir,
+        use_wandb=not args.no_wandb,
     )
 
     trainer.train(args.epochs, patience=args.patience)
+
+    if not args.no_wandb:
+        wandb.finish()
 
 
 if __name__ == "__main__":

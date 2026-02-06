@@ -11,8 +11,9 @@ conda activate klgrade || echo "⚠️  Warning: Failed to activate klgrade env"
 
 # Common settings
 EPOCHS=100
-BATCH_SIZE=4  # Conservative batch size to prevent OOM
+BATCH_SIZE=8  # Conservative batch size to prevent OOM
 PATIENCE=15
+PROJECT_NAME="klgrade-end-to-end"
 
 echo "========================================================"
 echo "STARTING ALL END-TO-END EXPERIMENTS"
@@ -36,6 +37,8 @@ run_experiment() {
     echo "Images: $IMG_DIR"
     echo "Splits: $SPLIT_DIR"
     echo "Save Dir: $SAVE_DIR"
+    echo "Backbone: yolo11l"
+    echo "Epochs: $EPOCHS - Batch Size: $BATCH_SIZE - Patience: $PATIENCE"
     echo "--------------------------------------------------------"
 
     python scripts/training/end_to_end/train_end_to_end.py \
@@ -52,7 +55,9 @@ run_experiment() {
         --val-img-dir "$IMG_DIR" \
         --val-knee-label-dir "$KNEE_LABEL_DIR" \
         --val-lesion-label-dir "$LESION_LABEL_DIR" \
-        --val-split-file "$SPLIT_DIR/val.txt"
+        --val-split-file "$SPLIT_DIR/val.txt" \
+        --project "$PROJECT_NAME" \
+        --name "$EXP_NAME"
 
     echo "✅ Completed: $EXP_NAME"
 }
