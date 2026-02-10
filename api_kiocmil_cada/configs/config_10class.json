@@ -1,0 +1,45 @@
+{
+  "model_name": "KIOCMIL-CADA 10-Class (Balanced)",
+  "description": "10-class KL grading model with type classification (a/b)",
+  "num_classes": 10,
+  "class_names": [
+    "KL0-a",
+    "KL0-b",
+    "KL1-a",
+    "KL1-b",
+    "KL2-a",
+    "KL2-b",
+    "KL3-a",
+    "KL3-b",
+    "KL4-a",
+    "KL4-b"
+  ],
+  "checkpoints": {
+    "kiocmil": "checkpoints/kiocmil_cada_10class_balanced.pt",
+    "knee_detector": "checkpoints/knee_detector.pt",
+    "lesion_detector": "checkpoints/lesion_detector.pt"
+  },
+  "inference_params": {
+    "knee_conf_threshold": 0.5,
+    "lesion_conf_threshold": 0.5,
+    "ctx_size": [
+      384,
+      384
+    ],
+    "patch_size": [
+      224,
+      224
+    ],
+    "feature_dim": 256,
+    "num_deformable_points": 4,
+    "num_context_scales": 3,
+    "use_positional_encoding": true,
+    "dropout": 0.1
+  },
+  "device": "cuda",
+  "performance": {
+    "test_accuracy": 0.8592,
+    "f1_macro": 0.8129,
+    "f1_weighted": 0.8558
+  }
+}

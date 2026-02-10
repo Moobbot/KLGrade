@@ -1,0 +1,39 @@
+{
+  "model_name": "KIOCMIL-CADA 4-Class (Balanced)",
+  "description": "4-class KL grading model (KL1-KL4)",
+  "num_classes": 4,
+  "class_names": [
+    "KL1",
+    "KL2",
+    "KL3",
+    "KL4"
+  ],
+  "checkpoints": {
+    "kiocmil": "checkpoints/kiocmil_cada_4class_balanced.pt",
+    "knee_detector": "checkpoints/knee_detector.pt",
+    "lesion_detector": "checkpoints/lesion_detector.pt"
+  },
+  "inference_params": {
+    "knee_conf_threshold": 0.5,
+    "lesion_conf_threshold": 0.5,
+    "ctx_size": [
+      384,
+      384
+    ],
+    "patch_size": [
+      224,
+      224
+    ],
+    "feature_dim": 256,
+    "num_deformable_points": 4,
+    "num_context_scales": 3,
+    "use_positional_encoding": true,
+    "dropout": 0.1
+  },
+  "device": "cuda",
+  "performance": {
+    "test_accuracy": 0.7213,
+    "f1_macro": 0.6842,
+    "f1_weighted": 0.7156
+  }
+}
