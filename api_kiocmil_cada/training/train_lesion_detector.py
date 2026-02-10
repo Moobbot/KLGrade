@@ -20,6 +20,7 @@ def train_lesion_detector(
     device: str = "0",
     project: str = "runs/detect",
     name: str = "train_lesion_detector",
+    wandb_project: str = "klgrade-lesion-detection",
 ):
     """
     Train YOLO11 model for lesion detection.
@@ -79,6 +80,12 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=50, help="Number of epochs")
     parser.add_argument("--batch", type=int, default=16, help="Batch size")
     parser.add_argument("--device", type=str, default="0", help="Device ID")
+    parser.add_argument(
+        "--wandb-project",
+        type=str,
+        default="klgrade-lesion-detection",
+        help="WandB project name",
+    )
 
     args = parser.parse_args()
 
@@ -91,4 +98,5 @@ if __name__ == "__main__":
         epochs=args.epochs,
         batch_size=args.batch,
         device=args.device,
+        wandb_project=args.wandb_project,
     )

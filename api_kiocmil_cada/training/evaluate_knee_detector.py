@@ -26,9 +26,14 @@ def evaluate_knee_detector(model_path: str, data_yaml: str):
 
     print("\nEvaluation Results:")
     print(f"mAP@50:    {metrics.box.map50:.4f}")
-    print(f"mAP@50-95: {metrics.box.map:.4f}")
+    print(f"mAP@50-95: {metrics.box.map:.4f} (Proxy for Mean IoU performance)")
     print(f"Precision: {metrics.box.mp:.4f}")
     print(f"Recall:    {metrics.box.mr:.4f}")
+
+    print("\nNote: mAP@50-95 averages precision over IoU thresholds 0.5-0.95.")
+    print(
+        "A high mAP@50-95 indicates that predicted boxes overlap well with ground truth (High IoU)."
+    )
 
 
 if __name__ == "__main__":
