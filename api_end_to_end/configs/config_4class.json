@@ -1,0 +1,12 @@
+{
+  "model_type": "4-class",
+  "description": "4-class pathological KL grading (KL1 through KL4, no KL0) - Best performance: 72.13% accuracy",
+  "checkpoint_path": "runs/end_to_end/e2e_4class_balanced/best.pt",
+  "num_classes": 4,
+  "device": "cuda",
+  "image_size": 640,
+  "batch_size": 32,
+  "confidence_threshold": 0.0,
+  "output_format": "json",
+  "output_dir": "outputs/inference/4class"
+}

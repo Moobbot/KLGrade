@@ -1,0 +1,12 @@
+{
+  "model_type": "5-class",
+  "description": "5-class traditional KL grading (KL0 through KL4) - Best performance: 84.82% accuracy",
+  "checkpoint_path": "runs/end_to_end/e2e_5class_balanced/best.pt",
+  "num_classes": 5,
+  "device": "cuda",
+  "image_size": 640,
+  "batch_size": 32,
+  "confidence_threshold": 0.0,
+  "output_format": "json",
+  "output_dir": "outputs/inference/5class"
+}

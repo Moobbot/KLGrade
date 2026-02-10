@@ -80,3 +80,49 @@ JS_CLASSES = {1, 3, 5, 7, 9}
 
 # Knee detection class (in `dataset/dataset_v0/labels-knee/`)
 KNEE_CLASS_ID = 0
+
+
+# ==============================================================================
+# UTILITY FUNCTIONS
+# ==============================================================================
+
+
+def get_class_names(num_classes: int) -> dict:
+    """
+    Get class name mapping for given number of classes.
+
+    Args:
+        num_classes: Number of classes (4, 5, 8, or 10)
+
+    Returns:
+        Dictionary mapping class IDs to class names
+
+    Raises:
+        ValueError: If num_classes is not supported
+    """
+    if num_classes == 10:
+        return CLASSES_10_CLASS
+    elif num_classes == 8:
+        return CLASSES_8_CLASS
+    elif num_classes == 5:
+        return CLASSES
+    elif num_classes == 4:
+        return CLASSES_4_CLASS
+    else:
+        raise ValueError(
+            f"Unsupported num_classes: {num_classes}. Must be 4, 5, 8, or 10."
+        )
+
+
+def get_class_list(num_classes: int) -> list:
+    """
+    Get ordered list of class names for given number of classes.
+
+    Args:
+        num_classes: Number of classes (4, 5, 8, or 10)
+
+    Returns:
+        List of class names in order
+    """
+    class_dict = get_class_names(num_classes)
+    return [class_dict[i] for i in range(num_classes)]

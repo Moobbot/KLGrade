@@ -1,0 +1,12 @@
+{
+  "model_type": "10-class",
+  "description": "10-class KL grade classification (KL0-a through KL4-b) - Best performance: 85.92% accuracy",
+  "checkpoint_path": "runs/end_to_end/e2e_10class_balanced/best.pt",
+  "num_classes": 10,
+  "device": "cuda",
+  "image_size": 640,
+  "batch_size": 32,
+  "confidence_threshold": 0.0,
+  "output_format": "json",
+  "output_dir": "outputs/inference/10class"
+}

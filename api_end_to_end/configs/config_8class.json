@@ -1,0 +1,12 @@
+{
+  "model_type": "8-class",
+  "description": "8-class KL grade classification (KL1-a through KL4-b) - Best performance: 83.41% accuracy",
+  "checkpoint_path": "runs/end_to_end/e2e_8class_balanced/best.pt",
+  "num_classes": 8,
+  "device": "cuda",
+  "image_size": 640,
+  "batch_size": 32,
+  "confidence_threshold": 0.0,
+  "output_format": "json",
+  "output_dir": "outputs/inference/8class"
+}
