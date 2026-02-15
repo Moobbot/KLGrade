@@ -10,10 +10,10 @@ echo "CDT-CAD Training - Recommended Fast Configuration"
 echo "============================================================"
 echo ""
 echo "Configuration:"
-echo "  - Batch size: 12"
-echo "  - Image size: 384"
-echo "  - Hidden dim: 128"
-echo "  - Accumulation steps: 2 (effective batch = 24)"
+#   - Batch size: 8 (reduced from 12 to avoid OOM)
+#   - Image size: 384
+#   - Hidden dim: 256 (Restored to default for capacity)
+#   - Accumulation steps: 3 (effective batch = 24)
 echo "  - Early stopping: 15 epochs patience"
 echo ""
 
@@ -39,16 +39,16 @@ echo ""
 python api_kiocmil_cada/training/train_cdt_cad_lesion.py \
   --data datasets/balanced/knees_cropped/dataset_cdt_cad_5class.yaml \
   --epochs 100 \
-  --batch 8 \
-  --accumulation-steps 3 \
+  --batch 4 \
+  --accumulation-steps 6 \
   --img-size 384 \
-  --hidden-dim 128 \
+  --hidden-dim 256 \
   --num-encoder-layers 4 \
   --num-decoder-layers 4 \
   --num-classes 5 \
   --early-stopping-patience 15 \
   --device cuda \
-  --save-dir runs/cdt_cad/balanced_5class_fast
+  --save-dir runs/cdt_cad/balanced_5class_fixed
 
 echo ""
 echo "✅ 5-Class training complete!"
@@ -64,10 +64,10 @@ echo ""
 python api_kiocmil_cada/training/train_cdt_cad_lesion.py \
   --data datasets/balanced/knees_cropped_10_class/dataset_cdt_cad_10class.yaml \
   --epochs 100 \
-  --batch 12 \
-  --accumulation-steps 2 \
+  --batch 8 \
+  --accumulation-steps 3 \
   --img-size 384 \
-  --hidden-dim 128 \
+  --hidden-dim 256 \
   --num-encoder-layers 4 \
   --num-decoder-layers 4 \
   --num-classes 10 \
