@@ -221,35 +221,50 @@ class TwoStepYOLOInference:
         """
         Determine KL grade from detected lesions.
 
-        Simple heuristic: Use the highest class detected.
-        For more sophisticated grading, implement custom logic.
+        Mapping strategy based on model class count:
+        - 5-class (0-4): Direct mapping (0->KL0, ... 4->KL4)
+        - 8-class (0-7): Assumes KL1-KL4 (Osteophytes/JSN).
+                         0,1->KL1; 2,3->KL2; 4,5->KL3; 6,7->KL4.
+                         Returns 0 if no lesions detected.
+        - 10-class (0-9): 0,1->KL0; 2,3->KL1; 4,5->KL2; 6,7->KL3; 8,9->KL4.
 
         Args:
             lesions: List of lesion detections
 
         Returns:
-            KL grade (0-4) or None if no lesions
+            KL grade (0-4)
         """
         if not lesions:
-            return 0  # KL0 if no lesions detected
+            return 0  # Default to KL0 if no lesions detected
 
-        # Get highest class (assumes class IDs map to KL grades)
+        # Get highest class
         max_class = max(lesion["class"] for lesion in lesions)
 
-        # Map class to KL grade
-        # This depends on your class configuration:
-        # - 5-class: 0-4 → KL0-KL4
-        # - 10-class: 0-9 → KL0-a to KL4-b → map to KL0-4
+        # Determine mapping based on model vocabulary size
+        num_classes = len(self.lesion_model.names)
 
-        if max_class <= 4:
-            return max_class  # Direct mapping for 5-class (0-4 -> KL0-KL4)
-        else:
-            # For 8-class:
-            # 0: KL1-a, 1: KL1-b -> KL1 (0//2 + 1 = 1)
-            # 2: KL2-a, 3: KL2-b -> KL2 (2//2 + 1 = 2)
+        if num_classes == 8:
+            # 8-class: 0-7 mapping to KL1-4
+            # 0,1 -> 1 (0//2 + 1 = 1)
             # ...
-            # 6: KL4-a, 7: KL4-b -> KL4 (6//2 + 1 = 4)
+            # 6,7 -> 4 (6//2 + 1 = 4)
             return (max_class // 2) + 1
+
+        elif num_classes == 10:
+            # 10-class: 0-9 mapping to KL0-4
+            # 0,1 -> 0
+            # 2,3 -> 1
+            return max_class // 2
+
+        elif num_classes == 5:
+            # 5-class: Direct mapping
+            return max_class
+
+        else:
+            # Fallback for unknown config, assume direct mapping or warn
+            # For safety, return max_class clipped to 4?
+            # Or assume it matches 5-class logic if small count.
+            return min(max_class, 4)
 
     def visualize(
         self, image_path: str, output_path: Optional[str] = None
