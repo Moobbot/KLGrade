@@ -149,6 +149,8 @@ def run_training(config: dict, epochs: int = 100, batch: int = 16, device: str =
         str(batch),
         "--device",
         device,
+        "--name",
+        config["run_name"],
     ]
 
     print(f"Command: {' '.join(cmd)}\n")

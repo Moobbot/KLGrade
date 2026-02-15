@@ -81,6 +81,12 @@ if __name__ == "__main__":
     parser.add_argument("--batch", type=int, default=16, help="Batch size")
     parser.add_argument("--device", type=str, default="0", help="Device ID")
     parser.add_argument(
+        "--name",
+        type=str,
+        default="train_lesion_detector",
+        help="Run name for saving model",
+    )
+    parser.add_argument(
         "--wandb-project",
         type=str,
         default="klgrade-lesion-detection",
@@ -98,5 +104,6 @@ if __name__ == "__main__":
         epochs=args.epochs,
         batch_size=args.batch,
         device=args.device,
+        name=args.name,
         wandb_project=args.wandb_project,
     )
