@@ -23,7 +23,7 @@ pip install ultralytics opencv-python numpy
 ### Basic Usage
 
 ```python
-from api_kiocmil_cada.inference.two_step_yolo_api import TwoStepYOLOInference
+from api_two_step_yolo.inference.two_step_yolo_api import TwoStepYOLOInference
 
 # Initialize pipeline
 pipeline = TwoStepYOLOInference(
@@ -47,9 +47,10 @@ pipeline.visualize("path/to/xray.jpg", "output.jpg")
 ### Command Line
 
 ```bash
-python api_kiocmil_cada/inference/two_step_yolo_api.py \
+python api_two_step_yolo/inference/two_step_yolo_api.py \
     --image path/to/xray.jpg \
     --lesion-model runs/detect/lesion_8class_balanced/weights/best.pt \
+    --knee-conf 0.75 --lesion-conf 0.25 \
     --output result.jpg
 ```
 
@@ -58,7 +59,7 @@ python api_kiocmil_cada/inference/two_step_yolo_api.py \
 Start the API server:
 
 ```bash
-python -m api_kiocmil_cada.inference.server
+python -m api_two_step_yolo.inference.server
 # Runs on http://0.0.0.0:9090
 ```
 
@@ -123,11 +124,14 @@ TwoStepYOLOInference(
 ```
 
 **Parameters:**
-- `knee_model_path`: Path to knee detection model (.pt file)
-- `lesion_model_path`: Path to lesion detection model (.pt file)
-- `device`: Device to run inference on (`cuda:0`, `cpu`)
-- `conf_threshold`: Confidence threshold for detections (0.0-1.0)
-- `iou_threshold`: IoU threshold for NMS (0.0-1.0)
+| Parameter | Description | Default/Example |
+|---|---|---|
+| `knee_model_path` | Path to knee detection model (`.pt` file) | `runs/detect/knee_detector/weights/best.pt` |
+| `lesion_model_path` | Path to lesion detection model (`.pt` file) | `runs/detect/lesion_8class_balanced/weights/best.pt` |
+| `device` | Device to run inference on | `cuda:0`, `cpu` |
+| `knee_conf_threshold` | Confidence threshold for knee detections (0.0-1.0) | `0.75` |
+| `lesion_conf_threshold` | Confidence threshold for lesion detections (0.0-1.0) | `0.25` |
+| `iou_threshold` | IoU threshold for NMS (0.0-1.0) | `0.45` |
 
 #### Methods
 
@@ -201,6 +205,8 @@ from two_step_yolo_api import TwoStepYOLOInference
 pipeline = TwoStepYOLOInference(
     knee_model_path="runs/detect/knee_detector/weights/best.pt",
     lesion_model_path="runs/detect/lesion_8class_balanced/weights/best.pt",
+    knee_conf_threshold=0.75,
+    lesion_conf_threshold=0.25,
 )
 
 # Process all images in directory

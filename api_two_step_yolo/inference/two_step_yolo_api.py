@@ -27,7 +27,8 @@ class TwoStepYOLOInference:
         knee_model_path: str,
         lesion_model_path: str,
         device: str = "cuda:0",
-        conf_threshold: float = 0.25,
+        knee_conf_threshold: float = 0.75,
+        lesion_conf_threshold: float = 0.25,
         iou_threshold: float = 0.45,
     ):
         """
@@ -37,11 +38,13 @@ class TwoStepYOLOInference:
             knee_model_path: Path to knee detection model
             lesion_model_path: Path to lesion detection model
             device: Device to run inference on
-            conf_threshold: Confidence threshold for detections
+            knee_conf_threshold: Confidence threshold for knee detection (default 0.75)
+            lesion_conf_threshold: Confidence threshold for lesion detection (default 0.25)
             iou_threshold: IoU threshold for NMS
         """
         self.device = device
-        self.conf_threshold = conf_threshold
+        self.knee_conf_threshold = knee_conf_threshold
+        self.lesion_conf_threshold = lesion_conf_threshold
         self.iou_threshold = iou_threshold
 
         # Load models
@@ -65,7 +68,7 @@ class TwoStepYOLOInference:
         """
         results = self.knee_model.predict(
             image,
-            conf=self.conf_threshold,
+            conf=self.knee_conf_threshold,
             iou=self.iou_threshold,
             device=self.device,
             verbose=False,
@@ -101,7 +104,7 @@ class TwoStepYOLOInference:
         """
         results = self.lesion_model.predict(
             knee_image,
-            conf=self.conf_threshold,
+            conf=self.lesion_conf_threshold,
             iou=self.iou_threshold,
             device=self.device,
             verbose=False,
@@ -339,6 +342,18 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output", type=str, default=None, help="Output visualization path"
     )
+    parser.add_argument(
+        "--knee-conf",
+        type=float,
+        default=0.75,
+        help="Knee detection confidence threshold",
+    )
+    parser.add_argument(
+        "--lesion-conf",
+        type=float,
+        default=0.25,
+        help="Lesion detection confidence threshold",
+    )
     parser.add_argument("--device", type=str, default="cuda:0", help="Device")
 
     args = parser.parse_args()
@@ -348,6 +363,8 @@ if __name__ == "__main__":
         knee_model_path=args.knee_model,
         lesion_model_path=args.lesion_model,
         device=args.device,
+        knee_conf_threshold=args.knee_conf,
+        lesion_conf_threshold=args.lesion_conf,
     )
 
     # Run inference

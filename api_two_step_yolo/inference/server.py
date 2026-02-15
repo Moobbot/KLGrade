@@ -9,7 +9,7 @@ from typing import Optional
 from pathlib import Path
 
 # Import the inference class
-from api_kiocmil_cada.inference.two_step_yolo_api import TwoStepYOLOInference
+from api_two_step_yolo.inference.two_step_yolo_api import TwoStepYOLOInference
 
 app = FastAPI(
     title="KL Grade Prediction API",

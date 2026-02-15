@@ -21,7 +21,7 @@ echo "Dataset: datasets/dataset_knees_cropped"
 echo "Epochs: 100, Batch: 16, Patience: 20"
 echo "------------------------------------------"
 
-python api_kiocmil_cada/training/train_lesion_detector.py \
+python api_two_step_yolo/training/train_lesion_detector.py \
     --data datasets/splits/dataset_knees_cropped_70_20_10/dataset.yaml \
     --epochs 100 \
     --batch 16 \
@@ -39,7 +39,7 @@ echo "Dataset: datasets/balanced/knees_cropped_10_class"
 echo "Epochs: 100, Batch: 16, Patience: 20"
 echo "------------------------------------------"
 
-python api_kiocmil_cada/training/train_lesion_detector.py \
+python api_two_step_yolo/training/train_lesion_detector.py \
     --data datasets/splits/dataset_knees_cropped_10_class_60_20_20/dataset.yaml \
     --epochs 100 \
     --batch 16 \

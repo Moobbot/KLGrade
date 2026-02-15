@@ -30,7 +30,7 @@ def run_training(data_yaml: str, name: str, description: str):
 
     cmd = [
         "python",
-        "api_kiocmil_cada/training/train_lesion_detector.py",
+        "api_two_step_yolo/training/train_lesion_detector.py",
         "--data",
         data_yaml,
         "--epochs",
