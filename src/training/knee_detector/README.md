@@ -4,9 +4,9 @@ This directory contains scripts for training the knee detection model (Step 1 of
 
 ## Files
 
-- `train_knee_detector.py` - Main training script for knee detection
-- `prepare_knee_data.py` - Data preparation utilities
-- `evaluate_knee_detector.py` - Evaluation script for knee detector
+- `src/training/knee_detector/train.py` - Main training script for knee detection
+- `src/training/knee_detector/prepare_data.py` - Data preparation utilities
+- `src/training/knee_detector/evaluate.py` - Early evaluation script (deprecated, use `scripts/evaluation/evaluate_knee_full.py`)
 
 ## Usage
 

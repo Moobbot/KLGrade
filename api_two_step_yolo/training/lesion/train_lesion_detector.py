@@ -24,7 +24,6 @@ def train_lesion_detector(
 ):
     """
     Train YOLO11 model for lesion detection.
-    Classes: 0: Osteophytes, 1: Joint Space Narrowing
 
     Args:
         data_yaml: Path to dataset.yaml

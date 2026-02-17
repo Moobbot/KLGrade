@@ -13,13 +13,33 @@ from api_two_step_yolo.inference.two_step_yolo_api import TwoStepYOLOInference
 
 app = FastAPI(
     title="KL Grade Prediction API",
-    description="API for Two-Step Knee Detection & Lesion Analysis using YOLO11l",
-    version="1.0.0",
+    description="""
+    Two-Step Deep Learning Pipeline for Knee Osteoarthritis Grading.
+    
+    ## Features
+    - **Step 1: Knee Detection** (YOLO11n) - Detects knee joints in X-ray images.
+    - **Step 2: Lesion Analysis** (YOLO11n/l) - Identifies osteophytes and JSN to determine KL Grade.
+    
+    ## Usage
+    Upload an X-ray image to the `/predict/` endpoint to get KL grade predictions and visualizations.
+    """,
+    version="2.0.0",
+    terms_of_service="http://example.com/terms/",
+    contact={
+        "name": "KLGrade Team",
+        "url": "http://github.com/ngoductam/KLGrade",
+        "email": "tam@example.com",
+    },
+    license_info={
+        "name": "MIT",
+    },
 )
 
 # Initialize pipeline
 PIPELINE = None
-KNEE_MODEL_PATH = "runs/detect/knee_detector/weights/best.pt"
+# Best YOLO11N Knee Detector (99.5% mAP)
+KNEE_MODEL_PATH = "runs/detect/knee_yolo11n_20260217_134003/weights/best.pt"
+# Best Lesion Detector (8-Class Balanced)
 LESION_MODEL_PATH = "runs/detect/lesion_8class_balanced/weights/best.pt"
 
 
@@ -28,14 +48,18 @@ async def load_model():
     global PIPELINE
     try:
         if not os.path.exists(KNEE_MODEL_PATH):
-            raise FileNotFoundError(f"Knee model not found at {KNEE_MODEL_PATH}")
+            print(
+                f"Warning: Knee model not found at {KNEE_MODEL_PATH}. Checking env vars..."
+            )
         if not os.path.exists(LESION_MODEL_PATH):
-            raise FileNotFoundError(f"Lesion model not found at {LESION_MODEL_PATH}")
+            print(
+                f"Warning: Lesion model not found at {LESION_MODEL_PATH}. Checking env vars..."
+            )
 
         print(f"Loading models...")
         PIPELINE = TwoStepYOLOInference(
-            knee_model_path=KNEE_MODEL_PATH,
-            lesion_model_path=LESION_MODEL_PATH,
+            knee_model_path=os.getenv("KNEE_MODEL", KNEE_MODEL_PATH),
+            lesion_model_path=os.getenv("LESION_MODEL", LESION_MODEL_PATH),
             device="cuda:0",
         )
         print("Models loaded successfully!")
@@ -44,10 +68,18 @@ async def load_model():
         pass
 
 
-@app.post("/predict/")
+@app.post(
+    "/predict/",
+    tags=["Inference"],
+    summary="Predict KL Grade",
+    response_description="JSON response containing predicted KL grade, knee bounding boxes, and lesion details.",
+)
 async def predict(file: UploadFile = File(...), visualize: bool = False):
     """
-    Predict KL Grade from an uploaded X-ray image.
+    **Upload an X-ray image** to detect knees and classify Osteoarthritis severity (KL Grade).
+
+    - **file**: Input X-ray image (JPEG/PNG)
+    - **visualize**: If true, returns the annotated image directly. If false, returns JSON results.
     """
     if PIPELINE is None:
         raise HTTPException(status_code=503, detail="Model not loaded")
@@ -88,6 +120,7 @@ async def predict(file: UploadFile = File(...), visualize: bool = False):
                 "kl_grade": (
                     int(result["kl_grade"]) if result["kl_grade"] is not None else None
                 ),
+                "image_size": result["image_size"],
                 "knees_count": len(result["knees"]),
                 "lesions_count": len(result["lesions"]),
                 "knees": [
@@ -100,7 +133,7 @@ async def predict(file: UploadFile = File(...), visualize: bool = False):
                 ],
                 "lesions": [
                     {
-                        "bbox": [int(x) for x in l["bbox"]],
+                        "bbox": [int(x) for x in l.get("bbox_global", l["bbox"])],
                         "class_name": l["class_name"],
                         "confidence": float(l["confidence"]),
                         "knee_id": int(l["knee_id"]),
@@ -108,6 +141,7 @@ async def predict(file: UploadFile = File(...), visualize: bool = False):
                     for l in result["lesions"]
                 ],
             }
+
             return JSONResponse(content=json_result)
 
     except Exception as e:

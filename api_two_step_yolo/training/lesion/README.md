@@ -5,7 +5,6 @@ This directory contains scripts for training the lesion detection models (Step 2
 ## Files
 
 - `train_lesion_detector.py` - Main training script for lesion detection
-- `prepare_lesion_data.py` - Data preparation utilities
 - `evaluate_lesion_detector.py` - Evaluation script for lesion detector
 - `train_lesion_sequential.py` - Sequential training for multiple configurations
 - `train_lesion_sequential.sh` - Shell script wrapper for sequential training

@@ -4,8 +4,9 @@
 
 API này cung cấp khả năng phân loại mức độ thoái hóa khớp gối (KL Grade) từ ảnh X-quang, bao gồm:
 
+- Phát hiện các khớp gối
 - Phát hiện và phân loại KL grade (KL0-4)
-- Phát hiện tổn thương (Osteophyte và Joint Space Narrowing)
+- Phát hiện các tổn thương (Osteophyte và Joint Space Narrowing)
 - Trực quan hóa với GradCAM
 - RESTful API với Swagger UI
 
@@ -40,14 +41,14 @@ cd KLGrade
 **Windows:**
 
 ```bash
-setup_env.bat
+scripts/setup/setup_env.bat
 ```
 
 **Linux/Mac:**
 
 ```bash
-chmod +x setup_env.sh
-./setup_env.sh
+chmod +x scripts/setup/setup_env.sh
+./scripts/setup/setup_env.sh
 ```
 
 ### 3. Kích hoạt Environment
@@ -59,9 +60,9 @@ conda activate klgrade_api
 ### 4. Verify Installation
 
 ```bash
-test_setup.bat  # Windows
+scripts/setup/test_setup.bat  # Windows
 # hoặc
-./test_setup.sh  # Linux/Mac
+./scripts/setup/test_setup.sh  # Linux/Mac
 ```
 
 ## Chi Tiết Quá Trình Setup
@@ -117,23 +118,34 @@ KLGrade/
 │           └── weights/
 │               └── best.pt                # YOLO detector
 ├── scripts/
-│   └── deployment/
-│       ├── kiocmil_api_server.py          # API server
-│       └── test_api.py                    # Test script
-├── src/
+│   ├── deployment/
+│   │   ├── kiocmil_api_server.py          # API server
+│   │   └── test_api.py                    # Test script
+│   ├── setup/
+│   │   ├── setup_env.bat                  # Windows setup
+│   │   ├── setup_env.sh                   # Linux/Mac setup
+│   │   ├── test_setup.bat                 # Verification script
+│   │   └── fix_pytorch.bat                # PyTorch fix
 │   └── api/
-│       ├── response_schemas.py            # Pydantic models
-│       ├── kiocmil_inference.py           # Inference logic
-│       ├── gradcam.py                     # Visualization
-│       └── logger_config.py               # Logging
+│       ├── start_api.sh                   # Start API (Linux/Mac)
+│       ├── start_api.bat                  # Start API (Windows)
+│       └── start_api_server.sh            # API server launcher
+├── src/
+│   ├── api/
+│   │   ├── response_schemas.py            # Pydantic models
+│   │   ├── kiocmil_inference.py           # Inference logic
+│   │   ├── gradcam.py                     # Visualization
+│   │   └── logger_config.py               # Logging
+│   └── models/
+│       ├── cada/                          # CADA architecture
+│       ├── yolo/                          # YOLO-based models
+│       └── resnet/                        # ResNet-based models
 ├── docs/
+│   ├── SETUP.md                           # This file
+│   ├── QUICKSTART.md                      # Quick start guide
 │   └── API_README.md                      # API documentation
 ├── environment_api.yml                    # Conda environment
-├── setup_env.bat                          # Windows setup
-├── setup_env.sh                           # Linux/Mac setup
-├── test_setup.bat                         # Verification script
-├── fix_pytorch.bat                        # PyTorch fix (if needed)
-└── QUICKSTART.md                          # Quick start guide
+└── requirements.txt                       # Python dependencies
 ```
 
 ## Khởi Động API Server
@@ -203,7 +215,7 @@ curl -X POST "http://localhost:8001/predict" \
 
 ```bash
 conda activate klgrade_api
-fix_pytorch.bat
+scripts/setup/fix_pytorch.bat
 ```
 
 Script này sẽ:
@@ -311,9 +323,10 @@ rm -rf logs/
 
 ## Tài Liệu Bổ Sung
 
+- **Quick Start**: `docs/QUICKSTART.md`
 - **API Documentation**: `docs/API_README.md`
-- **Quick Start**: `QUICKSTART.md`
-- **Walkthrough**: Artifact `walkthrough.md`
+- **Two-Step YOLO API**: `docs/TWO_STEP_YOLO_API.md`
+- **Model Evaluation**: `docs/MODEL_EVALUATION.md`
 - **Swagger UI**: http://localhost:8001/docs (khi server chạy)
 
 ## Liên Hệ & Support

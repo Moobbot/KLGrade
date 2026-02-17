@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Activate conda environment if needed (adjust path as necessary)
-# source ~/miniconda3/etc/profile.d/conda.sh
-# conda activate klgrade
+source ~/miniconda3/etc/profile.d/conda.sh
+conda activate klgrade
 
 echo "Starting Two-Step YOLO API Server on port 9090..."
 echo "Models:"
