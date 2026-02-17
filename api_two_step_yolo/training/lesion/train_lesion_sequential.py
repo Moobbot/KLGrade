@@ -15,7 +15,7 @@ from pathlib import Path
 import time
 
 # Add project root to path
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+PROJECT_ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
@@ -30,7 +30,7 @@ def run_training(data_yaml: str, name: str, description: str):
 
     cmd = [
         "python",
-        "api_two_step_yolo/training/train_lesion_detector.py",
+        "api_two_step_yolo/training/lesion/train_lesion_detector.py",
         "--data",
         data_yaml,
         "--epochs",

@@ -140,7 +140,7 @@ def run_training(config: dict, epochs: int = 100, batch: int = 16, device: str =
 
     cmd = [
         "python",
-        "api_two_step_yolo/training/train_lesion_detector.py",
+        "api_two_step_yolo/training/lesion/train_lesion_detector.py",
         "--data",
         config["data"],
         "--epochs",
