@@ -74,7 +74,7 @@ class AttentionPool(nn.Module):
         return pooled, weights
 
 
-class KiocmilModelV3(nn.Module):
+class KiocmilModel(nn.Module):
     """
     KIOCMIL V3 with YOLO11L backbone for improved feature extraction.
 
@@ -91,7 +91,7 @@ class KiocmilModelV3(nn.Module):
         feature_dim=256,
         use_attention=True,
     ):
-        super(KiocmilModelV3, self).__init__()
+        super(KiocmilModel, self).__init__()
         self.backbone_name = backbone_name
         self.feature_dim = feature_dim
         self.use_attention = use_attention

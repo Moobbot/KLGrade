@@ -15,8 +15,8 @@ from ultralytics import YOLO
 from typing import Dict, List, Tuple, Optional
 import warnings
 
-from src.models.kiocmil_model_cada import KiocmilModelCADA
-from src.models.attention_modules import (
+from src.models.cada import KiocmilModelCADA
+from src.models.cada.attention_modules import (
     DeformableAttention,
     CrossAttentionWithDeformable,
 )

@@ -17,7 +17,7 @@ import numpy as np
 project_root = Path(__file__).parent.parent.parent.resolve()
 sys.path.insert(0, str(project_root))
 
-from src.models.kiocmil_model_cada import KiocmilModelCADA
+from src.models.cada import KiocmilModelCADA
 
 
 def load_knee_detector(checkpoint_path):

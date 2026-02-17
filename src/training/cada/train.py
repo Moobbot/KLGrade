@@ -31,14 +31,14 @@ import numpy as np
 from collections import Counter
 
 # Add src to path
-sys.path.append(str(Path(__file__).parent.parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent.parent))
 
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
 from src.datasets.kiocmil_transforms import (
     get_geometric_transforms,
     get_photometric_transforms,
 )
-from src.models.kiocmil_model_cada import KiocmilModelCADA
+from src.models.cada import KiocmilModelCADA
 from src.config import PROJECT_ROOT
 from src.training.focal_loss import FocalLoss, compute_class_weights
 from src.training.early_stopping import EarlyStopping

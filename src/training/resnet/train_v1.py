@@ -16,7 +16,7 @@ from collections import Counter
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
-from src.models.kiocmil_model import KiocmilModel
+from src.models.resnet import KiocmilModel
 from src.config import PROJECT_ROOT
 from src.training.focal_loss import FocalLoss, compute_class_weights
 

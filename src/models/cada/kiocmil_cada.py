@@ -16,7 +16,7 @@ from ultralytics import YOLO
 from typing import List, Dict, Tuple, Optional
 import warnings
 
-from src.models.attention_modules import (
+from .attention_modules import (
     DeformableAttention,
     CrossAttentionWithDeformable,
     ContextEncoder,

@@ -15,7 +15,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 # Now import from src modules
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
 from src.datasets.kiocmil_transforms import get_photometric_transforms
-from src.models.kiocmil_model_cada import KiocmilModelCADA
+from src.models.cada import KiocmilModelCADA
 from src.config import PROJECT_ROOT
 from src.utils.visualization import (
     plot_confusion_matrix,

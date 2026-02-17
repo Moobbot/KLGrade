@@ -12,7 +12,7 @@ import numpy as np
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
-from src.models.kiocmil_model import KiocmilModel
+from src.models.resnet import KiocmilModel
 from src.config import PROJECT_ROOT
 
 

@@ -16,7 +16,7 @@ from ultralytics import YOLO
 from typing import Dict, List, Tuple, Optional
 import warnings
 
-from src.models.kiocmil_model_cada import KiocmilModelCADA
+from src.models.cada import KiocmilModelCADA
 
 
 class DetectionHead(nn.Module):

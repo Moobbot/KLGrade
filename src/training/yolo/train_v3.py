@@ -16,8 +16,10 @@ from collections import Counter
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
-from src.datasets.kiocmil_dataset_v2 import KiocmilDatasetV2  # NEW: V2 dataset
-from src.models.kiocmil_model_v3 import KiocmilModelV3  # V3: YOLO11L backbone
+from src.datasets.versions.kiocmil_dataset_v2 import (
+    KiocmilDatasetV2,
+)  # V2 dataset from versions
+from src.models.yolo import KiocmilModel  # V3: YOLO11L backbone
 from src.config import PROJECT_ROOT
 from src.training.focal_loss import FocalLoss, compute_class_weights
 from src.training.early_stopping import EarlyStopping
@@ -224,7 +226,7 @@ class KiocmilTrainer:
 
         # Model
         print("Initializing Model...")
-        self.model = KiocmilModelV3(backbone_name=args.backbone).to(self.device)
+        self.model = KiocmilModel(backbone_name=args.backbone).to(self.device)
 
         # Optimizer
         self.optimizer = optim.AdamW(
