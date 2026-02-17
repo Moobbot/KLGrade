@@ -1,0 +1,24 @@
+PROPOSED DOCS STRUCTURE:
+
+docs/
+├── README.md                          # Main docs index
+├── KIOCMIL_CADA_RESULTS.md           # Complete CADA results (from runs/)
+├── PREPROCESSING_LABELS.md            # Existing - keep
+├── TRAINING.md                        # Existing - keep
+├── experiments/
+│   ├── cada_complete_results.csv     # All CADA results
+│   ├── bug_analysis.md               # Training bug discovery & fix
+│   └── improvements_log.md           # Changelog for fixes
+├── guides/
+│   ├── training_guide.md             # How to train models
+│   ├── evaluation_guide.md           # How to evaluate
+│   └── data_preparation.md           # Dataset prep guide
+└── logs/
+    ├── archive_processing_log.md     # Historical logs
+    ├── EXPERIMENT_LOG.md             # Existing
+    └── EXPERIMENT_REPORT_FULL.md     # Final comprehensive report
+
+CLEANUP:
+- Move runs/kiocmil_cada/*.md → docs/experiments/
+- Remove duplicate docs in multiple locations
+- Update all cross-references

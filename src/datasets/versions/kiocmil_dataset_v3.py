@@ -18,13 +18,8 @@ from torch.utils.data import Dataset
 from typing import List, Dict, Tuple, Optional
 import warnings
 
-try:
-    from src.config import OST_CLASSES, JS_CLASSES, KNEE_CLASS_ID, CLASSES_10_CLASS
-except ImportError:
-    OST_CLASSES = {0, 1, 2, 3}
-    JS_CLASSES = {4, 5}
-    KNEE_CLASS_ID = 0
-    CLASSES_10_CLASS = {i: str(i) for i in range(10)}
+from src.config import OST_CLASSES, JS_CLASSES, KNEE_CLASS_ID, CLASSES_10_CLASS
+
 
 from src.datasets.kiocmil_transforms_v2 import normalize_patch, patch_to_tensor
 

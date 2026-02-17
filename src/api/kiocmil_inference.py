@@ -15,7 +15,7 @@ from typing import Dict, List, Tuple, Optional
 from ultralytics import YOLO
 
 from src.models.kiocmil_model_cada import KiocmilModelCADA
-from src.datasets.kiocmil_transforms_v2 import get_photometric_transforms
+from src.datasets.kiocmil_transforms import get_photometric_transforms
 
 
 class KiocmilInference:

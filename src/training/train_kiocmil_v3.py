@@ -85,7 +85,7 @@ class KiocmilTrainer:
         if use_v2:
             print("✅ Using V2 Dataset with fixed augmentation pipeline")
             # Import v2 transforms
-            from src.datasets.kiocmil_transforms_v2 import (
+            from src.datasets.kiocmil_transforms import (
                 get_geometric_transforms,
                 get_photometric_transforms,
             )

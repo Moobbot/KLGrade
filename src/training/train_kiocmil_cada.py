@@ -33,8 +33,8 @@ from collections import Counter
 # Add src to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-from src.datasets.kiocmil_dataset_v3 import KiocmilDatasetV3, collate_kiocmil_v3
-from src.datasets.kiocmil_transforms_v2 import (
+from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
+from src.datasets.kiocmil_transforms import (
     get_geometric_transforms,
     get_photometric_transforms,
 )
@@ -122,7 +122,7 @@ class KiocmilCADATrainer:
         )
 
         # Create datasets
-        self.train_dataset = KiocmilDatasetV3(
+        self.train_dataset = KiocmilDataset(
             img_dir=self.args.train_img_dir,
             knee_label_dir=self.args.train_knee_label_dir,
             lesion_label_dir=self.args.train_lesion_label_dir,
@@ -133,7 +133,7 @@ class KiocmilCADATrainer:
             patch_size=(224, 224),
         )
 
-        self.val_dataset = KiocmilDatasetV3(
+        self.val_dataset = KiocmilDataset(
             img_dir=self.args.val_img_dir,
             knee_label_dir=self.args.val_knee_label_dir,
             lesion_label_dir=self.args.val_lesion_label_dir,
@@ -153,7 +153,7 @@ class KiocmilCADATrainer:
             batch_size=self.args.batch_size,
             shuffle=True,
             num_workers=4,
-            collate_fn=collate_kiocmil_v3,
+            collate_fn=collate_kiocmil,
         )
 
         self.val_loader = DataLoader(
@@ -161,7 +161,7 @@ class KiocmilCADATrainer:
             batch_size=self.args.batch_size,
             shuffle=False,
             num_workers=4,
-            collate_fn=collate_kiocmil_v3,
+            collate_fn=collate_kiocmil,
         )
 
     def setup_model(self):
@@ -250,7 +250,9 @@ class KiocmilCADATrainer:
 
                 loss_main = self.ce_loss(logits_main, target_main)
                 loss_grade = self.ce_loss(logits_grade, target_grade)
-                loss_type = nn.BCEWithLogitsLoss()(logits_type, target_type.unsqueeze(-1))
+                loss_type = nn.BCEWithLogitsLoss()(
+                    logits_type, target_type.unsqueeze(-1)
+                )
 
                 loss = 0.5 * loss_main + 0.3 * loss_grade + 0.2 * loss_type
             else:
@@ -300,7 +302,7 @@ class KiocmilCADATrainer:
 
                     logits_main = output["logits_10"]
                     logits_grade = output["logits_grade"]
-                    
+
                     labels = [item["label"] for item in batch_data]
                     target_main = torch.tensor(labels, device=self.device).long()
                     batch_size = target_main.shape[0]
@@ -426,7 +428,9 @@ def main():
     parser.add_argument("--val_split_file", default="splits/knee_10_class/val.txt")
 
     # Training arguments
-    parser.add_argument("--num_classes", type=int, default=10, help="Number of classes (4, 5, 8, or 10)")
+    parser.add_argument(
+        "--num_classes", type=int, default=10, help="Number of classes (4, 5, 8, or 10)"
+    )
     parser.add_argument("--epochs", type=int, default=100)
     parser.add_argument("--batch_size", type=int, default=16)
     parser.add_argument("--lr", type=float, default=1e-4)

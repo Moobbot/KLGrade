@@ -13,8 +13,8 @@ import os
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Now import from src modules
-from src.datasets.kiocmil_dataset_v3 import KiocmilDatasetV3, collate_kiocmil_v3
-from src.datasets.kiocmil_transforms_v2 import get_photometric_transforms
+from src.datasets.kiocmil_dataset import KiocmilDataset, collate_kiocmil
+from src.datasets.kiocmil_transforms import get_photometric_transforms
 from src.models.kiocmil_model_cada import KiocmilModelCADA
 from src.config import PROJECT_ROOT
 from src.utils.visualization import (
@@ -41,7 +41,7 @@ def evaluate(args):
     # Use valid transform logic from trainer
     transform = get_photometric_transforms(level="none", use_clahe=True)
 
-    dataset = KiocmilDatasetV3(
+    dataset = KiocmilDataset(
         img_dir=args.img_dir,
         knee_label_dir=args.knee_label_dir,
         lesion_label_dir=args.lesion_label_dir,
@@ -57,7 +57,7 @@ def evaluate(args):
         batch_size=args.batch_size,
         shuffle=False,
         num_workers=4,
-        collate_fn=collate_kiocmil_v3,
+        collate_fn=collate_kiocmil,
     )
 
     # Load checkpoint first to check class count

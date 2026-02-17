@@ -28,7 +28,7 @@ from src.datasets.kiocmil_dataset_end_to_end import (
     KiocmilDatasetEndToEnd,
     collate_end_to_end,
 )
-from src.datasets.kiocmil_transforms_v2 import get_photometric_transforms
+from src.datasets.kiocmil_transforms import get_photometric_transforms
 
 
 def box_cxcywh_to_xyxy(x):
