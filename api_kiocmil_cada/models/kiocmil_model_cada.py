@@ -85,6 +85,7 @@ class KiocmilModelCADA(nn.Module):
         # 2. Context Encoder - Multi-scale context feature extraction
         self.context_encoder = ContextEncoder(
             backbone=self.backbone,
+            backbone_dim=self.backbone_dim,
             feature_dim=feature_dim,
             num_scales=num_context_scales,
         )
@@ -316,8 +317,16 @@ class KiocmilModelCADA(nn.Module):
         # 2. Extract features from patches
         t_ctx = torch.stack(all_ctx)
         f_ctx_all = self.forward_features(t_ctx)  # (Total_Knees, feature_dim)
-        if b_idx == 0:
-            pass  # removed debug print
+
+        # 2b. Extract context feature maps for deformable attention
+        # Use ContextEncoder to get spatial feature maps from context patches
+        ctx_feature_maps = self.context_encoder(
+            t_ctx
+        )  # List of (Total_Knees, C, H, W) at different scales
+        # Use the first scale for deformable attention
+        ctx_fmap = (
+            ctx_feature_maps[0] if ctx_feature_maps else None
+        )  # (Total_Knees, feature_dim, H, W)
 
         t_js = torch.cat(all_js) if all_js else torch.empty(0, 3, 224, 224).to(device)
         f_js_all = self.forward_features(t_js)  # (Total_JS, feature_dim)
@@ -362,14 +371,33 @@ class KiocmilModelCADA(nn.Module):
 
                 # Apply deformable cross-attention to each lesion
                 contextualized_js = []
+
+                # Get the context feature map for this knee
+                knee_ctx_fmap = (
+                    ctx_fmap[info["ctx_idx"]].unsqueeze(0)
+                    if ctx_fmap is not None
+                    else None
+                )  # (1, C, H, W)
+
                 for j in range(len(feats_js)):
                     lesion_feat = feats_js[j]  # (feature_dim,)
+                    lesion_bbox = bboxes_js[j]  # (4,) [cx, cy, w, h]
 
-                    # NOTE: Would need context_feature_map for true deformable attention
-                    # For now, use standard processing
-                    ctx_aware_feat = (
-                        lesion_feat + f_local_ctx
-                    )  # Simple fusion as placeholder
+                    if knee_ctx_fmap is not None:
+                        # Use deformable cross-attention
+                        lesion_bbox_center = lesion_bbox[:2].unsqueeze(
+                            0
+                        )  # (1, 2) [cx, cy]
+                        ctx_aware_feat, _ = self.cross_attn_js(
+                            lesion_query=lesion_feat.unsqueeze(0),  # (1, feature_dim)
+                            context_feature_map=knee_ctx_fmap,  # (1, C, H, W)
+                            lesion_bbox=lesion_bbox_center,  # (1, 2)
+                        )
+                        ctx_aware_feat = ctx_aware_feat.squeeze(0)  # (feature_dim,)
+                    else:
+                        # Fallback to simple fusion if no context feature map
+                        ctx_aware_feat = lesion_feat + f_local_ctx
+
                     contextualized_js.append(ctx_aware_feat)
 
                 feats_js_contextualized = torch.stack(
@@ -397,12 +425,33 @@ class KiocmilModelCADA(nn.Module):
 
                 # Apply deformable cross-attention to each lesion
                 contextualized_ost = []
+
+                # Get the context feature map for this knee
+                knee_ctx_fmap = (
+                    ctx_fmap[info["ctx_idx"]].unsqueeze(0)
+                    if ctx_fmap is not None
+                    else None
+                )  # (1, C, H, W)
+
                 for j in range(len(feats_ost)):
                     lesion_feat = feats_ost[j]  # (feature_dim,)
+                    lesion_bbox = bboxes_ost[j]  # (4,) [cx, cy, w, h]
 
-                    ctx_aware_feat = (
-                        lesion_feat + f_local_ctx
-                    )  # Simple fusion as placeholder
+                    if knee_ctx_fmap is not None:
+                        # Use deformable cross-attention
+                        lesion_bbox_center = lesion_bbox[:2].unsqueeze(
+                            0
+                        )  # (1, 2) [cx, cy]
+                        ctx_aware_feat, _ = self.cross_attn_ost(
+                            lesion_query=lesion_feat.unsqueeze(0),  # (1, feature_dim)
+                            context_feature_map=knee_ctx_fmap,  # (1, C, H, W)
+                            lesion_bbox=lesion_bbox_center,  # (1, 2)
+                        )
+                        ctx_aware_feat = ctx_aware_feat.squeeze(0)  # (feature_dim,)
+                    else:
+                        # Fallback to simple fusion if no context feature map
+                        ctx_aware_feat = lesion_feat + f_local_ctx
+
                     contextualized_ost.append(ctx_aware_feat)
 
                 feats_ost_contextualized = torch.stack(

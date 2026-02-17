@@ -329,11 +329,13 @@ class ContextEncoder(nn.Module):
     def __init__(
         self,
         backbone: nn.Module,
+        backbone_dim: int,
         feature_dim: int = 256,
         num_scales: int = 3,
     ):
         super().__init__()
         self.backbone = backbone
+        self.backbone_dim = backbone_dim
         self.feature_dim = feature_dim
         self.num_scales = num_scales
 
@@ -341,7 +343,7 @@ class ContextEncoder(nn.Module):
         self.pyramid_layers = nn.ModuleList(
             [
                 nn.Conv2d(
-                    backbone.feature_dim if hasattr(backbone, "feature_dim") else 1024,
+                    backbone_dim,
                     feature_dim,
                     kernel_size=1,
                 )
