@@ -31,97 +31,91 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 
+def discover_configs():
+    """Dynamically discover dataset configurations from datasets/splits directory."""
+    configs = {
+        "cropped_base": [],
+        "cropped_balanced": [],
+        "full_xray_base": [],
+        "full_xray_balanced": [],
+        "detection": []
+    }
+    
+    splits_dir = PROJECT_ROOT / "datasets/splits"
+    if not splits_dir.exists():
+        print(f"Warning: {splits_dir} not found")
+        return configs
+        
+    for d in splits_dir.iterdir():
+        if not d.is_dir() or not (d / "dataset.yaml").exists():
+            continue
+            
+        name = d.name
+        config = {
+            "name": name,  # Will be updated with readable name
+            "data": str(d / "dataset.yaml").replace(str(PROJECT_ROOT) + "/", ""),
+            "run_name": name,
+        }
+        
+        # Classification and naming logic
+        parts = name.split("_")
+        split = ""
+        # Check for split ratio at the end (e.g. 70_20_10)
+        if len(parts) >= 3 and parts[-3].isdigit() and parts[-2].isdigit() and parts[-1].isdigit():
+            split = f"[{parts[-3]}/{parts[-2]}/{parts[-1]}]"
+            
+        if name == "knee":
+            config["name"] = "Knee Detection"
+            configs["detection"].append(config)
+            continue
+            
+        # Determine class count
+        nc = "5"  # Default
+        if "class" in parts:
+            try:
+                class_idx = parts.index("class")
+                if class_idx > 0 and parts[class_idx-1].isdigit():
+                    nc = parts[class_idx-1]
+            except ValueError:
+                pass
+        
+        # Categorize
+        if "balanced" in name:
+            if "full" in name or "xray" in name:
+                category = "full_xray_balanced"
+                readable_name = f"{nc}-class Full X-ray (Balanced) {split}"
+            else:
+                category = "cropped_balanced"
+                readable_name = f"{nc}-class Cropped (Balanced) {split}"
+        else:
+            if "full" in name or "xray" in name:
+                category = "full_xray_base"
+                readable_name = f"{nc}-class Full X-ray (Base) {split}"
+            else:
+                # Default to cropped base if not full/xray and not balanced
+                # Check if it looks like cropped dataset
+                if "cropped" in name or "knees" in name:
+                    category = "cropped_base"
+                    readable_name = f"{nc}-class Cropped (Base) {split}"
+                else:
+                    # Unknown category, skip or put in misc? attempting to categorise as cropped base
+                    category = "cropped_base" 
+                    readable_name = f"{nc}-class {name} {split}"
+
+        config["name"] = readable_name.strip()
+        configs[category].append(config)
+    
+    # Sort configs by name
+    for key in configs:
+        configs[key].sort(key=lambda x: x["name"])
+        
+    return configs
+
 # Training configurations for all datasets
-TRAINING_CONFIGS = {
-    "cropped_base": [
-        {
-            "name": "5-class Cropped (Base)",
-            "data": "datasets/splits/dataset_knees_cropped_70_20_10/dataset.yaml",
-            "run_name": "lesion_5class_base",
-        },
-        {
-            "name": "4-class Cropped (Base)",
-            "data": "datasets/splits/dataset_knees_cropped_4_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_4class_base",
-        },
-        {
-            "name": "8-class Cropped (Base)",
-            "data": "datasets/splits/dataset_knees_cropped_8_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_8class_base",
-        },
-        {
-            "name": "10-class Cropped (Base)",
-            "data": "datasets/splits/dataset_knees_cropped_10_class_60_20_20/dataset.yaml",
-            "run_name": "lesion_10class_base",
-        },
-    ],
-    "cropped_balanced": [
-        {
-            "name": "5-class Cropped (Balanced)",
-            "data": "datasets/splits/balanced_knees_cropped_70_20_10/dataset.yaml",
-            "run_name": "lesion_5class_balanced",
-        },
-        {
-            "name": "4-class Cropped (Balanced)",
-            "data": "datasets/splits/balanced_knees_cropped_4_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_4class_balanced",
-        },
-        {
-            "name": "8-class Cropped (Balanced)",
-            "data": "datasets/splits/balanced_knees_cropped_8_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_8class_balanced",
-        },
-        {
-            "name": "10-class Cropped (Balanced)",
-            "data": "datasets/splits/balanced_knees_cropped_10_class_60_20_20/dataset.yaml",
-            "run_name": "lesion_10class_balanced",
-        },
-    ],
-    "full_xray_base": [
-        {
-            "name": "4-class Full X-ray (Base)",
-            "data": "datasets/splits/knee_full_4_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_full_4class_base",
-        },
-        {
-            "name": "8-class Full X-ray (Base)",
-            "data": "datasets/splits/knee_full_8_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_full_8class_base",
-        },
-        {
-            "name": "10-class Full X-ray (Base)",
-            "data": "datasets/splits/knee_full_10_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_full_10class_base",
-        },
-    ],
-    "full_xray_balanced": [
-        {
-            "name": "4-class Full X-ray (Balanced)",
-            "data": "datasets/splits/balanced_full_xray_4_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_full_4class_balanced",
-        },
-        {
-            "name": "8-class Full X-ray (Balanced)",
-            "data": "datasets/splits/balanced_full_xray_8_class_70_20_10/dataset.yaml",
-            "run_name": "lesion_full_8class_balanced",
-        },
-        {
-            "name": "10-class Full X-ray (Balanced)",
-            "data": "datasets/splits/balanced_full_xray_10_class_60_20_20/dataset.yaml",
-            "run_name": "lesion_full_10class_balanced",
-        },
-    ],
-    "detection": [
-        {
-            "name": "Knee Detection",
-            "data": "datasets/splits/knee/dataset.yaml",
-            "run_name": "knee_detector",
-        },
-    ],
-}
+TRAINING_CONFIGS = discover_configs()
 
 
-def run_training(config: dict, epochs: int = 100, batch: int = 16, device: str = "0"):
+def run_training(config: dict, epochs: int = 100, batch: int = 16, device: str = "0", wandb_project: str = "klgrade-lesion-detection"):
     """Run YOLO training for a single dataset configuration."""
     print("\n" + "=" * 80)
     print(f"Training: {config['name']}")
@@ -151,6 +145,8 @@ def run_training(config: dict, epochs: int = 100, batch: int = 16, device: str =
         device,
         "--name",
         config["run_name"],
+        "--wandb-project",
+        wandb_project,
     ]
 
     print(f"Command: {' '.join(cmd)}\n")
@@ -190,6 +186,12 @@ def main():
     parser.add_argument("--epochs", type=int, default=100, help="Number of epochs")
     parser.add_argument("--batch", type=int, default=16, help="Batch size")
     parser.add_argument("--device", type=str, default="0", help="Device ID")
+    parser.add_argument(
+        "--wandb-project",
+        type=str,
+        default="klgrade-lesion-detection",
+        help="WandB project name",
+    )
 
     args = parser.parse_args()
 
@@ -233,6 +235,7 @@ def main():
             epochs=args.epochs,
             batch=args.batch,
             device=args.device,
+            wandb_project=args.wandb_project,
         )
 
         results[config["name"]] = success

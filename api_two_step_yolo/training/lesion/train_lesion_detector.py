@@ -34,6 +34,10 @@ def train_lesion_detector(
         project: Project directory
         name: Run name
     """
+    # Set WandB project
+    if wandb_project:
+        os.environ["WANDB_PROJECT"] = wandb_project
+
     # Initialize YOLO11 Large model (pretrained)
     print("Loading YOLO11l model...")
     model = YOLO("yolo11l.pt")
