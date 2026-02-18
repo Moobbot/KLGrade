@@ -73,6 +73,8 @@ python api_kiocmil_cada/training/train_cdt_cad_lesion.py \
   --num-classes 10 \
   --early-stopping-patience 15 \
   --device cuda \
+  --lr 5e-5 \
+  --weight-class 5.0 \
   --save-dir runs/cdt_cad/balanced_10class_fast
 
 echo ""

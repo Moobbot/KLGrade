@@ -338,6 +338,15 @@ def main():
         action="store_true",
         help="Disable WandB logging",
     )
+    parser.add_argument(
+        "--weight-class", type=float, default=2.0, help="Weight for classification loss"
+    )
+    parser.add_argument(
+        "--weight-bbox", type=float, default=5.0, help="Weight for bbox L1 loss"
+    )
+    parser.add_argument(
+        "--weight-giou", type=float, default=2.0, help="Weight for GIoU loss"
+    )
 
     args = parser.parse_args()
 
@@ -405,9 +414,9 @@ def main():
     # Create loss
     criterion = CDTCADLoss(
         num_classes=args.num_classes,
-        weight_class=2.0,
-        weight_bbox=5.0,
-        weight_giou=2.0,
+        weight_class=args.weight_class,
+        weight_bbox=args.weight_bbox,
+        weight_giou=args.weight_giou,
         eos_coef=0.1,
     ).to(device)  # Move to device
 
