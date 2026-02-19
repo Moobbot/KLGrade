@@ -11,16 +11,19 @@ An end-to-end pipeline for Knee Osteoarthritis grading from X-ray images using D
 Comprehensive documentation organized by topic:
 
 ### Core Documentation
+
 1. **[Documentation Index](docs/README.md)** - Complete navigation guide
 2. **[Data Pipeline](docs/guides/DATA_PIPELPE.md)** - From raw X-rays to processed datasets
 3. **[Dataset Reference](docs/DATASETS.md)** - Dataset structure and statistics
 4. **[Training Index](docs/TRAINING_INDEX.md)** - Central hub for all training docs
 
 ### Model-Specific Training
+
 - **[KIOCMIL CADA Training](docs/KIOCMIL_CADA_TRAINING.md)** - Complete CADA training guide
 - **[CADA Results](docs/experiments/CADA_COMPLETE_RESULTS.md)** - Evaluation results (20 experiments)
 
 ### Tools & Analysis
+
 - **[Dataset Analysis Tools](tools/dataset_analysis/README.md)** - Dataset validation & visualization
 - **[Visualization Organization](docs/reference/VISUALIZATION_ORGANIZATION.md)** - Viz code structure
 
@@ -29,6 +32,7 @@ Comprehensive documentation organized by topic:
 ## 🚀 Quick Start
 
 ### 1. Setup Environment
+
 ```bash
 conda create -n klgrade python=3.10 -y
 conda activate klgrade
@@ -36,7 +40,9 @@ pip install -r requirements.txt
 ```
 
 ### 2. Prepare Data
+
 From raw X-rays in `datasets/dataset_v0`, run the pipeline:
+
 ```bash
 # Complete pipeline (recommended)
 bash scripts/pipelines/run_full_pipeline.sh
@@ -50,7 +56,9 @@ bash scripts/pipelines/step_5_create_splits.sh
 ```
 
 ### 3. Train KIOCMIL CADA Model
+
 Train the best-performing model (5-class balanced):
+
 ```bash
 python src/training/train_kiocmil_cada.py \
     --num_classes 5 \
@@ -61,18 +69,20 @@ python src/training/train_kiocmil_cada.py \
 ```
 
 Or use training scripts:
+
 ```bash
 bash scripts/training/run_train_4_5_class.sh
 ```
 
 ### 4. Evaluate
+
 ```bash
 bash scripts/training/evaluate_all_cada_experiments.sh
 ```
 
 ---
 
-```
+````
 
 ### Quick Test
 ```bash
@@ -80,7 +90,7 @@ bash scripts/training/evaluate_all_cada_experiments.sh
 scripts/setup/test_setup.sh  # Linux/Mac
 # or
 scripts/setup/test_setup.bat  # Windows
-```
+````
 
 📖 **Full Setup Guide**: [docs/SETUP.md](docs/SETUP.md)  
 ⚡ **Quick Start Guide**: [docs/QUICKSTART.md](docs/QUICKSTART.md)
@@ -125,6 +135,7 @@ KLGrade/
 ## 🏗️ Architectures
 
 ### 1. KIOCMIL-CADA (Recommended)
+
 **Best accuracy** with context-aware deformable attention mechanism.
 
 - **Accuracy**: Highest (target: 60-65% on 10-class)
@@ -134,6 +145,7 @@ KLGrade/
 📖 [Architecture Details](src/models/cada/README.md)
 
 ### 2. Two-Step YOLO Pipeline
+
 **Fast and efficient** detection + classification pipeline.
 
 - **Accuracy**: Good (mAP@50-95: 0.667 on 8-class)
@@ -143,11 +155,13 @@ KLGrade/
 📖 [API Documentation](docs/TWO_STEP_YOLO_API.md)
 
 ### 3. YOLO-Based Models
+
 YOLO11L backbone for improved feature extraction.
 
 📖 [Model Details](src/models/yolo/README.md)
 
 ### 4. ResNet-Based Models
+
 Lightweight baseline models.
 
 📖 [Model Details](src/models/resnet/README.md)
@@ -155,6 +169,7 @@ Lightweight baseline models.
 ## 🎓 Training
 
 ### CADA Model
+
 ```bash
 python src/training/cada/train.py \
     --train_img_dir processed/knee_10_class/images \
@@ -165,6 +180,7 @@ python src/training/cada/train.py \
 ```
 
 ### YOLO Model
+
 ```bash
 python src/training/yolo/train_v3.py \
     --img_dir dataset/dataset_v0/images \
@@ -182,7 +198,7 @@ python src/training/cada/evaluate.py \
     --checkpoint runs/kiocmil_cada/best_model.pt \
     --split_file splits/knee_10_class/test.txt
 
-# YOLO Evaluation  
+# YOLO Evaluation
 python src/training/evaluate_kiocmil.py \
     --checkpoint runs/kiocmil_yolo/best_model.pt
 ```
@@ -192,6 +208,7 @@ python src/training/evaluate_kiocmil.py \
 ## 🌐 API Deployment
 
 ### KIOCMIL-CADA API
+
 ```bash
 python scripts/deployment/kiocmil_api_server.py \
     --kiocmil-model runs/kiocmil_cada/best_acc_model.pt \
@@ -200,6 +217,7 @@ python scripts/deployment/kiocmil_api_server.py \
 ```
 
 ### Two-Step YOLO API
+
 ```bash
 python scripts/api/start_two_step_api.py \
     --knee-model runs/detect/knee_detector/weights/best.pt \
@@ -209,31 +227,35 @@ python scripts/api/start_two_step_api.py \
 
 **Swagger UI**: http://localhost:8001/docs
 
-📖 **API Documentation**: 
+📖 **API Documentation**:
+
 - [KIOCMIL-CADA API](docs/API_README.md)
 - [Two-Step YOLO API](docs/TWO_STEP_YOLO_API.md)
 
 ## 📊 Performance Comparison
 
-| Model | Accuracy | Speed | Memory | Complexity |
-|-------|----------|-------|--------|------------|
-| **CADA** | ⭐⭐⭐⭐ | ⭐⭐ | High | Complex |
-| **YOLO** | ⭐⭐⭐ | ⭐⭐⭐ | Medium | Medium |
-| **ResNet** | ⭐⭐ | ⭐⭐⭐⭐ | Low | Simple |
+| Model      | Accuracy | Speed    | Memory | Complexity |
+| ---------- | -------- | -------- | ------ | ---------- |
+| **CADA**   | ⭐⭐⭐⭐ | ⭐⭐     | High   | Complex    |
+| **YOLO**   | ⭐⭐⭐   | ⭐⭐⭐   | Medium | Medium     |
+| **ResNet** | ⭐⭐     | ⭐⭐⭐⭐ | Low    | Simple     |
 
 ## 🛠️ Development
 
 ### Environment
+
 - Python 3.10
 - PyTorch 2.5.1+cu121
 - CUDA 12.1 (optional, for GPU)
 
 ### Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Testing
+
 ```bash
 # Run tests
 pytest tests/
@@ -252,6 +274,7 @@ flake8 src/
 - **[YOLO Results](docs/YOLO_EVALUATION_RESULTS.md)** - YOLO evaluation
 
 ### Architecture-Specific Docs
+
 - [CADA Models](src/models/cada/README.md)
 - [YOLO Models](src/models/yolo/README.md)
 - [ResNet Models](src/models/resnet/README.md)

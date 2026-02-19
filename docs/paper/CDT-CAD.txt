@@ -1,0 +1,371 @@
+Dựa trên nội dung bài báo "CDT-CAD: Context-Aware Deformable Transformers for End-to-End Chest Abnormality Detection on X-Ray Images" (IEEE/ACM TCBB, Vol. 21, No. 4, July/August 2024), dưới đây là chi tiết về giải pháp, pipeline và các công nghệ cốt lõi.
+
+======================================================================
+### 1. Giải pháp tổng thể (Solution)
+======================================================================
+
+Bài báo giới thiệu **CDT-CAD**, một mô hình học sâu end-to-end để phát hiện bất thường trên ảnh X-quang ngực (CXR).
+
+* **Mục tiêu:** Giải quyết 3 vấn đề chính:
+  - Hội tụ chậm (slow convergence) và chi phí tính toán cao của các phương pháp hiện có (đặc biệt DETR).
+  - Nhúng kiến thức ngữ cảnh (context knowledge) vào mạng lưới để cải thiện độ chính xác.
+  - Xử lý các khó khăn đặc thù của ảnh CXR: che khuất (occlusions) giữa các bất thường, nhiều mẫu bệnh lý phức tạp (multiple & complex pathological patterns), và phát hiện bất thường nhỏ/tinh vi (small or subtle abnormalities).
+
+* **Cách tiếp cận chính:** CDT-CAD gồm 2 module chính:
+  1. **Iterative Context-Aware Feature Extractor** – Trích xuất đặc trưng nhận biết ngữ cảnh lặp.
+  2. **Deformable Transformer Detector** – Bộ phát hiện dựa trên Transformer biến hình.
+
+* **Đóng góp chính (Contributions):**
+  - CDT-CAD là công trình đầu tiên áp dụng cấu trúc deformable transformer cho chẩn đoán CXR.
+  - Đề xuất bộ trích xuất đặc trưng nhận biết ngữ cảnh lặp, bao gồm DCE block và FP block.
+  - Đề xuất khối gộp tần số (Frequency Pooling) mới để mã hóa thông tin tần số đa tỷ lệ qua biến đổi wavelet.
+
+======================================================================
+### 2. Pipeline xử lý (Pipeline) - Chi tiết
+======================================================================
+
+Quy trình xử lý end-to-end của CDT-CAD (xem Fig. 2 trong bài báo):
+
+**Bước 1: Đầu vào (Input)**
+  - Ảnh X-quang ngực (CXR image).
+
+**Bước 2: Trích xuất đặc trưng cơ bản (Backbone - ResNet-50)**
+  - Sử dụng ResNet-50 (pretrained trên ImageNet) làm backbone.
+  - Tạo ra feature map ban đầu từ ảnh đầu vào.
+  - Backbone được fine-tune cùng toàn bộ mạng.
+
+**Bước 3: Iterative Context-Aware Feature Extractor**
+  - Xây dựng trên nền tảng Feature Pyramid Networks (FPN), nhưng thêm cơ chế lặp (iterative) để tinh chỉnh dần dần.
+  - Quy trình lặp (Iterative Feature Fusion Scheme):
+    + Bắt đầu từ feature map của FPN, lặp lại nhiều lần (tối ưu: 4 lần lặp).
+    + Mỗi lần lặp gồm 2 bước chính:
+      (a) DCE Block: Mở rộng trường tiếp nhận, mã hóa ngữ cảnh cục bộ.
+      (b) FP Block: Thay đổi kích thước feature map qua biến đổi wavelet.
+  - Công thức lặp (Equation 5):
+      F_l = F_{l-1} + f_DCE(F_{l-1})
+      F_{l+1} = f_down(f_FP(F_l))
+    Trong đó:
+      - F_l: feature map sau l-1 lần downsampling.
+      - f_DCE(): operator của DCE block.
+      - f_FP(): operator của FP block.
+      - f_down(): operator downsampling.
+      - l biến thiên từ 2 đến 4.
+  - Kết quả: "Sequence Feature Map" chứa thông tin ngữ cảnh phong phú ở cả mức cục bộ (local) và toàn cục (global), trong cả miền không gian (spatial) và miền tần số (frequency).
+
+**Bước 4: Mã hóa vị trí (Positional Encoding)**
+  - Feature map được làm phẳng (flatten) thành chuỗi (sequence).
+  - Bổ sung thông tin ngữ cảnh không gian (spatial context information) để giải quyết vấn đề bất biến hoán vị (permutation invariance) của Transformer.
+
+**Bước 5: Deformable Transformer Detector**
+  - Gồm Transformer Encoder và Transformer Decoder, mỗi phần có 6 lớp deformable attention.
+  - Encoder: Tinh chỉnh feature map bằng self-attention biến hình.
+  - Decoder: Nhận queries, tổng hợp key contents theo attention weights.
+
+**Bước 6: Đầu ra (Output)**
+  - Feed-Forward Network (FFN) tạo ra N_obj dự đoán cố định.
+  - Mỗi dự đoán gồm: ŷ_ω(i) = (p̂_ω(i)(c_i), b̂_ω(i))
+    + p̂_ω(i)(c_i): xác suất phân loại bệnh (classification probability).
+    + b̂_ω(i): tọa độ hộp bao (bounding box coordinates).
+
+======================================================================
+### 3. Công nghệ và Kỹ thuật chi tiết (Technology)
+======================================================================
+
+----------------------------------------------------------------------
+#### A. Dilated Context Encoding (DCE) Block
+----------------------------------------------------------------------
+(Xem Fig. 3 trong bài báo)
+
+**Mục đích:** Mở rộng trường tiếp nhận (receptive field) để thu thập thông tin ngữ cảnh đa tỷ lệ mà không làm mất độ phân giải. Lấy cảm hứng từ YOLOF.
+
+**Kiến trúc chi tiết:**
+  1. **Projector (Bộ chiếu):**
+     - 1 lớp convolution 1×1 + 1 lớp convolution 3×3 tiêu chuẩn.
+     - Dùng để tinh chỉnh đặc trưng trước khi đưa vào các residual block.
+
+  2. **Các Residual Block nối tiếp (Serially-connected Residual Blocks):**
+     - Mỗi residual block gồm:
+       + Lớp convolution 1×1 (giảm chiều)
+       + Lớp dilated convolution 3×3 (với dilated rate khác nhau cho mỗi block)
+       + Lớp convolution 1×1 (tăng chiều)
+     - Các residual block được xếp chồng (stack) với kết nối tắt (skip connections / residual connections) để tạo đường tắt cho gradient flow.
+     - Mỗi residual block có dilated rate khác nhau → tạo receptive field với kích thước khác nhau, bao phủ mọi tỷ lệ.
+     - Số lượng tối ưu: 3 bottle neck structures (theo ablation study, Table III).
+
+  3. **Output:** Feature map kết quả được cộng (sum) với feature map gốc ban đầu (residual connection tổng thể).
+
+**Tại sao dùng dilated convolution?**
+  - So với conv thông thường, dilated conv mở rộng receptive field mà KHÔNG tăng số tham số.
+  - Bù đắp cho việc thiếu multi-level features, vượt quá phạm vi tỷ lệ (scale) mà receptive field mặc định có thể bao phủ.
+  - Giúp phát hiện tốt hơn các bất thường ở nhiều kích cỡ khác nhau.
+
+----------------------------------------------------------------------
+#### B. Frequency Pooling (FP) Block
+----------------------------------------------------------------------
+(Xem Fig. 4 trong bài báo)
+
+**Mục đích:** Thay vì chỉ pooling trong miền không gian (spatial domain), FP block phân tách feature map thành các thành phần tần số qua biến đổi wavelet, giúp:
+  - Lọc bỏ nhiễu (noise filtering).
+  - Tập trung vào thông tin tần số quan trọng (dominant frequency information).
+  - Tăng khả năng chống chịu với che khuất (occlusions) và biến đổi tỷ lệ (scale variations).
+
+**Lý thuyết DWT (Discrete Wavelet Transform):**
+
+  Công thức 1D-DWT:
+    x_{α,L}[n] = Σ_{k=0}^{K-1} x_{α-1,L}[2n - k] · g[k]    (Equation 6 - Low-pass)
+    x_{α,H}[n] = Σ_{k=0}^{K-1} x_{α-1,L}[2n - k] · h[k]    (Equation 7 - High-pass)
+
+  Trong đó:
+    - g[k]: bộ lọc thông thấp (low-pass filter) với kích thước cửa sổ k.
+    - h[k]: bộ lọc thông cao (high-pass filter) với kích thước cửa sổ k.
+    - x_{α,L}: thành phần tần số thấp ở tầng α.
+    - x_{α,H}: thành phần tần số cao ở tầng α.
+
+  2D-DWT mở rộng:
+    - Bước 1: Tách tín hiệu theo hướng ngang (horizontal) → L (low) và H (high).
+    - Bước 2: Tách L và H theo hướng dọc (vertical) → 4 thành phần: LL, LH, HL, HH.
+    - Phần LL (góc trên trái) chứa thông tin nội dung chủ đạo (dominant content-related information).
+    - Có thể phân tách đệ quy (recursive) ở nhiều mức (levels) để trích xuất tần số đa tỷ lệ.
+
+**Kiến trúc chi tiết FP Block:**
+  1. Chia input feature channels X ∈ R^{C×H×W} thành n phần: {X_1, X_2, ..., X_n}.
+  2. Mỗi phần X_i được xử lý qua i-layer wavelet transform:
+       Y_i = DWT^i(X_i), trong đó Y_i ∈ R^{C/i × H/(2^i) × W/(2^i)}    (Equation 8)
+  3. Áp dụng Global Average Pooling (GAP) trên mỗi phần đã phân tách.
+  4. Ghép nối (concatenate) tất cả các phần đã nén theo chiều kênh:
+       Z = GAP(Y_1) + GAP(Y_2) + ... + GAP(Y_n)    (Equation 9)
+     Output: Z ∈ R^{C×1×1}
+     (Ký hiệu + ở đây là phép concatenate, không phải cộng)
+
+  Số lượng DWT levels tối ưu: 3 (theo ablation study, Table IV). Level 4 trở lên không cải thiện vì phần tần số cao ở mức cao chứa rất ít thông tin hữu ích cho chẩn đoán.
+
+**Lưu ý:** FP block được thiết kế như module plug-and-play, không phải phần bắt buộc. Context-aware feature extractor vẫn hoạt động mà không có nó.
+
+----------------------------------------------------------------------
+#### C. Deformable Transformer Detector
+----------------------------------------------------------------------
+(Xem Fig. 5 trong bài báo)
+
+**Vấn đề của Standard Self-Attention Transformer (DETR):**
+  - Phải tính attention trên TOÀN BỘ vị trí trên feature map → chi phí tính toán lớn, tốn bộ nhớ.
+  - Hội tụ chậm, khó huấn luyện.
+
+**Giải pháp - Deformable Attention Block:**
+
+  Công thức Single-scale Multi-head Deformable Attention (Equation 10):
+    At(A, x) = Σ_{m=1}^{M} W_m [ Σ_{k=1}^{K} A_{m,k} · f_off([x, Δx_m, Δy_m]_k) ]
+
+  Trong đó:
+    - m: chỉ số attention head (tổng M heads).
+    - k: chỉ số sampled key (tổng K sampling points).
+    - A_{m,k}: attention weight đã học cho head m, điểm k.
+    - {Δx_m, Δy_m}: offsets (độ lệch) đã học để xác định vị trí lấy mẫu.
+    - f_off(): hàm lấy mẫu tại vị trí offset.
+    - W_m: ma trận trọng số cho head m.
+
+  Quá trình tính toán:
+    1. Từ input sequence feature, tính query feature z và feature map x qua linear layers.
+    2. Áp dụng linear layers lên z để tính multi-head offsets {Δx_m, Δy_m}_{m=1}^{M} và attention weights A.
+    3. Mỗi cặp offset lấy mẫu K điểm từ feature map x.
+    4. Tính weighted sum theo công thức trên.
+
+  Công thức Multi-scale Deformable Attention (Equation 11):
+    MsAt({A^l}_{l=1}^{L}, {x^l}_{l=1}^{L}) = Σ_{m=1}^{M} W_m [ Σ_{l=1}^{L} Σ_{k=1}^{K} A^L_{m,k} · f_off([x^l, Δx^l_m, Δy^l_m]_k) ]
+
+  Trong đó l: chỉ số layer, L: tổng số layers.
+
+**Cấu trúc Encoder-Decoder:**
+  - 6 lớp deformable encoder + 6 lớp deformable decoder.
+  - Output kích thước: (N_obj, c_out), trong đó N_obj là số bất thường phát hiện, c_out là chiều output của decoder.
+
+**Ưu điểm so với DETR:**
+  - Chỉ lấy mẫu K điểm (thay vì toàn bộ feature map) → giảm mạnh chi phí tính toán.
+  - Hội tụ nhanh hơn nhiều (xem Training Time Analysis).
+  - Tập trung vào vùng đặc trưng quan trọng (informative feature subspace).
+
+----------------------------------------------------------------------
+#### D. Hàm mất mát (Loss Function) - Chi tiết
+----------------------------------------------------------------------
+
+**Hungarian Matching (Equation 1):**
+  ω̂ = arg min_{ω ∈ Ω_N} Σ_{i=1}^{N} L_match(y_i, ŷ_ω(i))
+
+  - Tìm hoán vị tối ưu ω để ghép cặp N_obj dự đoán với ground truth.
+  - y được pad đến kích thước N_obj.
+
+**Total Loss (Equation 2):**
+  L(ŷ, y) = Σ_{i=1}^{N} [ α_1 · L_cls(c_i, p̂_ω(i)(c_i)) + α_2 · L_loc(b_i, b̂_ω(i)) ]
+
+  Trong đó α_1, α_2 là hyperparameters.
+
+**Classification Loss (Equation 3):**
+  L_cls(c_i, p̂_ω(i)(c_i)) = Σ_{i=1}^{N} -log p̂_ω(i)(c_i)
+  → Cross Entropy Loss tiêu chuẩn.
+
+**Bounding Box Loss (Equation 4):**
+  L_loc(b_i, b̂_ω(i)) = Σ_{i=1}^{N} [ β_1 · L_iou(b_i, b̂_ω(i)) + β_2 · L_reg(b_i, b̂_ω(i)) ]
+
+  - L_iou: GIoU (Generalized Intersection over Union) Loss → cân bằng loss giữa vật thể lớn và nhỏ.
+  - L_reg: L1 Loss (khoảng cách tuyệt đối giữa tọa độ dự đoán và ground truth).
+  - β_1, β_2 là hyperparameters.
+
+**Tính chất end-to-end:** Toàn bộ tham số được cập nhật dựa trên loss từ Hungarian matching → không cần NMS (Non-Maximum Suppression) hay các thành phần thủ công khác.
+
+======================================================================
+### 4. Ablation Study - Kết quả thí nghiệm khử (Ablation)
+======================================================================
+
+#### 4.1 Số lớp lặp trong Feature Extractor (Table II)
+  - Tăng số lớp (layers) trong iterative context-aware feature extractor → tăng AP50, AP75, AP_S, AP_M, AP_L.
+  - **Tối ưu: 4 lớp** cho cả hai dataset.
+  - Vượt quá 4 lớp: accuracy không tăng do quá nhiều lớp mang thông tin nhiễu (noisy information).
+
+#### 4.2 Số Bottle Neck trong DCE Block (Table III)
+  - **Tối ưu: 3 bottle neck structures** cho cả VinBig và ChestX Det-10.
+  - Nhiều bottle neck hơn → đa dạng hóa kích thước receptive field qua serial dilated convolutions.
+
+#### 4.3 Số DWT Levels trong FP Block (Table IV)
+  - **Tối ưu: 3 DWT levels**.
+  - Level ≥ 4: accuracy không tăng vì phần tần số cao ở mức cao chứa rất ít thông tin cho chẩn đoán bệnh.
+  - Lý thuyết: phần LL (low-frequency) chứa thông tin chủ đạo, có thể khôi phục ảnh chỉ từ phần này.
+
+======================================================================
+### 5. So sánh với các phương pháp hiện có (Table V)
+======================================================================
+
+**Dataset VinBig Chest X-Ray:**
+  - CDT-CAD đạt AP50 và AR cao nhất.
+  - Vượt trội 1.4% AP50 và 6.0% AR so với phương pháp tốt nhất trước đó.
+  - Cạnh tranh với ensemble baseline (kết hợp 5 detector khác nhau) nhưng với kiến trúc đơn giản hơn nhiều.
+
+**Dataset ChestX Det-10:**
+  - CDT-CAD đạt tất cả chỉ số cao nhất: AP50, AP75, AR, AP_S, AP_M, AP_L.
+  - Vượt trội 0.9% AP50 và 2.1% AR so với phương pháp tốt nhất trước đó.
+  - VinBig khó hơn ChestX Det-10 do có nhiều loại bất thường hơn và mẫu phức tạp hơn.
+
+**So sánh cụ thể:**
+  - vs DETR: CDT-CAD tốt hơn nhờ deformable attention tập trung vào feature subspace hữu ích, tránh noise.
+  - vs Cho et al. (YOLOv2-based): Deformable transformer có receptive field lớn hơn CNN nhờ self-attention.
+  - vs Ji et al. (PBC, weakly semi-supervised): CDT-CAD sử dụng fully labeled samples, đạt accuracy cao hơn.
+  - vs Faster R-CNN: CDT-CAD phát hiện tốt hơn các hard cases (nodules nhỏ, mẫu bệnh phức tạp).
+
+======================================================================
+### 6. Phân tích tốc độ huấn luyện (Training Time Analysis - Table VI)
+======================================================================
+
+  - CDT-CAD hội tụ ở số epochs THẤP HƠN NHIỀU so với DETR trên cả 2 dataset.
+  - Đồng thời đạt accuracy CAO HƠN DETR.
+  - Lý do: Iterative context-aware feature extractor trích xuất thông tin attention đa tỷ lệ mà không tăng computational burden.
+  - Training loss với deformable transformer giảm NHANH HƠN so với standard transformer (Fig. 6).
+  - Thời gian inference trên ChestX Det-10:
+      + GPU: trung bình 1.251 giây/ảnh.
+      + CPU: trung bình 5.32 giây/ảnh.
+
+======================================================================
+### 7. Chi tiết triển khai (Implementation Details)
+======================================================================
+
+**Phần cứng:**
+  - 2x Intel Xeon E5-2620 v4 (@2.1 GHz) CPUs.
+  - 4x NVIDIA GTX TITAN XP GPUs.
+
+**Framework:** PyTorch.
+
+**Backbone:** ResNet-50 (pretrained trên ImageNet).
+
+**Pre-training:** Trước tiên pre-train trên MS COCO dataset bằng Adam optimizer, sau đó fine-tune trên CXR dataset.
+
+**Data Augmentation:** Random clip, resize, crop. Training với multiple sizes.
+
+**Hyperparameters:**
+  - Learning rate ban đầu: 0.0001.
+  - Weight decay: 0.0001.
+  - Momentum: 0.9.
+  - Linear warm-up: learning rate tăng từ 1/3 × 0.01 đến 0.01 trong 500 iterations đầu tiên.
+
+**Training Schedule:**
+  - Fine-tune 800 epochs cho detection frame subnet.
+  - Giảm learning rate xuống 1/10 mỗi 300 epochs.
+  - Fine-tune 100 epochs cho segmentation head.
+
+**Metrics đánh giá:**
+  - IoU = area(B_p ∩ B_gt) / area(B_p ∪ B_gt)                  (Equation 12)
+  - AP: trung bình precision trên nhiều IoU thresholds (0.5 đến 0.95, step 0.05)    (Equation 13)
+  - AP50, AP75: mAP tại IoU = 0.5 và 0.75.
+  - AP_S, AP_M, AP_L: AP cho vật thể nhỏ, trung bình, lớn.
+  - mAP = Σ AP_i / K                                        (Equation 14)
+  - AR = 2 ∫_{0.5}^{1} recall(o) do                              (Equation 15)
+
+======================================================================
+### 8. Dataset
+======================================================================
+
+**VinBig Chest X-Ray Dataset:**
+  - 5000 ảnh training + 1063 ảnh testing.
+  - 14 loại bất thường X-quang (14 critical radiographic findings).
+  - Được gán nhãn bởi nhóm bác sĩ X-quang có kinh nghiệm (experienced radiologists).
+  - Có annotation bounding boxes + class labels.
+
+**ChestX Det-10 Dataset:**
+  - Tập con của NIH Chest-14 có box annotations.
+  - Training: 3000 ảnh (1000/class) | Validation: 1800 ảnh (600/class) | Testing: 1604 ảnh.
+  - 10 loại bệnh phổ biến (10 common categories of diseases).
+
+======================================================================
+### 9. Tóm tắt kiến trúc tổng thể (Architecture Summary)
+======================================================================
+
+Input CXR Image
+    │
+    ▼
+┌─────────────────────────────┐
+│  ResNet-50 Backbone         │  ← Pretrained ImageNet
+│  (Feature Map extraction)   │
+└─────────────┬───────────────┘
+              │
+              ▼
+┌─────────────────────────────────────────────┐
+│  Iterative Context-Aware Feature Extractor  │
+│  (Lặp 4 lần)                               │
+│                                             │
+│  ┌────────────────────┐                     │
+│  │ DCE Block          │  ← Dilated Conv     │
+│  │ (1×1 → 3×3 → Res  │    + Skip Connect   │
+│  │  Blocks × 3)       │    + Residual Sum    │
+│  └────────┬───────────┘                     │
+│           │                                 │
+│  ┌────────▼───────────┐                     │
+│  │ FP Block           │  ← 2D-DWT (3 levels)│
+│  │ (Split → DWT^i →   │    + GAP + Concat   │
+│  │  GAP → Concat)     │                     │
+│  └────────┬───────────┘                     │
+│           │                                 │
+│     Downsample → Lặp lại                    │
+└─────────────┬───────────────────────────────┘
+              │
+        Flatten + Positional Encoding
+              │
+              ▼
+┌─────────────────────────────────────────────┐
+│  Deformable Transformer Detector            │
+│                                             │
+│  ┌────────────────────┐                     │
+│  │ Encoder (6 layers) │  ← Deformable       │
+│  │ Self-Attention      │    Attention (K pts)│
+│  └────────┬───────────┘                     │
+│           │                                 │
+│  ┌────────▼───────────┐                     │
+│  │ Decoder (6 layers) │  ← Cross-Attention  │
+│  │ Query-based        │    + Deformable Attn │
+│  └────────┬───────────┘                     │
+└───────────┼─────────────────────────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│  FFN Head               │
+│  Classification + BBox  │
+│  (N_obj predictions)    │
+└─────────────────────────┘
+            │
+            ▼
+  Hungarian Matching → Loss (CE + L1 + GIoU)

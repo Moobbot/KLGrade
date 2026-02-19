@@ -18,7 +18,7 @@ app = FastAPI(
     
     ## Features
     - **Step 1: Knee Detection** (YOLO11n) - Detects knee joints in X-ray images.
-    - **Step 2: Lesion Analysis** (YOLO11n/l) - Identifies osteophytes and JSN to determine KL Grade.
+    - **Step 2: Lesion Analysis** (YOLO11l) - Identifies osteophytes and JSN to determine KL Grade.
     
     ## Usage
     Upload an X-ray image to the `/predict/` endpoint to get KL grade predictions and visualizations.
