@@ -309,5 +309,18 @@ async def predict_dicom(
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.get("/health", tags=["System"], summary="Health Check")
+async def health_check():
+    """
+    Health check endpoint for Docker/Kubernetes monitoring.
+    Returns status of the API and model loading state.
+    """
+    return {
+        "status": "ok",
+        "model_loaded": PIPELINE is not None,
+        "version": app.version,
+    }
+
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=9090)
