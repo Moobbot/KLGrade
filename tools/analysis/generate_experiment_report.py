@@ -25,7 +25,7 @@ def to_markdown_table(records, headers):
     return md
 
 def generate_report():
-    runs_dir = Path("runs/kiocmil_cada")
+    runs_dir = Path("runs/classify")
     json_files = sorted(glob.glob(str(runs_dir / "*/evaluation/metrics.json")))
     
     records = []
@@ -111,7 +111,7 @@ def generate_report():
     md += "Performance of the YOLO models used to generate the bounding boxes for the above experiments.\n\n"
     
     yolo_records = []
-    detect_dirs = glob.glob("runs/before_2026_01_17/detect/*")
+    detect_dirs = glob.glob("runs/detect/runs/detect/*")
     
     for d_dir in detect_dirs:
         exp_name = os.path.basename(d_dir)
@@ -126,7 +126,7 @@ def generate_report():
                 if len(lines) < 2:
                     continue
                     
-                headers = lines[0].strip().split(",")
+                headers = [h.strip() for h in lines[0].strip().split(",")]
                 # Indices
                 try:
                     idx_prec = headers.index("metrics/precision(B)")
@@ -140,7 +140,7 @@ def generate_report():
                 best_row = None
                 
                 for line in lines[1:]:
-                    parts = line.strip().split(",")
+                    parts = [p.strip() for p in line.strip().split(",")]
                     if len(parts) != len(headers):
                         continue
                     try:
@@ -185,7 +185,7 @@ def generate_report():
             ]
             md += "| " + " | ".join(row) + " |\n"
     else:
-        md += "No YOLO results found in `runs/before_2026_01_17/detect/`.\n"
+        md += "No YOLO results found in `runs/detect/runs/detect/`.\n"
 
     # Save Report
     with open("docs/EXPERIMENT_REPORT_FULL.md", "w") as f:

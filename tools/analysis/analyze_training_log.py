@@ -3,7 +3,7 @@ import pandas as pd
 import json
 import os
 
-LOG_FILE = "/home/ngoductam/KLGrade/training_all.log"
+LOG_FILE = "/home/ngoductam/KLGrade/nohup.out"
 OUTPUT_CSV = "training_summary.csv"
 OUTPUT_JSON = "training_details.json"
 
