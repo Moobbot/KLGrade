@@ -18,7 +18,7 @@ def train_lesion_detector(
     imgsz: int = 640,
     batch_size: int = 16,
     device: str = "0",
-    project: str = "runs/detect",
+    project: str = str(Path("runs/detect").absolute()),
     name: str = "train_lesion_detector",
     wandb_project: str = "klgrade-lesion-detection",
 ):
