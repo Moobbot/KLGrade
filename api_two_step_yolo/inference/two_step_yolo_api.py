@@ -1,8 +1,8 @@
 """
 Two-Step YOLO Inference API
 
-Step 1: Knee Detection (YOLO11l)
-Step 2: Lesion Detection on cropped knees (YOLO11l)
+Step 1: Knee Detection (YOLO11n) — Lightweight Nano model for fast knee localization
+Step 2: Lesion Detection on cropped knees (YOLO11l) — Large model for fine-grained lesion detection
 
 This API uses two YOLO models sequentially for end-to-end KL grading.
 """

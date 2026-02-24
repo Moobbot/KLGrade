@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Two-Step YOLO API provides end-to-end KL grading using two sequential YOLO11l models:
+The Two-Step YOLO API provides end-to-end KL grading using two sequential YOLO models (YOLO11n for knee detection + YOLO11l for lesion detection):
 
 1. **Step 1**: Knee Detection - Detect knee regions in full X-ray images
 2. **Step 2**: Lesion Detection - Detect lesions (osteophytes, joint space narrowing) in cropped knees
@@ -80,7 +80,9 @@ curl -X POST "http://localhost:9090/predict/?visualize=true" \
 ## Available Models
 
 ### Knee Detection
-- **Model**: `runs/detect/knee_detector/weights/best.pt`
+
+- **Model**: `runs/detect/knee_yolo11n_YYYYMMDD_HHMMSS/weights/best.pt`
+- **Architecture**: YOLO11n (Nano)
 - **Classes**: 1 (Knee)
 - **mAP@50**: 0.995
 - **Use**: Always use this for Step 1
@@ -89,19 +91,23 @@ curl -X POST "http://localhost:9090/predict/?visualize=true" \
 
 #### Cropped Knee Images (Recommended)
 
-| Model | Classes | Dataset | mAP@50 | mAP@50-95 | Use Case |
-|-------|---------|---------|--------|-----------|----------|
-| `lesion_8class_balanced` | 8 (OST/JS split) | Balanced | **0.763** | **0.667** | **Best Performance (Recommended)** |
-| `lesion_5class_balanced` | 5 (KL0-4) | Balanced | 0.734 | 0.571 | Good alternative |
-| `lesion_10class_balanced` | 10 (KL0-a to KL4-b) | Balanced | 0.633 | 0.571 | Fine-grained grading |
-| `lesion_4class_balanced` | 4 (KL1-4) | Balanced | 0.584 | 0.348 | Not recommended |
+> Metrics reported on **best split: 80/10/10** (train/val/test), model `yolo11l.pt`, 100 epochs.
+
+| Model                     | Classes             | Dataset  | mAP@50    | mAP@50-95 | Precision | Recall | Use Case                           |
+| ------------------------- | ------------------- | -------- | --------- | --------- | --------- | ------ | ---------------------------------- |
+| `lesion_8class_balanced`  | 8 (OST/JS split)    | Balanced | **0.820** | **0.726** | 0.808     | 0.837  | **Best Performance (Recommended)** |
+| `lesion_5class_balanced`  | 5 (KL0-4)           | Balanced | 0.748     | 0.589     | 0.710     | 0.781  | Good alternative                   |
+| `lesion_10class_balanced` | 10 (KL0-a to KL4-b) | Balanced | 0.664     | 0.621     | 0.603     | 0.842  | Fine-grained grading               |
+| `lesion_4class_balanced`  | 4 (KL1-4)           | Balanced | 0.591     | 0.371     | 0.573     | 0.623  | Not recommended                    |
 
 #### Full X-ray Images
 
-| Model | Classes | Dataset | mAP@50 | mAP@50-95 | Note |
-|-------|---------|---------|--------|-----------|------|
-| `lesion_full_10class_balanced` | 10 | Balanced | 0.681 | 0.527 | Best Full X-ray model |
-| `lesion_full_8class_balanced` | 8 | Balanced | 0.657 | 0.514 | |
+> Metrics reported on **best split: 80/10/10** (train/val/test), model `yolo11l.pt`, 100 epochs.
+
+| Model                          | Classes | Dataset  | mAP@50    | mAP@50-95 | Precision | Recall | Note                  |
+| ------------------------------ | ------- | -------- | --------- | --------- | --------- | ------ | --------------------- |
+| `lesion_full_10class_balanced` | 10      | Balanced | **0.790** | **0.668** | 0.778     | 0.794  | Best Full X-ray model |
+| `lesion_full_8class_balanced`  | 8       | Balanced | 0.661     | 0.519     | 0.617     | 0.722  |                       |
 
 **Recommendation**: Always use **`lesion_8class_balanced`** for the best accuracy.
 
@@ -118,7 +124,8 @@ TwoStepYOLOInference(
     knee_model_path: str,
     lesion_model_path: str,
     device: str = "cuda:0",
-    conf_threshold: float = 0.25,
+    knee_conf_threshold: float = 0.75,
+    lesion_conf_threshold: float = 0.25,
     iou_threshold: float = 0.45,
 )
 ```
@@ -140,10 +147,12 @@ TwoStepYOLOInference(
 Run full two-step inference pipeline.
 
 **Parameters:**
+
 - `image_path` (str): Path to input X-ray image
 - `return_crops` (bool): Whether to return cropped knee images
 
 **Returns:**
+
 ```python
 {
     "image_path": str,
@@ -177,10 +186,12 @@ Run full two-step inference pipeline.
 Run inference and create annotated visualization.
 
 **Parameters:**
+
 - `image_path` (str): Path to input image
 - `output_path` (str, optional): Path to save visualization
 
 **Returns:**
+
 - `np.ndarray`: Annotated image (RGB)
 
 ##### `detect_knees(image)`
@@ -203,7 +214,7 @@ from two_step_yolo_api import TwoStepYOLOInference
 
 # Initialize
 pipeline = TwoStepYOLOInference(
-    knee_model_path="runs/detect/knee_detector/weights/best.pt",
+    knee_model_path="runs/detect/knee_yolo11n_YYYYMMDD_HHMMSS/weights/best.pt",
     lesion_model_path="runs/detect/lesion_8class_balanced/weights/best.pt",
     knee_conf_threshold=0.75,
     lesion_conf_threshold=0.25,
@@ -231,7 +242,7 @@ with open("batch_results.json", "w") as f:
 pipeline = TwoStepYOLOInference(
     knee_model_path="...",
     lesion_model_path="...",
-    conf_threshold=0.15,  # Lower = more sensitive
+    lesion_conf_threshold=0.15,  # Lower = more sensitive
     iou_threshold=0.5,
 )
 
@@ -254,11 +265,11 @@ for i, crop in enumerate(result["knee_crops"]):
 
 ### Speed
 
-| GPU | Knee Detection | Lesion Detection | Total |
-|-----|----------------|------------------|-------|
-| RTX 2080 Ti | ~50ms | ~80ms | ~130ms |
-| RTX 3090 | ~30ms | ~50ms | ~80ms |
-| CPU (i7) | ~500ms | ~800ms | ~1.3s |
+| GPU         | Knee Detection | Lesion Detection | Total  |
+| ----------- | -------------- | ---------------- | ------ |
+| RTX 2080 Ti | ~50ms          | ~80ms            | ~130ms |
+| RTX 3090    | ~30ms          | ~50ms            | ~80ms  |
+| CPU (i7)    | ~500ms         | ~800ms           | ~1.3s  |
 
 ### Accuracy
 
@@ -268,13 +279,14 @@ Depends on chosen lesion model. See evaluation results in `doc-training/`.
 
 ## Comparison with Other Approaches
 
-| Approach | GPU Memory | Speed | Accuracy | Status |
-|----------|------------|-------|----------|--------|
-| **Two-Step YOLO** | 3-4GB | Fast | Good | ✅ **Ready** |
-| CDT-CAD | 12-16GB | Slow | Better? | ⚠️ Needs large GPU |
-| KIOCMIL-CADA | 6-8GB | Medium | Best | ✅ Available |
+| Approach          | GPU Memory | Speed  | Accuracy | Status             |
+| ----------------- | ---------- | ------ | -------- | ------------------ |
+| **Two-Step YOLO** | 3-4GB      | Fast   | Good     | ✅ **Ready**       |
+| CDT-CAD           | 12-16GB    | Slow   | Better?  | ⚠️ Needs large GPU |
+| KIOCMIL-CADA      | 6-8GB      | Medium | Best     | ✅ Available       |
 
-**Recommendation**: 
+**Recommendation**:
+
 - Use **Two-Step YOLO** for fast inference on limited hardware
 - Use **KIOCMIL-CADA** for best accuracy
 - Use **CDT-CAD** if you have access to large GPU (A100, V100)
@@ -286,20 +298,23 @@ Depends on chosen lesion model. See evaluation results in `doc-training/`.
 ### Issue: Low Detection Rate
 
 **Solution**: Lower confidence threshold
+
 ```python
-pipeline = TwoStepYOLOInference(..., conf_threshold=0.15)
+pipeline = TwoStepYOLOInference(..., lesion_conf_threshold=0.15)
 ```
 
 ### Issue: Too Many False Positives
 
 **Solution**: Raise confidence threshold
+
 ```python
-pipeline = TwoStepYOLOInference(..., conf_threshold=0.35)
+pipeline = TwoStepYOLOInference(..., lesion_conf_threshold=0.35)
 ```
 
 ### Issue: CUDA Out of Memory
 
 **Solution**: Use CPU or smaller batch size
+
 ```python
 pipeline = TwoStepYOLOInference(..., device="cpu")
 ```
